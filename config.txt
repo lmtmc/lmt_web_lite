@@ -1,0 +1,10 @@
+
+[database]
+con = sqlite:///users.db
+
+[path]
+lmt_work = /home/lmt/lmtoy_web/lmtoy_run
+
+[connect]
+user = lmthelpdesk_umass_edu
+host=unity.rc.umass.edu
