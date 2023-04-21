@@ -14,8 +14,18 @@ SQLAlchemy==1.4.36
 
 6. Login using 'xia', '1234' or sign up an account
 
-7. Choose a PID and click next button. If it runs on unity, it will run ./mk_run.py. If not, it will show 'No LMTOY with runs.py'.
-![image](https://user-images.githubusercontent.com/63130123/230937966-1cebfe1d-5a83-444a-a87d-1b1e78e2b76e.png)
+7. Choose a PID and click 'MAKE RUNS' button. If it runs on unity, it will run ./mk_run.py.
 
-8. Run via Unity will show the jobs on unity by lmthelpdesk account
-![image](https://user-images.githubusercontent.com/63130123/230937624-f7f4083c-adfc-4f35-84aa-001498a75ca5.png)
+8. After choose a PID, the available runfiles will appear as the options of the "Choose a runfile:" dropdown.
+
+9. Choose a runfile and the parameters will appear in the table below.
+![image](https://user-images.githubusercontent.com/63130123/233525112-e696f968-bc3d-47ba-88e1-002ed73a7684.png)
+
+10. Click the 'Run' button, it will excute 'sbatch_lmtoy.sh 2023-S1-US-17.run1'
+
+11. Run via Unity will show the jobs on unity by lmthelpdesk account
+
+Next steps:
+1. Make the table editable. Save the new paremeter to the $PID.run1 
+
+2. Get the "Make summary" function working
