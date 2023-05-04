@@ -3,8 +3,9 @@ from dash import dcc, html, Input, Output, State
 import dash_bootstrap_components as dbc
 from server import app, server
 from flask_login import logout_user, current_user
-from views import success, login, login_fd, logout, signup, joblist_unity
-# from views import joblist_ssh
+from views import success, login, login_fd, logout, signup
+
+
 header = html.Div(
     className='header',
     children=html.Div(
@@ -29,16 +30,6 @@ app.layout = html.Div(
                 className='content-container'
             ),
         ], className='container-width'),
-
-        html.Div([
-            html.Div([
-                dbc.Tabs([
-                    #dbc.Tab(joblist_ssh.layout, label='Run via SSH', className='content'),
-                    dbc.Tab(joblist_unity.layout, label='Run via Unity',className='content')
-                ])
-            ],className='content-container')
-
-            ],className='container-width',),
 
         dcc.Location(id='url', refresh=False),
     ]
@@ -92,7 +83,5 @@ def user_logout(input1):
 
 # export FLASK_ENV=development
 if __name__ == '__main__':
-
-    #app.run_server()
+    # app.run_server()
     app.server.run(port='8000', debug=True)
-
