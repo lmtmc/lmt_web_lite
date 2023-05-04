@@ -6,6 +6,8 @@ import subprocess
 import pandas as pd
 import os
 from config import config
+from views import joblist_ssh, joblist_unity
+from flask_login import current_user
 
 lmt_work_path = config['path']['work_lmt']
 # lmtoy_run path which includes the PIDs
@@ -13,21 +15,6 @@ lmtoy_pid_path = lmt_work_path + '/lmtoy_run'
 
 # select PID then get the session number
 PIS_options = []
-
-
-# get the pid options in the lmtoy_pid_path
-def get_pid_option(path):
-    pid_options = []
-    folders = [f.path for f in os.scandir(path) if f.is_dir()]
-    for folder in folders:
-        folder_name = os.path.basename(folder)
-        if folder_name.startswith('lmtoy_'):
-            folder = folder_name.split('_')[1]
-            pid_options.append(os.path.basename(folder))
-    return pid_options
-
-
-pid_options = get_pid_option(lmtoy_pid_path)
 
 
 # get the runfile options in the lmtoy_runfile_path
@@ -56,19 +43,19 @@ def df_runfile(filename):
 choose_pid_layout = html.Div(
     className="container",
     children=[
-        html.Div('Choose a PID: '),
-        html.Div(
-            dbc.Row([
-                dbc.Col(dcc.Dropdown(id='pid', options=pid_options), width=9),
-                dbc.Col(html.Button(id='make-runs', children='make runs', n_clicks=0)),
-            ])),
+        html.Div(html.Button(id='make-runs', children='make runs', n_clicks=0)),
         html.Br(),
         html.Div('Choose a runfile: '),
-        dcc.Dropdown(id='runfile', ),
+        html.Div(
+            dbc.Row([
+                dbc.Col(dcc.Dropdown(id='runfile', ), width=9),
+                dbc.Col(html.Button('Run', id='run-btn', n_clicks=0), )
+            ])
+        ),
+
         html.Br(),
         html.Div(id='table-container'),
         html.Br(),
-        html.Button('Run', id='run-btn', n_clicks=0),
         html.Div(id='output-message')
 
     ])
@@ -82,25 +69,34 @@ run_files_layout = html.Div(
                )], id='run-file-output', size='xl', is_open=False)
 )
 
+job_display_layout = html.Div([
+    html.Div([
+        dbc.Tabs([
+            # dbc.Tab(joblist_ssh.layout, label='Run via SSH', className='content'),
+            dbc.Tab(joblist_unity.layout, label='Run via Unity', className='content')
+        ])
+    ], className='content-container')
+
+], className='container-width', )
+
 # Create success layout
 layout = html.Div(children=[
     dcc.Location(id='url_login_success', refresh=True),
     choose_pid_layout,
-    run_files_layout,
+    job_display_layout,
     dcc.Store(id='store')
 ])
 
 
-# get the runfile based on a PID
+# get the runfile based on a PID and run python3 mk_runs.py
 @app.callback(
     Output('runfile', 'options'),
-    Input('pid', 'value'),
     Input('make-runs', 'n_clicks')
 )
-def get_runfile(pid_value, n):
+def get_runfile(n):
     options = []
-    if pid_value is not None:
-        path = lmtoy_pid_path + '/lmtoy_' + pid_value
+    if current_user.is_authenticated:
+        path = lmtoy_pid_path + '/lmtoy_' + current_user.username
         if n:
             # command of python3 mk_runs.py
             cmd = ['python3', path + '/mk_runs.py']
@@ -113,28 +109,27 @@ def get_runfile(pid_value, n):
 # display an editable dash table based on runfile
 @app.callback(
     Output('table-container', 'children'),
-    Input('pid', 'value'),
     Input('runfile', 'value'),
-    Input('run-btn','n_clicks'),
+    Input('run-btn', 'n_clicks'),
     prevent_initial_call=True
 )
-def edit_table(pid_value, runfile, n):
-    if pid_value is not None and runfile is not None:
-        pid_path = lmtoy_pid_path + '/lmtoy_' + pid_value
-        runfile_path = pid_path+'/'+runfile
-        df = df_runfile(runfile_path)
-        cmd_table = dash_table.DataTable(
-            id='table',
-            columns=[{'name': i, 'id': i} for i in df.columns],
-            data=df.to_dict('records'),
-            editable=True,
-            row_deletable=True,
-            row_selectable='multi'
-        ),
-        if n:
-            
-        # sbatch_lmtoy.sh $PID.run1
-            subprocess.run('sbatch_lmtoy.sh '+runfile,cwd=pid_path,shell=True)
+def edit_table(runfile, n):
+    if current_user.is_authenticated:
+        if runfile is not None:
+            pid_path = lmtoy_pid_path + '/lmtoy_' + current_user.username
+            runfile_path = pid_path + '/' + runfile
+            df = df_runfile(runfile_path)
+            cmd_table = dash_table.DataTable(
+                id='table',
+                columns=[{'name': i, 'id': i} for i in df.columns],
+                data=df.to_dict('records'),
+                editable=True,
+                row_deletable=True,
+                row_selectable='multi'
+            ),
+            if n:
+                # sbatch_lmtoy.sh $PID.run1
+                subprocess.run('sbatch_lmtoy.sh ' + runfile, cwd=pid_path, shell=True)
         return cmd_table
 
 # @app.callback(

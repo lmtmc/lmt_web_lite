@@ -1,32 +1,51 @@
 from dash import dcc, html, Input, Output, State
-
+from config import config
+import os
+import dash_bootstrap_components as dbc
 from server import app, User
 from flask_login import login_user
 from werkzeug.security import check_password_hash
 
+
+# get the pid options in the lmtoy_pid_path
+def get_pid_option(path):
+    pid_options = []
+    folders = [f.path for f in os.scandir(path) if f.is_dir()]
+    for folder in folders:
+        folder_name = os.path.basename(folder)
+        if folder_name.startswith('lmtoy_'):
+            folder = folder_name.split('_')[1]
+            pid_options.append(os.path.basename(folder))
+    return pid_options
+
+
+lmt_work_path = config['path']['work_lmt']
+# lmtoy_run path which includes the PIDs
+lmtoy_pid_path = lmt_work_path + '/lmtoy_run'
+pid_options = get_pid_option(lmtoy_pid_path)
+
 layout = html.Div(
     children=[
         html.Div(
-            #className="container",
+            # className="container",
 
             children=[
                 dcc.Location(id='url_login', refresh=True),
-                html.Div('''Please log in to create a job:''', id='h1'),
                 html.Div(
                     # method='Post',
                     children=[
-                        dcc.Input(
-                            placeholder='Enter your username',
-                            n_submit=0,
-                            type='text',
-                            id='uname-box',
-                        ),
-                        dcc.Input(
-                            placeholder='Enter your password',
-                            n_submit=0,
-                            type='password',
-                            id='pwd-box'
-                        ),
+                        dbc.Row([
+                            dbc.Col([
+                                html.Div('''Select a PID:''', id='h1'),
+                                dcc.Dropdown(id='pid', options=pid_options)]),
+
+                            dbc.Col([
+                                html.Div('''Password:''', id='h1'),
+                                dcc.Input(id='pwd-box', n_submit=0, type='password'), ]
+                            ),
+                        ]),
+
+                        html.Br(),
                         html.Button(
                             children='Login',
                             n_clicks=0,
@@ -34,7 +53,6 @@ layout = html.Div(
                             id='login-button'
                         ),
 
-                        html.A(html.Button('Sign Up'), href='/signup'),
                         html.Div(children='', id='output-state')
                     ]
                 ),
@@ -44,39 +62,46 @@ layout = html.Div(
 )
 
 
+# if the input password matches the pid password, login to that pid
 @app.callback(Output('url_login', 'pathname'),
-              [Input('login-button', 'n_clicks'),
-               Input('uname-box', 'n_submit'),
-               Input('pwd-box', 'n_submit')],
-              [State('uname-box', 'value'),
-               State('pwd-box', 'value')])
-def success(n_clicks, n_submit_uname, n_submit_pwd, input1, input2):
-    user = User.query.filter_by(username=input1).first()
+              Output('output-state', 'children'),
+              [
+                  Input('pid', 'value'),
+                  Input('login-button', 'n_clicks'),
+                  Input('pwd-box', 'n_submit'),
+              ],
+              State('pwd-box', 'value')
+              )
+def success(pid, n_clicks, n_submit_pwd, input1):
+    print('pid', pid)
+    user = User.query.filter_by(username=pid).first()
+    print(user)
     if user:
-        if check_password_hash(user.password, input2):
+        if check_password_hash(user.password, input1):
             login_user(user)
-            return '/success'
+            return '/success', html.Div('')
         else:
-            pass
+            return '/login', html.Div('Incorrect password')
     else:
-        pass
+        return '/login', html.Div('Please select a valid PID')
 
+# if the password and pid not match
 
-@app.callback(Output('output-state', 'children'),
-              [Input('login-button', 'n_clicks'),
-               Input('uname-box', 'n_submit'),
-               Input('pwd-box', 'n_submit')],
-              [State('uname-box', 'value'),
-               State('pwd-box', 'value')])
-def update_output(n_clicks, n_submit_uname, n_submit_pwd, input1, input2):
-    if n_clicks > 0 or n_submit_uname > 0 or n_submit_pwd > 0:
-        user = User.query.filter_by(username=input1).first()
-        if user:
-            if check_password_hash(user.password, input2):
-                return ''
-            else:
-                return 'Incorrect username or password'
-        else:
-            return 'Incorrect username or password'
-    else:
-        return ''
+# @app.callback(Output('output-state', 'children'),
+#               [Input('login-button', 'n_clicks'),
+#                Input('uname-box', 'n_submit'),
+#                Input('pwd-box', 'n_submit')],
+#               [State('uname-box', 'value'),
+#                State('pwd-box', 'value')])
+# def update_output(n_clicks, n_submit_uname, n_submit_pwd, input1, input2):
+#     if n_clicks > 0 or n_submit_uname > 0 or n_submit_pwd > 0:
+#         user = User.query.filter_by(username=input1).first()
+#         if user:
+#             if check_password_hash(user.password, input2):
+#                 return ''
+#             else:
+#                 return 'Incorrect username or password'
+#         else:
+#             return 'Incorrect username or password'
+#     else:
+#         return ''
