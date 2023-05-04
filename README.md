@@ -12,7 +12,7 @@ SQLAlchemy==1.4.36
 
 5. The app will be running on http://127.0.0.1:8000
 
-6. Login using 'xia', '1234' or sign up an account
+6. Login using pid. For example pid = 2023-S1-US-17 password = 1234
 
 7. Choose a PID and click 'MAKE RUNS' button. If it runs on unity, it will run ./mk_run.py.
 
