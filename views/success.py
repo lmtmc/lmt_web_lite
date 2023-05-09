@@ -115,6 +115,7 @@ def get_runfile(n):
 )
 def edit_table(runfile, n):
     if current_user.is_authenticated:
+        cmd_table = dash_table.DataTable(columns=[], data=[])
         if runfile is not None:
             pid_path = lmtoy_pid_path + '/lmtoy_' + current_user.username
             runfile_path = pid_path + '/' + runfile

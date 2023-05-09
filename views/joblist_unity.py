@@ -12,7 +12,7 @@ from config import config
 user = config['connect']['user']
 
 def view_jobs(user):
-    df = []
+    df = pd.DataFrame()
     try:
         squeue_output = subprocess.run(['squeue', '-u', user], capture_output=True, text=True)
         if squeue_output:
@@ -20,7 +20,6 @@ def view_jobs(user):
             df = df.head(5)
     except:
         print('No job')
-
 
     return df
 
@@ -73,7 +72,8 @@ layout = html.Div(children=[
     [
         Output('job-table-unity', 'data'),
     ],
-    Input('interval-component_unity', 'n_intervals')
+    Input('interval-component_unity', 'n_intervals'),
+    prevent_initial_call=True
 )
 def update_job(n):
     data = []
