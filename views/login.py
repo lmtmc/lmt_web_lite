@@ -19,9 +19,8 @@ def get_pid_option(path):
     return pid_options
 
 
-lmt_work_path = config['path']['work_lmt']
+lmtoy_pid_path = config['path']['work_lmt']
 # lmtoy_run path which includes the PIDs
-lmtoy_pid_path = lmt_work_path + '/lmtoy_run'
 pid_options = get_pid_option(lmtoy_pid_path)
 
 layout = html.Div(
@@ -78,8 +77,11 @@ def success(pid, n_clicks, n_submit_pwd, input1):
     print(user)
     if user:
         if check_password_hash(user.password, input1):
-            login_user(user)
-            return '/success', html.Div('')
+            if n_clicks:
+                login_user(user)
+                return '/success', html.Div('')
+            else:
+                pass
         else:
             return '/login', html.Div('Incorrect password')
     else:

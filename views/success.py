@@ -8,10 +8,9 @@ import os
 from config import config
 from views import joblist_ssh, joblist_unity
 from flask_login import current_user
-
-lmt_work_path = config['path']['work_lmt']
 # lmtoy_run path which includes the PIDs
-lmtoy_pid_path = lmt_work_path + '/lmtoy_run'
+lmtoy_work_path = config['path']['work_lmt']
+
 
 # select PID then get the session number
 PIS_options = []
@@ -132,126 +131,3 @@ def edit_table(runfile, n):
                 # sbatch_lmtoy.sh $PID.run1
                 subprocess.run('sbatch_lmtoy.sh ' + runfile, cwd=pid_path, shell=True)
         return cmd_table
-
-# @app.callback(
-#     Output('source', 'options'),
-#     Output('pis', 'options'),
-#     Output('session-alert', 'children'),
-#     Input('pid', 'value'),
-#     Input('add-btn', 'n_clicks'),
-#     State('add-session', 'value'),
-#     prevent_initial_call=True
-# )
-# def get_options(pid_value, n, add_new):
-#     pis_options = ['create a new session']
-#     source_options = []
-#     session_alert = dbc.Alert(is_open=False)
-#     # get the folder name as session options
-#     pis_path = lmtoy_run_path + '/lmtoy_' + pid_value
-#     subfolders = [f.path for f in os.scandir(pis_path) if f.is_dir()]
-#     for subfolder in subfolders:
-#         folder_name = os.path.basename(subfolder)
-#         if folder_name.startswith('session'):
-#             pis_options.append(os.path.basename(subfolder))
-#     # if press add button, add the input to session option
-#     if n:
-#         if add_new in pis_options:
-#             session_alert = dbc.Alert('session name exists', color='secondary', dismissable=True)
-#         else:
-#             # create a session folder
-#             os.makedirs(os.path.join(pis_path, add_new))
-#             session_alert = dbc.Alert(f'{add_new} created', color='success', dismissable=True)
-#             pis_options.append(add_new)
-#
-#     # get the source options (fake data for now)
-#     # todo
-#
-#     source_file = pis_path + '/source.txt'
-#     try:
-#         with open(source_file, 'r') as file:
-#             source_options = [line.strip() for line in file.readlines()]
-#     except:
-#         print('no source file in this folder')
-#     return source_options, pis_options, session_alert
-#
-#
-# @app.callback(
-#     Output('session-modal', 'is_open'),
-#     Input('pis', 'value'),
-#     Input('close-btn', 'n_clicks'),
-#     Input('add-btn', 'n_clicks'),
-#     State('session-modal', 'is_open'),
-#     State('add-session', 'value'),
-#     State('pis', 'value')
-# )
-# def show_output(option, n1, n2, is_open, new_session, pis_value):
-#     print('create a new session', option)
-#     if option == 'create a new session':
-#         is_open = True
-#     if n1 or n2:
-#         is_open = False
-
-# return is_open
-
-
-# @app.callback(
-#     Output('run-file-output', 'children'),
-#     [Input('pid', 'value'),
-#      Input('pis', 'value'),
-#      Input('run-file', 'is_open')],
-#     prevent_initial_call=True)
-# def run_file(pid, pis, is_open):
-#     if is_open:
-#         run_path = lmt_work_path + '/lmtoy_' + pid
-#         subprocess.run('lmtoy', capture_output=True, text=True)
-#         result = subprocess.run(run_path + 'make runs', capture_output=True, text=True)
-#         output = result.stdout
-#
-#         return html.Pre(output)
-#
-#
-# # click next to run file
-# @app.callback(
-#     Output('run-file', 'is_open'),
-#     [Input('next-button', 'n_clicks'), Input('close', 'n_clicks')],
-#     [State('run-file', 'is_open')]
-# )
-# def toggle_modal(n1, n2, is_open):
-#     if n1 or n2:
-#         return not is_open
-#     return is_open
-# runfile_modal = dbc.Modal(
-#     [
-#         dbc.Label("Edit Parameters"),
-#         dbc.ModalBody(html.Div(id='runfile-table')),
-#         dbc.ModalFooter(
-#             html.Button(
-#                 "Save", id="save-btn", className="ms-auto"),
-#         ),
-#
-#     ],
-#     id='runfile-modal',
-#     is_open=False,
-#     centered=True,
-#     size='lg'
-#
-# )
-# session_modal = dbc.Modal(
-#     [
-#         dbc.Label("Create a new session"),
-#         dbc.ModalBody(
-#             [dcc.Input(id='add-session'),
-#              html.Button('Add', id='add-btn'),
-#              ]),
-#         dbc.ModalFooter(
-#             html.Button(
-#                 "Close", id="close-btn", className="ms-auto"),
-#         ),
-#
-#     ],
-#     id='session-modal',
-#     is_open=False,
-#     centered=True,
-#     size='lg'
-#
-# )
