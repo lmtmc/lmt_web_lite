@@ -9,8 +9,14 @@ from config import config
 from views import joblist_ssh, joblist_unity
 from flask_login import current_user
 # lmtoy_run path which includes the PIDs
-lmtoy_work_path = config['path']['work_lmt']
-
+#lmtoy_work_path = config['path']['work_lmt']
+work_lmt = os.environ.get('LMT_WORK')
+if work_lmt:
+    lmtoy_pid_path = work_lmt + '/lmtoy_run'
+    print('Environment variable LMT_WORK exists')
+else:
+    lmtoy_pid_path = config['path']['work_lmt']
+    print('Environment variable LMT_WORK not exists, get it from config.txt')
 
 # select PID then get the session number
 PIS_options = []

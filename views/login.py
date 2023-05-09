@@ -19,7 +19,15 @@ def get_pid_option(path):
     return pid_options
 
 
-lmtoy_pid_path = config['path']['work_lmt']
+# lmtoy_pid_path = config['path']['work_lmt']
+work_lmt = os.environ.get('LMT_WORK')
+
+if work_lmt:
+    lmtoy_pid_path = work_lmt + '/lmtoy_run'
+    print('Environment variable LMT_WORK exists')
+else:
+    lmtoy_pid_path = config['path']['work_lmt']
+    print('Environment variable LMT_WORK not exists, get it from config.txt')
 # lmtoy_run path which includes the PIDs
 pid_options = get_pid_option(lmtoy_pid_path)
 
@@ -67,43 +75,27 @@ layout = html.Div(
               [
                   Input('pid', 'value'),
                   Input('login-button', 'n_clicks'),
-                  Input('pwd-box', 'n_submit'),
+                  #Input('pwd-box', 'n_submit'),
               ],
-              State('pwd-box', 'value')
+              State('pwd-box', 'value'),
+              State('pid', 'value'),
+              prevent_initial_call=True
               )
-def success(pid, n_clicks, n_submit_pwd, input1):
+def success(pid, n_clicks,  input1, pid_state):
     print('pid', pid)
+
     user = User.query.filter_by(username=pid).first()
-    print(user)
+    print('user exists', user)
     if user:
         if check_password_hash(user.password, input1):
             if n_clicks:
                 login_user(user)
-                return '/success', html.Div('')
+                return '/success', ''
             else:
-                pass
+                return '/login', 'Please click LOGIN button'
         else:
-            return '/login', html.Div('Incorrect password')
+            return '/login', 'Incorrect password'
     else:
-        return '/login', html.Div('Please select a valid PID')
+        return '/login', 'Please select a valid PID'
 
-# if the password and pid not match
 
-# @app.callback(Output('output-state', 'children'),
-#               [Input('login-button', 'n_clicks'),
-#                Input('uname-box', 'n_submit'),
-#                Input('pwd-box', 'n_submit')],
-#               [State('uname-box', 'value'),
-#                State('pwd-box', 'value')])
-# def update_output(n_clicks, n_submit_uname, n_submit_pwd, input1, input2):
-#     if n_clicks > 0 or n_submit_uname > 0 or n_submit_pwd > 0:
-#         user = User.query.filter_by(username=input1).first()
-#         if user:
-#             if check_password_hash(user.password, input2):
-#                 return ''
-#             else:
-#                 return 'Incorrect username or password'
-#         else:
-#             return 'Incorrect username or password'
-#     else:
-#         return ''
