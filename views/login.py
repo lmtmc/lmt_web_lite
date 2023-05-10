@@ -75,7 +75,6 @@ layout = html.Div(
               [
                   Input('pid', 'value'),
                   Input('login-button', 'n_clicks'),
-                  #Input('pwd-box', 'n_submit'),
               ],
               State('pwd-box', 'value'),
               State('pid', 'value'),
@@ -87,14 +86,15 @@ def success(pid, n_clicks,  input1, pid_state):
     user = User.query.filter_by(username=pid).first()
     print('user exists', user)
     if user:
-        if check_password_hash(user.password, input1):
-            if n_clicks:
-                login_user(user)
-                return '/success', ''
+        if input1:
+            if check_password_hash(user.password, input1):
+                if n_clicks:
+                    login_user(user)
+                    return '/success', ''
+                else:
+                    return '/login', 'Please click LOGIN button'
             else:
-                return '/login', 'Please click LOGIN button'
-        else:
-            return '/login', 'Incorrect password'
+                return '/login', 'Incorrect password'
     else:
         return '/login', 'Please select a valid PID'
 
