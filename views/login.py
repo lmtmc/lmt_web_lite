@@ -20,7 +20,7 @@ def get_pid_option(path):
 
 
 # lmtoy_pid_path = config['path']['work_lmt']
-work_lmt = os.environ.get('LMT_WORK')
+work_lmt = os.environ.get('WORK_LMT')
 
 if work_lmt:
     lmtoy_pid_path = work_lmt + '/lmtoy_run'
