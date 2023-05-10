@@ -3,7 +3,7 @@ from dash import dcc, html, Input, Output, State
 import dash_bootstrap_components as dbc
 from server import app, server
 from flask_login import logout_user, current_user
-from views import success, login, login_fd, logout, signup
+from views import success, login, login_fd, logout
 
 
 header = html.Div(
@@ -43,8 +43,6 @@ def display_page(pathname):
         return login.layout
     elif pathname == '/login':
         return login.layout
-    elif pathname == '/signup':
-        return signup.layout
     elif pathname == '/success':
         if current_user.is_authenticated:
             return success.layout
