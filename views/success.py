@@ -10,7 +10,7 @@ from views import joblist_ssh, joblist_unity
 from flask_login import current_user
 # lmtoy_run path which includes the PIDs
 #lmtoy_work_path = config['path']['work_lmt']
-work_lmt = os.environ.get('LMT_WORK')
+work_lmt = os.environ.get('WORK_LMT')
 if work_lmt:
     lmtoy_pid_path = work_lmt + '/lmtoy_run'
     print('Environment variable LMT_WORK exists')
