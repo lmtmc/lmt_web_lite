@@ -127,7 +127,7 @@ choose_pid_layout = html.Div(
     ])
 
 job_display_layout = html.Div([
-    html.H5('Job running on unity'),
+    html.H5('Jobs running on unity'),
     html.Div(id='job-status'),
     dcc.Interval(
         id='interval-component_unity',
@@ -136,8 +136,10 @@ job_display_layout = html.Div([
     ),
     dash_table.DataTable(
         id='job-table-unity',
+        selectable=True,
         style_table={'overflowX': 'scroll'}
     ),
+    html.Button('Cancel selected job', id='cancel-button'),
     html.Div(id='cancel-status')
 ], className='content-container')
 
