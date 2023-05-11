@@ -57,7 +57,7 @@ def save_runfile(df, runfile_path):
             line += f" {column}{separator}{value}"
         lines.append(line)
     print('runfile_path', runfile_path)
-    with open('data', 'w') as f:
+    with open(runfile_path, 'w') as f:
         f.write('\n'.join(lines))
 
 
