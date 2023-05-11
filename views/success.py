@@ -75,6 +75,20 @@ def view_jobs(user):
     return df
 
 
+def get_job_info():
+    result = subprocess.run(['squeue', '-u', user], stdout=subprocess.PIPE)
+    output = result.stdout.decode('utf-8').strip()
+    if output:
+        jobs = [line.split() for line in output.split('\n')]
+        return jobs
+    else:
+        return []
+
+
+def cancel_job(job_id):
+    subprocess.run(['scancel', job_id])
+
+
 choose_pid_layout = html.Div(
     className="container",
     children=[
@@ -121,17 +135,19 @@ job_display_layout = html.Div([
     ),
     dash_table.DataTable(
         id='job-table-unity',
-    )
+        style_table={'overflowX': 'scroll'}
+    ),
+    html.Div(id='all-done')
 ], className='content-container')
 
 run_files_layout = html.Div(
     className='container',
     children=[
-    dbc.Spinner(html.Div(id='job-running-status'), color='primary', type='grow'),
-    job_display_layout,
-    dcc.Link('Make Summary', id='make-summary', href='https://taps.lmtgtm.org',target="_blank",
-                                                                   style={'display': 'none'}),
-])
+        dbc.Spinner(html.Div(id='job-running-status'), color='primary', type='grow'),
+        job_display_layout,
+        dcc.Link('Make Summary', id='make-summary', href='https://taps.lmtgtm.org', target="_blank",
+                 style={'display': 'none'}),
+    ])
 
 # Create success layout
 layout = html.Div(children=[
@@ -227,31 +243,70 @@ def run_file(n, runfile):
     if runfile:
         pid_path = lmtoy_pid_path + '/lmtoy_' + current_user.username
         # sbatch_lmtoy.sh $PID.run1
-        subprocess.run('sbatch_lmtoy.sh ' + runfile, cwd=pid_path, shell=True)
-        return 'job finished'
+        result = subprocess.run('sbatch_lmtoy.sh ' + runfile, cwd=pid_path, shell=True)
+
+        return result
 
 
-# todo make the job cancelable
 @app.callback(
     Output('job-table-unity', 'data'),
-    Output('make-summary', 'style'),
-    Output('make-summary', 'href'),
-    Input('interval-component_unity', 'n_intervals'),
-    Input('run-btn', 'n_clicks'),
-    prevent_initial_call=True
+    Input('interval-component_unity', 'n_intervals')
 )
-def update_job(interval, n):
-    data = []
-    make_summary_style = {'display': 'none'}
-    url = 'https://taps.lmtgtm.org/'
-    if n:
-        df = view_jobs(user)
-        url = 'https://taps.lmtgtm.org/lmtslr/2023-S1-US-18/Session-1/2023-S1-US-18/'
-        if df.empty:
-            # job is done, show the make summary button
-            make_summary_style = {'display': 'inline-block'}
-        else:
-            # job is still running, hide the make summary button
-            data = df.to_dict('records')
-    return [data], make_summary_style, url
+def update_table(n):
+    return get_job_info().to_dict('records')
 
+@app.callback(
+    Output('all-done','children'),
+    Input('cancel-button','n_clicks'),
+    State('job-table-unity', 'selected_rows')
+)
+def cancel_job(n, selected_rows):
+    if n:
+        if len(selected_rows) == 1:
+            job_id = get_job_info().iloc[selected_rows[0]]['JOBID']
+            cancel_job(job_id)
+            return f'Canceled job {job_id}.'
+        else:
+            return 'Please select a single job to cancel'
+    else:
+        return ''
+
+@app.callback(
+    Output('make-summary','style'),
+    Output('make-summary','href'),
+    Input('interval-component_unity', 'n_intervals'),
+)
+def make_summary(n):
+    if len(get_job_info()) == 0:
+        return {'display': 'inline-block'}, 'https://taps.lmtgtm.org/lmtslr/2023-S1-US-18/Session-1/2023-S1-US-18/'
+    else:
+        return {'display': 'none'}, 'https://taps.lmtgtm.org'
+# # todo make the job cancelable
+# @app.callback(
+#     Output('job-table-unity', 'data'),
+#     Output('all-done', 'children'),
+#     Output('make-summary', 'style'),
+#     Output('make-summary', 'href'),
+#     Input('interval-component_unity', 'n_intervals'),
+#     prevent_initial_call=True
+# )
+# def update_job(n):
+#     data = []
+#     make_summary_style = {'display': 'none'}
+#     url = 'https://taps.lmtgtm.org/'
+#
+#     jobs = get_job_info()
+#     jobs_with_buttons = []
+#     for job in jobs:
+#         job_id = job[0]
+#         cancel_button = html.Button('Cancel', id=f'cancel-button-{job_id}')
+#         cancel_button.callback = dash.dependencies.callback(dash.dependencies.Output('cancel-button', 'children'),
+#                                                             [dash.dependencies.Input(f'cancel-button-{job_id}', 'n_clicks')])(lambda n: cancel_job(job_id))
+#     url = 'https://taps.lmtgtm.org/lmtslr/2023-S1-US-18/Session-1/2023-S1-US-18/'
+#     if df.empty:
+#         # job is done, show the make summary button
+#         make_summary_style = {'display': 'inline-block'}
+#     else:
+#         # job is still running, hide the make summary button
+#         data = df.to_dict('records')
+#     return [data], make_summary_style, url
