@@ -79,10 +79,12 @@ def get_job_info():
     result = subprocess.run(['squeue', '-u', user], stdout=subprocess.PIPE)
     output = result.stdout.decode('utf-8').strip()
     if output:
+        columns = ['JOBID', 'PARTITION', 'NAME', 'USER', 'ST', 'TIME', 'NODES', 'NODELIST(REASON)']
         jobs = [line.split() for line in output.split('\n')]
+        df = pd.DataFrame(jobs, columns=columns)
         return jobs
     else:
-        return []
+        return pd.DataFrame()
 
 
 def cancel_job(job_id):
@@ -136,7 +138,7 @@ job_display_layout = html.Div([
     ),
     dash_table.DataTable(
         id='job-table-unity',
-        selectable=True,
+        row_selectable='single',
         style_table={'overflowX': 'scroll'}
     ),
     html.Button('Cancel selected job', id='cancel-button'),
@@ -257,7 +259,7 @@ def run_file(n, runfile):
     Input('interval-component_unity', 'n_intervals')
 )
 def update_table(n):
-    df = view_jobs(user)
+    df = get_job_info(user)
     data = []
     if not df.empty:
         return df.to_dict('records'), 'Job list'
@@ -272,7 +274,7 @@ def update_table(n):
 def cancel_job(n, selected_rows):
     if n:
         if len(selected_rows) == 1:
-            job_id = view_jobs(user).iloc[selected_rows[0]]['JOBID']
+            job_id = get_job_info().iloc[selected_rows[0]]['JOBID']
             cancel_job(job_id)
             return f'Canceled job {job_id}.'
         else:
@@ -287,7 +289,7 @@ def cancel_job(n, selected_rows):
     Input('interval-component_unity', 'n_intervals'),
 )
 def make_summary(n):
-    if view_jobs(user).empty:
+    if get_job_info().empty:
         return {'display': 'none'}, 'https://taps.lmtgtm.org'
     else:
         return {'display': 'inline-block'}, 'https://taps.lmtgtm.org/lmtslr/2023-S1-US-18/Session-1/2023-S1-US-18/'
