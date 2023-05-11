@@ -8,8 +8,9 @@ import os
 from config import config
 from views import joblist_ssh, joblist_unity
 from flask_login import current_user
+
 # lmtoy_run path which includes the PIDs
-#lmtoy_work_path = config['path']['work_lmt']
+# lmtoy_work_path = config['path']['work_lmt']
 work_lmt = os.environ.get('WORK_LMT')
 if work_lmt:
     lmtoy_pid_path = work_lmt + '/lmtoy_run'
@@ -32,6 +33,7 @@ def get_runfile_option(path):
 # Parse the runfile into a DataFrame
 def df_runfile(filename):
     data = []
+    df = pd.DataFrame()
     for line in open(filename):
         commands = line.strip().split()
         row = {}
@@ -43,6 +45,20 @@ def df_runfile(filename):
         data.append(row)
         df = pd.DataFrame(data)
     return df
+
+
+# save revised data to a runfile
+def save_runfile(df, runfile_path):
+    separator = '='
+    lines = []
+    for row in df.to_dict('records'):
+        line = 'SLpipeline.sh'
+        for column, value in row.items():
+            line += f" {column}{separator}{value}"
+        lines.append(line)
+    print('runfile_path', runfile_path)
+    with open('data', 'w') as f:
+        f.write('\n'.join(lines))
 
 
 choose_pid_layout = html.Div(
@@ -59,9 +75,16 @@ choose_pid_layout = html.Div(
         ),
 
         html.Br(),
-        html.Div(id='table-container'),
+        dash_table.DataTable(
+            id='table',
+            editable=True,
+            row_deletable=True,
+            row_selectable='multi'
+        ),
         html.Br(),
-        html.Div(id='output-message')
+        html.Div(html.Button('Save', id='save-table', style={'display': 'none'})),
+        html.Br(),
+        html.Div(id='save-state')
 
     ])
 
@@ -71,7 +94,7 @@ run_files_layout = html.Div(
                              id='run-file-output', style={'overflowY': 'auto'}),
                dbc.ModalFooter(
                    html.Button('Close', id='close', className='ml-auto')
-               )], id='run-file-output', size='xl', is_open=False)
+               )], id='run-file', size='xl', is_open=False)
 )
 
 job_display_layout = html.Div([
@@ -113,27 +136,60 @@ def get_runfile(n):
 
 # display an editable dash table based on runfile
 @app.callback(
-    Output('table-container', 'children'),
+    Output('table', 'data'),
+    Output('save-table', 'style'),
     Input('runfile', 'value'),
-    Input('run-btn', 'n_clicks'),
     prevent_initial_call=True
 )
-def edit_table(runfile, n):
+def update_table(runfile):
     if current_user.is_authenticated:
-        cmd_table = dash_table.DataTable(columns=[], data=[])
+        save_button_style = {'display': 'none'}
         if runfile is not None:
             pid_path = lmtoy_pid_path + '/lmtoy_' + current_user.username
             runfile_path = pid_path + '/' + runfile
             df = df_runfile(runfile_path)
-            cmd_table = dash_table.DataTable(
-                id='table',
-                columns=[{'name': i, 'id': i} for i in df.columns],
-                data=df.to_dict('records'),
-                editable=True,
-                row_deletable=True,
-                row_selectable='multi'
-            ),
-            if n:
-                # sbatch_lmtoy.sh $PID.run1
-                subprocess.run('sbatch_lmtoy.sh ' + runfile, cwd=pid_path, shell=True)
-        return cmd_table
+            data = df.to_dict('records')
+            if not df.empty:
+                save_button_style = {'display': 'inline-block'}
+
+        return data, save_button_style
+
+
+@app.callback(
+    Output('save-table', 'n_clicks'),
+    Input('save-table', 'n_clicks'),
+)
+def reset_clicks(n_clicks):
+    return 0
+
+
+@app.callback(
+    Output('save-state', 'children'),
+    Input('save-table', 'n_clicks'),
+    State('runfile', 'value'),
+    State('table', 'data')
+)
+def save_table(n_clicks, runfile, data):
+    if runfile is not None:
+        pid_path = lmtoy_pid_path + '/lmtoy_' + current_user.username
+        runfile_path = pid_path + '/' + runfile
+        print('n_clicks', n_clicks)
+        if n_clicks is not None:
+            df = pd.DataFrame(data)
+            save_runfile(df, runfile_path)
+            return html.Div('Parameter saved successfully')
+
+# @app.callback(
+#     Output('run-file', 'is-open'),
+#     [
+#         Input('runfile', 'value'),
+#         Input('run-btn', 'n_clicks')
+#     ]
+# )
+# def run_file(runfile, n):
+#     if runfile is not None:
+#         pid_path = lmtoy_pid_path + '/lmtoy_' + current_user.username
+#         if n:
+#             # sbatch_lmtoy.sh $PID.run1
+#             subprocess.run('sbatch_lmtoy.sh ' + runfile, cwd=pid_path, shell=True)
+#             return True
