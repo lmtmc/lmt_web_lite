@@ -1,16 +1,17 @@
 # Dash configuration
-from dash import dcc, html, Input, Output, State, ALL, MATCH, dash_table
+from dash import dcc, html, Input, Output, State, ALL, MATCH, dash_table, ctx
 import dash_bootstrap_components as dbc
 from server import app
 import subprocess
 import pandas as pd
 import os
 from config import config
-from views import joblist_ssh, joblist_unity
 from flask_login import current_user
+from io import StringIO
 
 # lmtoy_run path which includes the PIDs
 # lmtoy_work_path = config['path']['work_lmt']
+user = 'lmthelpdesk_umass_edu'
 work_lmt = os.environ.get('WORK_LMT')
 if work_lmt:
     lmtoy_pid_path = work_lmt + '/lmtoy_run'
@@ -61,57 +62,90 @@ def save_runfile(df, runfile_path):
         f.write('\n'.join(lines))
 
 
+def view_jobs(user):
+    df = pd.DataFrame()
+    try:
+        squeue_output = subprocess.run(['squeue', '-u', user], capture_output=True, text=True)
+        if squeue_output:
+            df = pd.read_csv(StringIO(squeue_output.stdout), header=None)
+            # df = df.head(5)
+    except:
+        print('No job')
+
+    return df
+
+
 choose_pid_layout = html.Div(
     className="container",
     children=[
         html.Div(html.Button(id='make-runs', children='make runs', n_clicks=0)),
         html.Br(),
         html.Div('Choose a runfile: '),
-        html.Div(
-            dbc.Row([
-                dbc.Col(dcc.Dropdown(id='runfile', ), width=9),
-                dbc.Col(html.Button('Run', id='run-btn', n_clicks=0), )
-            ])
-        ),
+        html.Div(dcc.Dropdown(id='runfile', )),
 
         html.Br(),
         dash_table.DataTable(
             id='table',
             editable=True,
+            data=[],
             row_deletable=True,
-            row_selectable='multi'
+            row_selectable='multi',
+
         ),
         html.Br(),
-        html.Div(html.Button('Save', id='save-table', style={'display': 'none'})),
+        # todo filename should be validated before saving
+        html.Div([dbc.Row([
+            dbc.Col(html.Button('Add a row', id='add-row-btn')),
+            dbc.Col(html.Button('Add a column', id='add-col-btn')),
+        ]),
+            html.Br(),
+            dbc.Row([
+                dbc.Col(dcc.Input(id='filename-input', type='text', placeholder='Enter filename')),
+                dbc.Col(html.Button('Save', id='save-btn')),
+                dbc.Col(html.Button('Run', id='run-btn', n_clicks=0, style={'background-color': 'orange'}), )
+            ]),
+
+        ], id='save-table', style={'display': 'none'}),
         html.Br(),
-        html.Div(id='save-state')
+        html.Div(id='save-state'),
+        html.Br(),
 
     ])
 
-run_files_layout = html.Div(
-    dbc.Modal([dbc.ModalTitle('Run file'),
-               dbc.ModalBody(dbc.Spinner(color='primary', type='grow'),
-                             id='run-file-output', style={'overflowY': 'auto'}),
-               dbc.ModalFooter(
-                   html.Button('Close', id='close', className='ml-auto')
-               )], id='run-file', size='xl', is_open=False)
-)
-
 job_display_layout = html.Div([
-    html.Div([
-        dbc.Tabs([
-            # dbc.Tab(joblist_ssh.layout, label='Run via SSH', className='content'),
-            dbc.Tab(joblist_unity.layout, label='Run via Unity', className='content')
-        ])
-    ], className='content-container')
+    html.H4('Job running on unity'),
+    dcc.Interval(
+        id='interval-component_unity',
+        interval=10 * 1000,
+        n_intervals=0
+    ),
+    dash_table.DataTable(
+        id='job-table-unity',
+    )
+], className='content-container')
 
-], className='container-width', )
+run_files_layout = dbc.Modal(
+    [
+        dbc.ModalTitle('Job Running'),
+
+        dbc.ModalBody(
+            [
+                dbc.Spinner(html.Div(id='job-running-status'), color='primary', type='grow'),
+                job_display_layout
+            ]),
+        dbc.ModalFooter([
+            dcc.Link('Make Summary', id='make-summary', href='https://taps.lmtgtm.org',target="_blank",
+                                                                   style={'display': 'none'}),
+            html.Button('Close', id='close-btn', className='ml-auto')
+        ]
+        )
+    ], id='run-file', size='xl', is_open=False)
 
 # Create success layout
 layout = html.Div(children=[
     dcc.Location(id='url_login_success', refresh=True),
     choose_pid_layout,
-    job_display_layout,
+    run_files_layout,
     dcc.Store(id='store')
 ])
 
@@ -134,62 +168,108 @@ def get_runfile(n):
     return options
 
 
+# todo need more validaton here
 # display an editable dash table based on runfile
 @app.callback(
     Output('table', 'data'),
+    Output('table', 'columns'),
     Output('save-table', 'style'),
     Input('runfile', 'value'),
+    Input('add-row-btn', 'n_clicks'),
+    Input('add-col-btn', 'n_clicks'),
+    State('table', 'data'),
+    State('table', 'columns'),
     prevent_initial_call=True
 )
-def update_table(runfile):
+def display_table(runfile, n1, n2, data, columns):
     if current_user.is_authenticated:
-        save_button_style = {'display': 'none'}
-        if runfile is not None:
+        save_file_style = {'display': 'none'}
+        if runfile:
             pid_path = lmtoy_pid_path + '/lmtoy_' + current_user.username
             runfile_path = pid_path + '/' + runfile
             df = df_runfile(runfile_path)
             data = df.to_dict('records')
+            columns = [{'name': col, 'id': col, 'deletable': True, 'renamable': True} for col in df.columns]
             if not df.empty:
-                save_button_style = {'display': 'inline-block'}
+                save_file_style = {'display': 'inline-block'}
+                if ctx.triggered:
+                    button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+                    if button_id == 'add-row-btn':
+                        data.append({col['id']: '' for col in columns})
+                    if button_id == 'add-col-btn':
+                        columns.append({'name': f'Column {len(columns) + 1}', 'id': f'column_{len(columns) + 1}',
+                                        'deletable': True, 'renamable': True})
 
-        return data, save_button_style
-
-
-@app.callback(
-    Output('save-table', 'n_clicks'),
-    Input('save-table', 'n_clicks'),
-)
-def reset_clicks(n_clicks):
-    return 0
+        return data, columns, save_file_style
 
 
 @app.callback(
     Output('save-state', 'children'),
-    Input('save-table', 'n_clicks'),
+    Output('filename-input', 'value'),
+    Input('save-btn', 'n_clicks'),
     State('runfile', 'value'),
-    State('table', 'data')
+    State('filename-input', 'value'),
+    State('table', 'data'),
 )
-def save_table(n_clicks, runfile, data):
+def save_table(n_clicks, runfile, newfile, data):
     if runfile is not None:
         pid_path = lmtoy_pid_path + '/lmtoy_' + current_user.username
-        runfile_path = pid_path + '/' + runfile
-        print('n_clicks', n_clicks)
-        if n_clicks is not None:
-            df = pd.DataFrame(data)
-            save_runfile(df, runfile_path)
-            return html.Div('Parameter saved successfully')
+        # save the data to the new file if given a newfile name, else use the old filename
+        if newfile:
+            runfile_path = pid_path + '/' + newfile
+        else:
+            runfile_path = pid_path + '/' + runfile
 
-# @app.callback(
-#     Output('run-file', 'is-open'),
-#     [
-#         Input('runfile', 'value'),
-#         Input('run-btn', 'n_clicks')
-#     ]
-# )
-# def run_file(runfile, n):
-#     if runfile is not None:
-#         pid_path = lmtoy_pid_path + '/lmtoy_' + current_user.username
-#         if n:
-#             # sbatch_lmtoy.sh $PID.run1
-#             subprocess.run('sbatch_lmtoy.sh ' + runfile, cwd=pid_path, shell=True)
-#             return True
+        df = pd.DataFrame(data)
+        save_runfile(df, runfile_path)
+        return f'Data saved to {runfile_path}', ''
+    return '', ''
+
+
+@app.callback(
+    Output('run-file', 'is_open'),
+    Input('run-btn', 'n_clicks'),
+    Input('close-btn', 'n_clicks'),
+    # State('runfile', 'value'),
+    State('run-file', 'is_open')
+)
+def run_file_state(n1, n2, is_open):
+    if n1 or n2:
+        return not is_open
+    return is_open
+
+
+@app.callback(
+    Output('job-running-status', 'children'),
+    Input('run-btn', 'n_clicks'),
+    State('runfile', 'value'),
+)
+def run_file(n, runfile):
+    if runfile:
+        pid_path = lmtoy_pid_path + '/lmtoy_' + current_user.username
+        # sbatch_lmtoy.sh $PID.run1
+        subprocess.run('sbatch_lmtoy.sh ' + runfile, cwd=pid_path, shell=True)
+        return 'job finished'
+
+
+# todo make the job cancelable
+@app.callback(
+    Output('job-table-unity', 'data'),
+    Output('make-summary', 'style'),
+    Output('make-summary', 'href'),
+    Input('interval-component_unity', 'n_intervals'),
+    prevent_initial_call=True
+)
+def update_job(n):
+    data = []
+    make_summary_style = {'display': 'none'}
+    df = view_jobs(user)
+    url = 'https://taps.lmtgtm.org/lmtslr/2023-S1-US-18/Session-1/2023-S1-US-18/'
+    if df.empty:
+        # job is done, show the make summary button
+        make_summary_style = {'display': 'inline-block'}
+    else:
+        # job is still running, hide the make summary button
+        data = df.to_dict('records')
+    return [data], make_summary_style, url
+

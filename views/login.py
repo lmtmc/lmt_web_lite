@@ -57,7 +57,8 @@ layout = html.Div(
                             children='Login',
                             n_clicks=0,
                             type='submit',
-                            id='login-button'
+                            id='login-button',
+                            style={'pointer-events': 'none', 'opacity': '0.5'}
                         ),
 
                         html.Div(children='', id='output-state')
@@ -69,33 +70,100 @@ layout = html.Div(
 )
 
 
+# clear password after click login
+@app.callback(
+    Output('pwd-box', 'value'),
+    Input('login-button', 'n_clicks'),
+    State('pwd-box', 'value')
+)
+def clear_password_input(n_clicks, password):
+    if n_clicks > 0:
+        return ''
+    return password
+
+
+# if both pid and password have value then enable the login button
+@app.callback(
+    Output('login-button', 'style'),
+    [
+        Input('pid', 'value'),
+        Input('pwd-box', 'value')
+    ]
+)
+def disable_login_button(pid, password):
+    if pid and password:
+        return {'pointer-events': 'auto', 'opacity': '1'}
+    return {'pointer-events': 'none', 'opacity': '0.5'}
+
+
 # if the input password matches the pid password, login to that pid
 @app.callback(Output('url_login', 'pathname'),
               Output('output-state', 'children'),
-              [
-                  Input('pid', 'value'),
-                  Input('login-button', 'n_clicks'),
-              ],
-              State('pwd-box', 'value'),
+              Input('login-button', 'n_clicks'),
               State('pid', 'value'),
+              State('pwd-box', 'value'),
               prevent_initial_call=True
               )
-def success(pid, n_clicks,  input1, pid_state):
-    print('pid', pid)
+def login_state(n_clicks, pid, password):
+    if n_clicks:
+        user = User.query.filter_by(username=pid).first()
+        if user and check_password_hash(user.password, password):
+            login_user(user)
+            return '/success', ''
+        else:
+            return '/login', 'Invaild password'
 
-    user = User.query.filter_by(username=pid).first()
-    print('user exists', user)
-    if user:
-        if input1:
-            if check_password_hash(user.password, input1):
-                if n_clicks:
-                    login_user(user)
-                    return '/success', ''
-                else:
-                    return '/login', 'Please click LOGIN button'
-            else:
-                return '/login', 'Incorrect password'
-    else:
-        return '/login', 'Please select a valid PID'
+    # @app.callback(Output('url_login', 'pathname'),
+    #               Output('output-state', 'children'),
+    #               Input('login-button', 'n_clicks'),
+    #               State('pid', 'value'),
+    #               State('pwd-box', 'value'),
+    #               prevent_initial_call=True
+    #               )
+    # def success(n_clicks, pid, password):
+    #     if n_clicks:
+    #         user = User.query.filter_by(username=pid).first()
+    #         if user is None:
+    #             return '/login', 'Invaild PID'
+    #         elif check_password_hash(user.password, password):
+    #             login_user(user)
+    #             return '/success', ''
+    #         else:
+    #             return '/login', 'Invaild password'
+    # if n_clicks == 0:
+    #     return '/login', ''
 
+    # elif check_password_hash(user.password, password):
+    #     return '/success', ''
+    # else:
+    #     return '', 'Invaild password'
 
+# @app.callback(Output('url_login', 'pathname'),
+#               Output('output-state', 'children'),
+#               [
+#                   Input('pid', 'value'),
+#                   Input('login-button', 'n_clicks'),
+#               ],
+#               State('pwd-box', 'value'),
+#               State('pid', 'value'),
+#               prevent_initial_call=True
+#               )
+# def success(pid, n_clicks,  input1, pid_state):
+#     print('pid', pid)
+#
+#     user = User.query.filter_by(username=pid).first()
+#     print('user exists', user)
+#     if user:
+#         if input1:
+#             if check_password_hash(user.password, input1):
+#                 if n_clicks:
+#                     login_user(user)
+#                     return '/success', ''
+#                 else:
+#                     return '', 'Please click LOGIN button'
+#             else:
+#                 return '', 'Incorrect password'
+#         else:
+#             return '', ''
+#     else:
+#         return '/login', 'Please select a valid PID'
