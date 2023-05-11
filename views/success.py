@@ -113,7 +113,7 @@ choose_pid_layout = html.Div(
     ])
 
 job_display_layout = html.Div([
-    html.H4('Job running on unity'),
+    html.H5('Job running on unity'),
     dcc.Interval(
         id='interval-component_unity',
         interval=10 * 1000,
@@ -124,22 +124,14 @@ job_display_layout = html.Div([
     )
 ], className='content-container')
 
-run_files_layout = dbc.Modal(
-    [
-        dbc.ModalTitle('Job Running'),
-
-        dbc.ModalBody(
-            [
-                dbc.Spinner(html.Div(id='job-running-status'), color='primary', type='grow'),
-                job_display_layout
-            ]),
-        dbc.ModalFooter([
-            dcc.Link('Make Summary', id='make-summary', href='https://taps.lmtgtm.org',target="_blank",
+run_files_layout = html.Div(
+    className='container',
+    children=[
+    dbc.Spinner(html.Div(id='job-running-status'), color='primary', type='grow'),
+    job_display_layout,
+    dcc.Link('Make Summary', id='make-summary', href='https://taps.lmtgtm.org',target="_blank",
                                                                    style={'display': 'none'}),
-            html.Button('Close', id='close-btn', className='ml-auto')
-        ]
-        )
-    ], id='run-file', size='xl', is_open=False)
+])
 
 # Create success layout
 layout = html.Div(children=[
@@ -227,19 +219,6 @@ def save_table(n_clicks, runfile, newfile, data):
 
 
 @app.callback(
-    Output('run-file', 'is_open'),
-    Input('run-btn', 'n_clicks'),
-    Input('close-btn', 'n_clicks'),
-    # State('runfile', 'value'),
-    State('run-file', 'is_open')
-)
-def run_file_state(n1, n2, is_open):
-    if n1 or n2:
-        return not is_open
-    return is_open
-
-
-@app.callback(
     Output('job-running-status', 'children'),
     Input('run-btn', 'n_clicks'),
     State('runfile', 'value'),
@@ -258,18 +237,21 @@ def run_file(n, runfile):
     Output('make-summary', 'style'),
     Output('make-summary', 'href'),
     Input('interval-component_unity', 'n_intervals'),
+    Input('run-btn', 'n_clicks'),
     prevent_initial_call=True
 )
-def update_job(n):
+def update_job(interval, n):
     data = []
     make_summary_style = {'display': 'none'}
-    df = view_jobs(user)
-    url = 'https://taps.lmtgtm.org/lmtslr/2023-S1-US-18/Session-1/2023-S1-US-18/'
-    if df.empty:
-        # job is done, show the make summary button
-        make_summary_style = {'display': 'inline-block'}
-    else:
-        # job is still running, hide the make summary button
-        data = df.to_dict('records')
+    url = 'https://taps.lmtgtm.org/'
+    if n:
+        df = view_jobs(user)
+        url = 'https://taps.lmtgtm.org/lmtslr/2023-S1-US-18/Session-1/2023-S1-US-18/'
+        if df.empty:
+            # job is done, show the make summary button
+            make_summary_style = {'display': 'inline-block'}
+        else:
+            # job is still running, hide the make summary button
+            data = df.to_dict('records')
     return [data], make_summary_style, url
 
