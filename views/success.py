@@ -128,6 +128,7 @@ choose_pid_layout = html.Div(
 
 job_display_layout = html.Div([
     html.H5('Job running on unity'),
+    html.Div(id='job-status'),
     dcc.Interval(
         id='interval-component_unity',
         interval=10 * 1000,
@@ -137,7 +138,7 @@ job_display_layout = html.Div([
         id='job-table-unity',
         style_table={'overflowX': 'scroll'}
     ),
-    html.Div(id='all-done')
+    html.Div(id='cancel-status')
 ], className='content-container')
 
 run_files_layout = html.Div(
@@ -242,28 +243,34 @@ def save_table(n_clicks, runfile, newfile, data):
 def run_file(n, runfile):
     if runfile:
         pid_path = lmtoy_pid_path + '/lmtoy_' + current_user.username
-        # sbatch_lmtoy.sh $PID.run1
+        print('sbatch_lmtoy.sh $PID.run1')
         result = subprocess.run('sbatch_lmtoy.sh ' + runfile, cwd=pid_path, shell=True)
-
-        return result
+        print('result', result)
+        return result.stdout
 
 
 @app.callback(
     Output('job-table-unity', 'data'),
+    Output('job-status','children'),
     Input('interval-component_unity', 'n_intervals')
 )
 def update_table(n):
-    return get_job_info().to_dict('records')
+    df = view_jobs(user)
+    data = []
+    if not df.empty:
+        return df.to_dict('records'), 'Job list'
+    return [data], 'No job'
+
 
 @app.callback(
-    Output('all-done','children'),
-    Input('cancel-button','n_clicks'),
+    Output('cancel-status', 'children'),
+    Input('cancel-button', 'n_clicks'),
     State('job-table-unity', 'selected_rows')
 )
 def cancel_job(n, selected_rows):
     if n:
         if len(selected_rows) == 1:
-            job_id = get_job_info().iloc[selected_rows[0]]['JOBID']
+            job_id = view_jobs(user).iloc[selected_rows[0]]['JOBID']
             cancel_job(job_id)
             return f'Canceled job {job_id}.'
         else:
@@ -271,16 +278,17 @@ def cancel_job(n, selected_rows):
     else:
         return ''
 
+
 @app.callback(
-    Output('make-summary','style'),
-    Output('make-summary','href'),
+    Output('make-summary', 'style'),
+    Output('make-summary', 'href'),
     Input('interval-component_unity', 'n_intervals'),
 )
 def make_summary(n):
-    if len(get_job_info()) == 0:
-        return {'display': 'inline-block'}, 'https://taps.lmtgtm.org/lmtslr/2023-S1-US-18/Session-1/2023-S1-US-18/'
-    else:
+    if view_jobs(user).empty:
         return {'display': 'none'}, 'https://taps.lmtgtm.org'
+    else:
+        return {'display': 'inline-block'}, 'https://taps.lmtgtm.org/lmtslr/2023-S1-US-18/Session-1/2023-S1-US-18/'
 # # todo make the job cancelable
 # @app.callback(
 #     Output('job-table-unity', 'data'),
