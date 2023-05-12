@@ -76,15 +76,17 @@ def view_jobs(user):
 
 
 def get_job_info():
-    result = subprocess.run(['squeue', '-u', user], stdout=subprocess.PIPE)
-    output = result.stdout.decode('utf-8').strip()
-    if output:
-        columns = ['JOBID', 'PARTITION', 'NAME', 'USER', 'ST', 'TIME', 'NODES', 'NODELIST(REASON)']
-        jobs = [line.split(',') for line in output.split('\n')]
-        df = pd.DataFrame(jobs, columns=columns)
-        return df
-    else:
-        return pd.DataFrame()
+    result = subprocess.run(['squeue', '-u', user], stdout=subprocess.PIPE, text=True)
+    output = result.stdout.strip().split('\n')[1:]
+    jobs = []
+    columns = ['JOBID', 'PARTITION', 'NAME', 'USER', 'ST', 'TIME', 'NODES', 'NODELIST(REASON)']
+    for line in output:
+        data = line.split()
+        for i in range(len(columns)):
+            job = {columns[i]: data[i]}
+        jobs.append(job)
+    df = pd.DataFrame(jobs)
+    return df
 
 
 def cancel_job(job_id):
