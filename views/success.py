@@ -82,8 +82,9 @@ def get_job_info():
     columns = ['JOBID', 'PARTITION', 'NAME', 'USER', 'ST', 'TIME', 'NODES', 'NODELIST(REASON)']
     for line in output:
         data = line.split()
+        job = {}
         for i in range(len(columns)):
-            job = {columns[i]: data[i]}
+            job[columns[i]] = data[i]
         jobs.append(job)
     df = pd.DataFrame(jobs)
     return df
