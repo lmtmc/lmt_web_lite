@@ -82,7 +82,7 @@ def get_job_info():
         columns = ['JOBID', 'PARTITION', 'NAME', 'USER', 'ST', 'TIME', 'NODES', 'NODELIST(REASON)']
         jobs = [line.split() for line in output.split('\n')]
         df = pd.DataFrame(jobs, columns=columns)
-        return jobs
+        return df
     else:
         return pd.DataFrame()
 
@@ -141,6 +141,7 @@ job_display_layout = html.Div([
         row_selectable='single',
         style_table={'overflowX': 'scroll'}
     ),
+    html.Br(),
     html.Button('Cancel selected job', id='cancel-button'),
     html.Div(id='cancel-status')
 ], className='content-container')
