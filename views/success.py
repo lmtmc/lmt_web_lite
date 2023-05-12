@@ -80,7 +80,7 @@ def get_job_info():
     output = result.stdout.decode('utf-8').strip()
     if output:
         columns = ['JOBID', 'PARTITION', 'NAME', 'USER', 'ST', 'TIME', 'NODES', 'NODELIST(REASON)']
-        jobs = [line.split() for line in output.split('\n')]
+        jobs = [line.split(',') for line in output.split('\n')]
         df = pd.DataFrame(jobs, columns=columns)
         return df
     else:
@@ -260,7 +260,7 @@ def run_file(n, runfile):
     Input('interval-component_unity', 'n_intervals')
 )
 def update_table(n):
-    df = get_job_info(user)
+    df = get_job_info()
     data = []
     if not df.empty:
         return df.to_dict('records'), 'Job list'
@@ -272,10 +272,11 @@ def update_table(n):
     Input('cancel-button', 'n_clicks'),
     State('job-table-unity', 'selected_rows')
 )
-def cancel_job(n, selected_rows):
+def cancel_slurm_job(n, selected_rows):
     if n:
         if len(selected_rows) == 1:
             job_id = get_job_info().iloc[selected_rows[0]]['JOBID']
+            print('job_id to cancel', job_id)
             cancel_job(job_id)
             return f'Canceled job {job_id}.'
         else:
