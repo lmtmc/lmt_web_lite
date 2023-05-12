@@ -149,7 +149,7 @@ job_display_layout = html.Div([
                  {'name': 'ST', 'id': 'ST'},
                  {'name': 'TIME', 'id': 'TIME'},
                  {'name': 'NODES', 'id': 'NODES'},
-                 {'name': 'NODELIST', 'id': 'NODELIST'}],
+                 {'name': 'NODELIST(REASON)', 'id': 'NODELIST(REASON)'}],
         row_selectable='single',
         style_table={'overflowX': 'scroll'}
     ),
