@@ -141,6 +141,15 @@ job_display_layout = html.Div([
     ),
     dash_table.DataTable(
         id='job-table-unity',
+        data=[],
+        columns=[{'name': 'JOBID', 'id': 'JOBID'},
+                 {'name': 'PARTITION', 'id': 'PARTITION'},
+                 {'name': 'NAME', 'id': 'NAME'},
+                 {'name': 'USER', 'id': 'USER'},
+                 {'name': 'ST', 'id': 'ST'},
+                 {'name': 'TIME', 'id': 'TIME'},
+                 {'name': 'NODES', 'id': 'NODES'},
+                 {'name': 'NODELIST', 'id': 'NODELIST'}],
         row_selectable='single',
         style_table={'overflowX': 'scroll'}
     ),
@@ -259,7 +268,7 @@ def run_file(n, runfile):
 
 @app.callback(
     Output('job-table-unity', 'data'),
-    Output('job-status','children'),
+    Output('job-status', 'children'),
     Input('interval-component_unity', 'n_intervals')
 )
 def update_table(n):
@@ -277,13 +286,10 @@ def update_table(n):
 )
 def cancel_slurm_job(n, selected_rows):
     if n:
-        if len(selected_rows) == 1:
-            job_id = get_job_info().iloc[selected_rows[0]]['JOBID']
-            print('job_id to cancel', job_id)
-            cancel_job(job_id)
-            return f'Canceled job {job_id}.'
-        else:
-            return 'Please select a single job to cancel'
+        job_id = get_job_info().iloc[selected_rows[0]]['JOBID']
+        print('job_id to cancel', job_id)
+        cancel_job(job_id)
+        return f'Cancel job {job_id}.'
     else:
         return ''
 
@@ -295,9 +301,9 @@ def cancel_slurm_job(n, selected_rows):
 )
 def make_summary(n):
     if get_job_info().empty:
-        return {'display': 'none'}, 'https://taps.lmtgtm.org'
-    else:
         return {'display': 'inline-block'}, 'https://taps.lmtgtm.org/lmtslr/2023-S1-US-18/Session-1/2023-S1-US-18/'
+    else:
+        return {'display': 'none'}, 'https://taps.lmtgtm.org'
 # # todo make the job cancelable
 # @app.callback(
 #     Output('job-table-unity', 'data'),
