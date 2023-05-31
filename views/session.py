@@ -329,9 +329,10 @@ def display_confirmation(n_clicks):
               Input('runfile-select', 'value'),
               Input('confirm-del-runfile', 'submit_n_clicks'),
               Input('runfile-add', 'n_clicks'),
+              Input('make-runs', 'n_clicks'),
               State('runfile-name', 'value'),
               prevent_initial_call=True)
-def runfile_display(session, runfile, n1, n2, name):
+def runfile_display(session, runfile, n1, n2, n3, name):
     session_path = ''
     runfile_value = runfile
     names = []
@@ -372,6 +373,13 @@ def runfile_display(session, runfile, n1, n2, name):
                                 message = f"{name} exists"
                         else:
                             message = 'Please input a runfile name!'
+                    if button_id == 'make-runs':
+                        print('move make runs')
+                        cmd1 = ['cp', 'mk_runs.py', session_path]
+                        subprocess.run(cmd1, cwd=pid_path, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                        cmd2 = ['python3', session_path + '/mk_runs.py']
+                        # run the command and save the runfiles in path
+                        subprocess.run(cmd2, cwd=session_path, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                     names = get_runfile_option(session_path)
     return message, is_open, names, runfile_value, ''
 
