@@ -200,7 +200,9 @@ runfile_layout = html.Div(
 parameter_layout = html.Div(
     dbc.Card([
         dbc.CardHeader(html.H6('Runfile content:', id='runfile-content')),
-        dbc.CardBody(runfile_table,
+        dbc.CardBody([runfile_table,
+                      dbc.Spinner(html.Div(id='job-running-status'), color='primary', type='grow'),
+                      ],
                      style={"height": "200px", "overflowY": "scroll"}),
         dbc.CardFooter(
             dbc.Row([
