@@ -1,7 +1,7 @@
 from dash import dcc, html, Input, Output, State, ALL, MATCH, dash_table, ctx, no_update
 import dash_ag_grid as dag
 import dash_bootstrap_components as dbc
-from server import app, Job, db
+from my_server import app, Job, db
 import subprocess
 import pandas as pd
 import os

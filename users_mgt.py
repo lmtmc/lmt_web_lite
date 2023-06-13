@@ -1,4 +1,4 @@
-from server import server, db, User, Job
+from my_server import server, db, User, Job
 from datetime import datetime
 with server.app_context():
     db.create_all()

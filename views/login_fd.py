@@ -1,7 +1,7 @@
 # Dash configuration
 from dash import dcc, html, Input, Output
 
-from server import app
+from my_server import app
 
 
 # Create app layout

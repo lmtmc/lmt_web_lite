@@ -1,17 +1,11 @@
 from dash import dcc, html, Input, Output, State, ALL, MATCH, dash_table, ctx, no_update
 import dash_ag_grid as dag
 import dash_bootstrap_components as dbc
-from server import app, Job, db
-import subprocess
+from my_server import app, Job
 import pandas as pd
 import os
-import shutil
 from config import config
 from flask_login import current_user
-
-import platform
-from datetime import datetime
-from io import StringIO
 
 user = 'lmthelpdesk_umass_edu'
 work_lmt = os.environ.get('WORK_LMT')

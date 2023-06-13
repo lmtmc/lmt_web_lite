@@ -5,7 +5,7 @@ import pandas as pd
 
 from dash import dcc, html, Input, Output, dash_table, State
 import dash_bootstrap_components as dbc
-from server import app
+from my_server import app
 
 from config import config
 

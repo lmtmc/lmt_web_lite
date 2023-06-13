@@ -1,7 +1,7 @@
 # index page
 from dash import dcc, html, Input, Output, State
 import dash_bootstrap_components as dbc
-from server import app
+from my_server import app
 from flask_login import logout_user, current_user
 from views import login, login_fd, logout, account, session, joblist_unity
 
