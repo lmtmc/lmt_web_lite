@@ -1,24 +1,25 @@
 # index page
 from dash import dcc, html, Input, Output, State
 import dash_bootstrap_components as dbc
-from server import app, server
+from server import app
 from flask_login import logout_user, current_user
-from views import login, login_fd, logout, session
-
+from views import login, login_fd, logout, account, session, joblist_unity
 
 header = html.Div(
     className='header',
     children=html.Div(
-        className='container-width',
+        #className='container-width',
         style={'height': '100%'},
         children=[
             html.H4('JOB RUNNER'),
             html.Div(className='links', children=[
+                html.A('Current running jobs', href='/joblist_unity'),
                 html.Div(id='user-name', className='link'),
                 html.Div(id='logout', className='link')
             ]),
-        ]
-    )
+        ],
+
+    ),style={'margin':20}
 )
 
 app.layout = html.Div(
@@ -29,7 +30,9 @@ app.layout = html.Div(
                 html.Div(id='control-content', className='content'),
                 className='content-container'
             ),
-        ], className='container-width'),
+        ],
+            #className='container-width'
+            ),
 
         dcc.Location(id='url', refresh=False),
     ]
@@ -43,11 +46,18 @@ def display_page(pathname):
         return login.layout
     elif pathname == '/login':
         return login.layout
+    elif pathname == '/account':
+        if current_user.is_authenticated:
+            return account.layout
+        else:
+            return login_fd.layout
     elif pathname == '/session':
         if current_user.is_authenticated:
             return session.layout
         else:
             return login_fd.layout
+    elif pathname == '/joblist_unity':
+        return joblist_unity.layout
     elif pathname == '/logout':
         if current_user.is_authenticated:
             logout_user()
@@ -60,23 +70,24 @@ def display_page(pathname):
 
 @app.callback(
     Output('user-name', 'children'),
+    Output('logout', 'children'),
     [Input('control-content', 'children')])
 def cur_user(input1):
     if current_user.is_authenticated:
-        return html.Div('Current user: ' + current_user.username)
+        return html.A('Current user: ' + current_user.username, href='/account'), html.A('Logout', href='/logout')
         # 'User authenticated' return username in get_id()
     else:
-        return ''
+        return '',''
 
 
-@app.callback(
-    Output('logout', 'children'),
-    [Input('control-content', 'children')])
-def user_logout(input1):
-    if current_user.is_authenticated:
-        return html.A('Logout', href='/logout')
-    else:
-        return ''
+# @app.callback(
+#     Output('logout', 'children'),
+#     [Input('control-content', 'children')])
+# def user_logout(input1):
+#     if current_user.is_authenticated:
+#         return html.A('Logout', href='/logout')
+#     else:
+#         return ''
 
 
 # export FLASK_ENV=development

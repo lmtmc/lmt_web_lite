@@ -1,13 +1,14 @@
 from dash import dcc, html, Input, Output, State, ALL, MATCH, dash_table, ctx, no_update
 import dash_ag_grid as dag
 import dash_bootstrap_components as dbc
-from server import app
+from server import app, Job, db
 import subprocess
 import pandas as pd
 import os
 import shutil
 from config import config
 from flask_login import current_user
+
 import platform
 from datetime import datetime
 from io import StringIO
@@ -73,39 +74,6 @@ def save_runfile(df, runfile_path):
     with open(runfile_path, 'w') as f:
         f.write('\n'.join(lines))
 
-
-def view_jobs(user):
-    df = pd.DataFrame()
-    try:
-        squeue_output = subprocess.run(['squeue', '-u', user], capture_output=True, text=True)
-        if squeue_output:
-            df = pd.read_csv(StringIO(squeue_output.stdout), header=None)
-            # df = df.head(5)
-    except:
-        print('No job')
-
-    return df
-
-
-def get_job_info():
-    result = subprocess.run(['squeue', '-u', user], stdout=subprocess.PIPE, text=True)
-    output = result.stdout.strip().split('\n')[1:]
-    jobs = []
-    columns = ['JOBID', 'PARTITION', 'NAME', 'USER', 'ST', 'TIME', 'NODES', 'NODELIST(REASON)']
-    for line in output:
-        data = line.split()
-        job = {}
-        for i in range(len(columns)):
-            job[columns[i]] = data[i]
-        jobs.append(job)
-    df = pd.DataFrame(jobs)
-    return df
-
-
-def cancel_job(job_id):
-    subprocess.run(['scancel', job_id])
-
-
 runfile_table = html.Div(
     [
         dash_table.DataTable(
@@ -139,20 +107,19 @@ if current_user:
 
 print('pid_path', pid_path)
 
-session_layout = html.Div(
-    dbc.Card(
+session_layout = dbc.Card(
         [
             dbc.CardHeader(html.H6('Choose a session or create a new'), ),
             dbc.CardBody(dbc.RadioItems(id='session-select', options=get_session_names(pid_path), inline=True,
-                                        style={"height": "100px", 'overflow-y': 'scroll'}), ),
+                                        ), ),
             dbc.CardFooter([
 
                 dbc.Row(
                     [
-                        dbc.Col(html.Button('Delete session', id='session-del'), ),
-                        dbc.Col(dcc.Input(placeholder='Session Name', id='session-name',
+                        dbc.Col(html.Button('Delete', id='session-del'), ),
+                        dbc.Col(dcc.Input(placeholder='Name', id='session-name',
                                           ), ),
-                        dbc.Col(html.Button('Add session', id='session-add'), ),
+                        dbc.Col(html.Button('New', id='session-add'), ),
                     ]
                 ),
 
@@ -164,25 +131,23 @@ session_layout = html.Div(
                     message='Are you sure you want to delete?'
                 ), style={'position': 'relative', "top": "100px"}),
             ])
-        ],
-    ),
-)
+        ], style={'height': '300px'}
+    )
 
-runfile_layout = html.Div(
-    dbc.Card(
+runfile_layout = dbc.Card(
         [
-            dbc.CardHeader(html.H6('Select a session to view details', id='runfiles-label')),
+            dbc.CardHeader(html.H6('Select a runfile to view details', id='runfiles-label')),
             dbc.CardBody([
                 dbc.RadioItems(id='runfile-select', inline=True),
                 dbc.Col(html.Div(dbc.Button(id='make-runs', children='make runs',
                                             color='secondary', n_clicks=0))),
-            ], style={"height": "100px", 'overflow-y': 'scroll'}),
+            ], ),
             dbc.CardFooter([
                 dbc.Row(
                     [
-                        dbc.Col(html.Button('Delete runfile', id='runfile-del'), ),
-                        dbc.Col(dcc.Input(placeholder='Runfile Name', id='runfile-name', ), ),
-                        dbc.Col(html.Button('Add runfile', id='runfile-add'), ),
+                        dbc.Col(html.Button('Delete', id='runfile-del'), ),
+                        dbc.Col(dcc.Input(placeholder='Name', id='runfile-name', ), ),
+                        dbc.Col(html.Button('New', id='runfile-add'), ),
                     ]
                 ),
 
@@ -194,66 +159,43 @@ runfile_layout = html.Div(
                     style={'position': 'relative', "top": "100px"})
             ]
 
-            )]
-    ), )
+            )], style={'height': '500px'}
+    )
 
-parameter_layout = html.Div(
-    dbc.Card([
+parameter_layout = dbc.Card([
         dbc.CardHeader(html.H6('Runfile content:', id='runfile-content')),
         dbc.CardBody([runfile_table,
-                      dbc.Spinner(html.Div(id='job-running-status'), color='primary', type='grow'),
+                      #dbc.Spinner(html.Div(id='job-running-status'), color='primary', type='grow'),
                       ],
-                     style={"height": "200px", "overflowY": "scroll"}),
+                     style={"overflowY": "scroll"}),
         dbc.CardFooter(
             dbc.Row([
                 dbc.Col(dcc.Input(id='filename-input', type='text',
                                   placeholder='New Runfile Name')),
                 dbc.Col(html.Button('Save', id='save-btn')),
-                dbc.Col(html.Button('Run', id='run-btn', n_clicks=0,
-                                    style={'background-color': 'orange'}), )
             ])
         )
 
-    ], ))
+    ], style={'height': '500px'})
 
-job_display_layout = html.Div([
-    html.H5('Jobs running on unity'),
-    html.Div(id='job-status'),
-    dcc.Interval(
-        id='interval-component_unity',
-        interval=10 * 1000,
-        n_intervals=0
-    ),
-    dash_table.DataTable(
-        id='job-table-unity',
-        data=[],
-        columns=[{'name': 'JOBID', 'id': 'JOBID'},
-                 {'name': 'PARTITION', 'id': 'PARTITION'},
-                 {'name': 'NAME', 'id': 'NAME'},
-                 {'name': 'USER', 'id': 'USER'},
-                 {'name': 'ST', 'id': 'ST'},
-                 {'name': 'TIME', 'id': 'TIME'},
-                 {'name': 'NODES', 'id': 'NODES'},
-                 {'name': 'NODELIST(REASON)', 'id': 'NODELIST(REASON)'}],
-        row_selectable='single',
-        style_table={'overflowX': 'scroll'}
-    ),
-    html.Br(),
-    html.Button('Cancel selected job', id='cancel-button'),
-    html.Div(id='cancel-status')
-], className='content-container')
 
 layout = html.Div(
     [
-        session_layout,
+        dcc.Location(id='url_session', refresh=True),
+        dbc.Card(session_layout),
         html.Br(),
-        runfile_layout,
+        dbc.Row([
+            dbc.Col(dbc.Card(runfile_layout), ),
+            dbc.Col(parameter_layout),
+        ]),
+
         html.Br(),
-        parameter_layout,
-        html.Br(),
-        job_display_layout
+        html.Button('Submit Job', id='run-btn', n_clicks=0,
+                    style={'background-color': 'orange'}),
 
     ]
+
+    # dbc.Tab(html.Div(job_display_layout, style={'height': '800px'}), id='tab-3', label='Jobs running on unity'),
 )
 
 
@@ -294,9 +236,17 @@ def session_display(session, n1, n2, name):
             print('name', name)
             if name:
                 if name not in names:
+                    session_path = pid_path + '/' + name
+                    file_names = ['Makefile', 'mk_runs.py', 'PID', 'README.md', 'comments.txt']
                     try:
-                        os.mkdir(os.path.join(pid_path, name))
+                        os.mkdir(session_path)
+                        os.mkdir(session_path + '/lmtoy_run')
+                        new_session_path = session_path + '/lmtoy_run/lmtoy_' + current_user.username
+                        os.mkdir(new_session_path)
+                        for file_name in file_names:
+                            shutil.copy2(os.path.join(pid_path, file_name), os.path.join(new_session_path, file_name))
                         message = f'{name} created!'
+
                         session_value = name
                     except Exception as e:
                         print(f'Error creating folder: {str(e)}')
@@ -344,7 +294,7 @@ def runfile_display(session, runfile, n1, n2, n3, name):
         if current_user.is_authenticated:
             if session:
                 pid_path = lmtoy_pid_path + '/lmtoy_' + current_user.username
-                session_path = pid_path + '/' + session
+                session_path = pid_path + '/' + session + '/lmtoy_run/lmtoy_' + current_user.username
                 names = get_runfile_option(session_path)
                 print('runfile names', names)
                 if ctx.triggered:
@@ -416,7 +366,7 @@ def display_runfile_table(runfile, session, n1, n2, data, columns):
     # if runfile exists
     if runfile:
         pid_path = lmtoy_pid_path + '/lmtoy_' + current_user.username
-        runfile_path = pid_path + '/' + session + '/' + runfile
+        runfile_path = pid_path + '/' + session + '/lmtoy_run/lmtoy_' + current_user.username + '/' + runfile
         df = df_runfile(runfile_path)
         data = df.to_dict('records')
         columns = [{'name': col, 'id': col, 'deletable': True, 'renamable': True} for col in df.columns]
@@ -460,44 +410,27 @@ def save_table(n_clicks, session, runfile, newfile, data):
     return '', ''
 
 
+# submit jobs in selected runfiles
 @app.callback(
-    Output('job-running-status', 'children'),
+    #Output('job-running-status', 'children'),
+    Output('url_session', 'pathname'),
     Input('run-btn', 'n_clicks'),
     State('session-select', 'value'),
     State('runfile-select', 'value'),
 )
 def run_file(n, session, runfile):
     if runfile:
-        session_path = lmtoy_pid_path + '/lmtoy_' + current_user.username + '/' + session
+        session_path = lmtoy_pid_path + '/lmtoy_' + current_user.username + '/' + session + \
+                       '/lmtoy_run/lmtoy_' + current_user.username
+        print('username is:', current_user.username)
+        new_job = Job(title=runfile, session=session, create_time=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                      username=current_user.username)
+        db.session.add(new_job)
+        db.session.commit()
         print('sbatch_lmtoy.sh $PID.run1')
         result = subprocess.run('sbatch_lmtoy.sh ' + runfile, cwd=session_path, shell=True)
         print('result', result)
-        return result.stdout
+        #return result.stdout, '/joblist_unity'
+        return '/joblist_unity'
 
 
-@app.callback(
-    Output('job-table-unity', 'data'),
-    Output('job-status', 'children'),
-    Input('interval-component_unity', 'n_intervals')
-)
-def update_table(n):
-    df = get_job_info()
-    data = []
-    if not df.empty:
-        return df.to_dict('records'), 'Job list'
-    return [data], 'No job'
-
-
-@app.callback(
-    Output('cancel-status', 'children'),
-    Input('cancel-button', 'n_clicks'),
-    State('job-table-unity', 'selected_rows')
-)
-def cancel_slurm_job(n, selected_rows):
-    if n:
-        job_id = get_job_info().iloc[selected_rows[0]]['JOBID']
-        print('job_id to cancel', job_id)
-        cancel_job(job_id)
-        return f'Cancel job {job_id}.'
-    else:
-        return ''

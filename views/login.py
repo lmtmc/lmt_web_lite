@@ -34,7 +34,7 @@ pid_options = get_pid_option(lmtoy_pid_path)
 layout = html.Div(
     children=[
         html.Div(
-            # className="container",
+            className="container-width",
 
             children=[
                 dcc.Location(id='url_login', refresh=True),
@@ -109,7 +109,7 @@ def login_state(n_clicks, pid, password):
         user = User.query.filter_by(username=pid).first()
         if user and check_password_hash(user.password, password):
             login_user(user)
-            return '/session', ''
+            return '/account', ''
         else:
-            return '/login', 'Invaild password'
+            return '/login', 'Invalid password'
 

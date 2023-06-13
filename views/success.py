@@ -23,7 +23,6 @@ else:
 # select PID then get the session number
 PIS_options = []
 
-
 # get the runfile options in the lmtoy_runfile_path
 def get_runfile_option(path):
     files = os.listdir(path)
@@ -109,7 +108,6 @@ choose_pid_layout = html.Div(
             data=[],
             row_deletable=True,
             row_selectable='multi',
-
         ),
         html.Br(),
         # todo filename should be validated before saving
