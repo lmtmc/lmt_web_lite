@@ -8,31 +8,32 @@ from views import login, login_fd, logout, account, session, joblist_unity
 header = html.Div(
     className='header',
     children=html.Div(
-        #className='container-width',
+        # className='container-width',
         style={'height': '100%'},
         children=[
             html.H4('JOB RUNNER'),
             html.Div(className='links', children=[
-                html.A('Current running jobs', href='/joblist_unity'),
+                html.Div(id='current-joblist', className='link'),
                 html.Div(id='user-name', className='link'),
                 html.Div(id='logout', className='link')
             ]),
         ],
 
-    ),style={'margin':20}
+    ), style={'margin': 20}
 )
 
 app.layout = html.Div(
     [
         header,
+        html.Br(),
         html.Div([
             html.Div(
                 html.Div(id='control-content', className='content'),
                 className='content-container'
             ),
         ],
-            #className='container-width'
-            ),
+            # className='container-width'
+        ),
 
         dcc.Location(id='url', refresh=False),
     ]
@@ -71,23 +72,16 @@ def display_page(pathname):
 @app.callback(
     Output('user-name', 'children'),
     Output('logout', 'children'),
+    Output('current-joblist','children'),
     [Input('control-content', 'children')])
 def cur_user(input1):
     if current_user.is_authenticated:
-        return html.A('Current user: ' + current_user.username, href='/account'), html.A('Logout', href='/logout')
+        return html.A('Current user: ' + current_user.username, href='/account'), \
+               html.A('Logout', href='/logout'),\
+               html.A('Current running jobs', href='/joblist_unity')
         # 'User authenticated' return username in get_id()
     else:
-        return '',''
-
-
-# @app.callback(
-#     Output('logout', 'children'),
-#     [Input('control-content', 'children')])
-# def user_logout(input1):
-#     if current_user.is_authenticated:
-#         return html.A('Logout', href='/logout')
-#     else:
-#         return ''
+        return '', '', ''
 
 
 # export FLASK_ENV=development
