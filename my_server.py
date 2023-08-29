@@ -1,6 +1,5 @@
-# Dash app initialization
 import dash
-# User management initialization
+from flask import Flask
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
 import os
@@ -10,41 +9,26 @@ import dash_bootstrap_components as dbc
 from datetime import datetime
 from flask_migrate import Migrate
 
-app = dash.Dash(
-    __name__,
-    external_stylesheets=[dbc.themes.BOOTSTRAP],
-    meta_tags=[
-        {
-            'charset': 'utf-8',
-        },
-        {
-            'name': 'viewport',
-            'content': 'width=device-width, initial-scale=1, shrink-to-fit=no'
-        }
-    ]
-)
-server = app.server
+server = Flask(__name__)
+server.config['SECRET_KEY'] = os.urandom(12)
+server.config['SQLALCHEMY_DATABASE_URI'] = config.get('database', 'con')
+server.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+db = SQLAlchemy(server)
+
+# enable running the Dash app on the Flask server
+app = dash.Dash(__name__, server=server,
+                external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.FONT_AWESOME, dbc.icons.BOOTSTRAP,
+                                      #'https://cdn.jsdelivr.net/npm/sidebartemplate/dist/sidebar-template.min.css'
+                                      ],
+                meta_tags=[
+                    {'charset': 'utf-8'},
+                    {'name': 'viewport',
+                     'content': 'width=device-width, initial-scale=1, shrink-to-fit=yes'},
+                ])
 app.config.suppress_callback_exceptions = True
-app.css.config.serve_locally = True
-app.scripts.config.serve_locally = True
 
-# server.debug = True
-# server.port = '8050'
-# update SQLAIchemy database URI
-server.config.update(
-    SECRET_KEY=os.urandom(12),
-    SQLALCHEMY_DATABASE_URI=config.get('database', 'con'),
-    SQLALCHEMY_TRACK_MODIFICATIONS=False
-)
-# initializing the database extension with flask application
-db = SQLAlchemy()
-db.init_app(server)
-migrate = Migrate(server, db)
-
-# Setup the LoginManager for the server
-login_manager = LoginManager()
-login_manager.init_app(server)
+login_manager = LoginManager(server)
 login_manager.login_view = '/login'
 
 
