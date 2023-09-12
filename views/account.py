@@ -11,10 +11,10 @@ user = 'lmthelpdesk_umass_edu'
 work_lmt = os.environ.get('WORK_LMT')
 if work_lmt:
     lmtoy_pid_path = work_lmt + '/lmtoy_run'
-    print('Environment variable LMT_WORK exists')
+    print('Environment variable WORK_LMT exists')
 else:
     lmtoy_pid_path = config['path']['work_lmt']
-    print('Environment variable LMT_WORK not exists, get it from config.txt')
+    print('Environment variable WORK_LMT not exists, get it from config.txt')
 
 job_list = dbc.Card(
     [
