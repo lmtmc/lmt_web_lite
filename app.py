@@ -3,7 +3,7 @@ from my_server import app
 from flask_login import logout_user, current_user
 from flask import session
 import dash_bootstrap_components as dbc
-from views import login, account, joblist_unity, project, new_job
+from views import login, account, joblist_unity, project
 
 link_bar = dbc.Row(
     [
@@ -63,7 +63,7 @@ def display_page(pathname):
     auth_routes = {
         '/account': account.layout,
         '/project': project.layout,
-        '/newjob': new_job.layout,
+        # '/newjob': new_job.layout,
         # '/newjobtab': new_job_tab.layout,
     }
     if pathname in ['/', '/login']:
