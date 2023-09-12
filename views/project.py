@@ -186,7 +186,6 @@ def display_selected_runfile(selected_values, session_name, del_runfile, selRow,
             pf.del_runfile(selected_runfile)
         dff = pd.concat([df, dff])
     parameter_display = PARAMETER_SHOW  # This seems to be constant, so defined it here
-    # print('runfile display', dff)
 
     return dff.to_dict('records'), highlight, runfile_title, parameter_display, data_store
 
@@ -235,14 +234,11 @@ all_states = fixed_states + dynamic_states
 
 # display multiply input
 def layoutTotable(input_data):
-    print(f'input: {input_data}')
-
     if isinstance(input_data, list):
         output = input_data[0] if len(input_data) == 1 else ",".join(map(str, sorted(input_data)))
     else:
         output = input_data
 
-    print(f'output: {output}')
     return output
 
 
@@ -295,14 +291,13 @@ def new_job(n1, n2, n3, n4, n5, selected_row, data, df_data, *state_values):
             pf.save_runfile(df, data['runfile'])
         elif triggered_id in [Parameter.SAVE_ROW_BTN.value, Parameter.UPDATE_BTN.value]:
             # if there are more obsnums then join them using ' '
-            print('state_values', state_values)
+
             parameters = list(state_values)
             for i in revise_data:
                 parameters[i] = layoutTotable(state_values[i])
 
             new_row = {key: value for key, value in zip(ui.column_list, parameters)}
 
-            print('new_row', new_row)
             if triggered_id == Parameter.SAVE_ROW_BTN.value:
                 df = df._append(new_row, ignore_index=True)
             else:
