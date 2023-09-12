@@ -8,27 +8,32 @@ from flask_login import login_user
 from werkzeug.security import check_password_hash
 
 
-# get the pid options in the lmtoy_pid_path
+# Function to get pid options from the given path
 def get_pid_option(path):
-    return [
-        {'label': os.path.basename(folder_name.split('_')[1]), 'value': os.path.basename(folder_name.split('_')[1])}
-        for folder_name in os.listdir(path) if
-        os.path.isdir(os.path.join(path, folder_name)) and folder_name.startswith('lmtoy_')
-    ]
+    result = []
+    for folder_name in os.listdir(path):
+        full_path = os.path.join(path, folder_name)
+        
+        if os.path.isdir(full_path) and folder_name.startswith('lmtoy_'):
+            label_value = os.path.basename(folder_name.split('_')[1])
+            result.append({'label': label_value, 'value': label_value})
+            
+    return result
 
 
 # lmtoy_pid_path = config['path']['work_lmt']
 work_lmt = os.environ.get('WORK_LMT')
 
 if work_lmt:
-    lmtoy_pid_path = work_lmt + '/lmtoy_run'
+    lmtoy_pid_path = os.path.join(work_lmt, '/lmtoy_run')
     print('Environment variable LMT_WORK exists')
 else:
-    lmtoy_pid_path = config['path']['work_lmt']
+    lmtoy_pid_path = config['path']['work_lmt'] + '/lmtoy_run'
     print('Environment variable LMT_WORK not exists, get it from config.txt')
 # lmtoy_run path which includes the PIDs
 pid_options = get_pid_option(lmtoy_pid_path)
 
+print(pid_options)
 layout = html.Div(
     children=[
         html.Div(
