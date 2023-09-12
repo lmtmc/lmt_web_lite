@@ -2,7 +2,6 @@
 from dash import dcc, html, Input, Output, State, ALL, MATCH, dash_table, ctx, no_update
 import dash_bootstrap_components as dbc
 from flask_login import current_user
-from views import new_job
 from functions import project_function as pf
 from enum import Enum
 

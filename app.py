@@ -63,8 +63,6 @@ def display_page(pathname):
     auth_routes = {
         '/account': account.layout,
         '/project': project.layout,
-        # '/newjob': new_job.layout,
-        # '/newjobtab': new_job_tab.layout,
     }
     if pathname in ['/', '/login']:
         return login.layout
