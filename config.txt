@@ -8,26 +8,3 @@ work_lmt = /home/lmt/work_lmt
 [connect]
 user = lmthelpdesk_umass_edu
 host=unity.rc.umass.edu
-
-[beam]
-value = 3
-
-[obsnum]
-options = [107356, 107357, 107358]
-value = 107356
-
-[source]
-options = ['VIIZw800']
-value = 'VIIZw800'
-
-[birdies]
-value = 1
-
-[rums_cut]
-value = 2
-
-[syype]
-value = 0
-
-[otf_cal]
-value = 1
