@@ -7,6 +7,9 @@ from dash import no_update
 import pandas as pd
 import subprocess
 import json
+import ast
+
+default_time_range = [3, 7]
 
 
 # Functions
@@ -43,11 +46,11 @@ def find_runfiles(folder_path, prefix):
 # Function to find and construct file paths
 def construct_file_paths(init_session, session_name, pid_path, pid_lmtoy_path, username):
     if session_name == init_session:
-        files = find_runfiles(pid_lmtoy_path, username+'.')
+        files = find_runfiles(pid_lmtoy_path, username + '.')
         return [os.path.join(pid_lmtoy_path, file) for file in files]
     else:
         session_path = os.path.join(pid_path, session_name)
-        files = find_runfiles(session_path, username+'.')
+        files = find_runfiles(session_path, username + '.')
         return [os.path.join(session_path, file) for file in files]
 
 
@@ -208,13 +211,14 @@ def df_runfile(filename):
     df = pd.DataFrame(data)
     # rename obsnum to obsnum(s)
     if 'obsnum' in df.columns:
-        df.rename(columns={'obsnum':'obsnum(s)'}, inplace=True)
+        df.rename(columns={'obsnum': 'obsnum(s)'}, inplace=True)
     elif 'obsnums' in df.columns:
-        df.rename(columns={'obsnums':'obsnum(s)'}, inplace=True)
+        df.rename(columns={'obsnums': 'obsnum(s)'}, inplace=True)
     return df
 
 
 # save revised data to a runfile
+# todo format each value and not write if there is no value for the column
 def save_runfile(df, runfile_path):
     separator = '='
     lines = []
@@ -225,6 +229,38 @@ def save_runfile(df, runfile_path):
         lines.append(line)
     with open(runfile_path, 'w') as f:
         f.write('\n'.join(lines))
+
+
+def table_layout(table_data):
+    output = table_data
+    output[1] = table_data[1].split(',')
+    # 1,2,3 to ['1', '2', '3']
+    if output[3]:
+        output[3] = table_data[3].split(',')
+    if output[4] == '':
+        output[4] = default_time_range
+    else:
+        output[4] = ast.literal_eval(output[4])
+    print('time range', output[4])
+    return output
+
+
+def layout_table(layout_data):
+    output = layout_data
+    print('layout_data[3]', layout_data[3])
+    output[1] = ",".join(layout_data[1])
+
+    if output[3]:
+        filtered_beam = filter(bool, layout_data[3])
+        sorted_beam = sorted(filtered_beam, key=int)
+        output[3] = ",".join(sorted_beam)
+    else:
+        output[3] = ''
+
+    print('time before', layout_data[4])
+    output[4] = f'[{layout_data[4][0]},{layout_data[4][1]}]'
+    print('time type', type(output[4]))
+    return output
 
 
 def create_modal(header_label, body_elements, footer_elements, modal_id, size='lg', centered=True):

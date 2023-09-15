@@ -172,8 +172,12 @@ session_layout = dbc.Card(
 
 )
 # parameter layout
+bank_options = [
+    {'label': '0', 'value': '0'},
+    {'label': '1', 'value': '1'},
+    {'label': 'Not Apply', 'value': ''},
+]
 beam_options = [{'label': str(i), 'value': str(i)} for i in range(0, 16)]
-beam_options.append({'label': 'All beams', 'value': 'all'})
 
 
 def create_input_field(label_text, input_id, value, input_type='number', min_val=0, max_val=10, step=0.1, ):
@@ -208,23 +212,27 @@ input_fields_2 = [
 edit_parameter_layout = [
     html.Div([
         dbc.Label('Select Source', className='large-label'),
-        dcc.Dropdown(id=column_list[0], multi=False)
+        dcc.Dropdown(id=column_list[0], multi=False),
+        dbc.Alert(id='source-alert', color='danger', duration=2000)
     ], style={'margin-bottom': '20px'}),
 
     html.Div([
         dbc.Label('Select Obsnums', className='large-label'),
-        dcc.Dropdown(id=column_list[1], multi=True)
+        dcc.Dropdown(id=column_list[1], clearable=False, multi=True)
     ], style={'margin-bottom': '20px'}),
 
     html.Div([
         dbc.Label('Select which beam', className='large-label'),
         dbc.Row([
-            dbc.Col([dbc.Label('Bank'), dbc.RadioItems(id=column_list[2], options=['0', '1'])], ),
-            dbc.Col([dbc.Label('Beam'), dbc.Checklist(id=column_list[3], value=[0], options=beam_options,
-                                                      inline=True)]),
+            dbc.Col([dbc.Label('Bank'), dbc.RadioItems(id=column_list[2], options=bank_options, inline=True)], ),
+            dbc.Col([dbc.Label('Beam'), dbc.Checklist(id=column_list[3], options=beam_options, inline=True),
+                     dbc.Checklist(id='all-beam', options=[{'label': 'Select All', 'value': 'All'}], inline=True)]),
             # todo rangeslider not working
-            # dbc.Col([dbc.Label('Time Range'), dcc.RangeSlider(min=0, max=10, value=[3, 7], id='time_range')]),
-            dbc.Col([dbc.Label('Time Range'), dcc.Input(id='time_range')]),
+            dbc.Col([dbc.Label('Time Range'), dcc.RangeSlider(id=column_list[4], min=0, max=10, value=[3, 7],
+                                                              tooltip={"placement": "bottom", "always_visible": True}
+                                                              # marks={i: str(i) for i in range(11)}
+                                                              )]),
+            # dbc.Col([dbc.Label('Time Range'), dcc.Input(id='time_range')]),
         ], style={'margin-bottom': '20px'}),
     ]),
 
@@ -284,11 +292,11 @@ edit_parameter_layout = [
     html.Div([
         dbc.Label('Advanced Output & others', className='large-label'),
         dbc.Row([
-            dbc.Col(dbc.Checklist(id=column_list[20], options=['restart'])),
-            dbc.Col(dbc.Checklist(id=column_list[21], options=['admit'])),
-            dbc.Col(dbc.Checklist(id=column_list[22], options=['maskmoment'])),
-            dbc.Col(dbc.Checklist(id=column_list[23], options=['Dataverse'])),
-            dbc.Col(dbc.Checklist(id=column_list[24], options=['Cleanup after run'])),
+            dbc.Col(dbc.Checklist(id=column_list[20], options=[{'label': 'restart', 'value': '1'}])),
+            dbc.Col(dbc.Checklist(id=column_list[21], options=[{'label': 'admit', 'value': '1'}])),
+            dbc.Col(dbc.Checklist(id=column_list[22], options=[{'label': 'maskmoment', 'value': '1'}])),
+            dbc.Col(dbc.Checklist(id=column_list[23], options=[{'label': 'Dataverse', 'value': '1'}])),
+            dbc.Col(dbc.Checklist(id=column_list[24], options=[{'label': 'Cleanup after run', 'value': '1'}])),
         ])],
         style={'margin-bottom': '20px'}),
 

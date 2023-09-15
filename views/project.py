@@ -34,18 +34,7 @@ init_session = 'session0'
 PIS = 0
 myFmt = '%Y-%m-%d %H:%M:%S'
 
-column_to_index_mapping = {
-    'obsnum': 1,
-    '_s': 0,
-    'dv': 2,
-    'dw': 3,
-    'extend': 4,
-    'edge': 5,
-    'speczoom': 6,
-    'srdp': 7,
-    'restart': 8,
-    'admit': 9
-}
+column_list = ui.column_list
 
 
 def create_session_directory():
@@ -156,6 +145,9 @@ def display_confirmation(n_clicks):
         Input({'type': 'runfile-radio', 'index': ALL}, 'session_name'),
         Input(Runfile.CONFIRM_DEL_ALERT.value, 'submit_n_clicks'),
         Input(Runfile.TABLE.value, "selected_rows"),
+        Input(Parameter.SAVE_ROW_BTN.value, 'n_clicks'),
+        Input(Parameter.UPDATE_BTN.value, 'n_clicks'),
+
     ],
     [
         State(Runfile.TABLE.value, 'data'),
@@ -164,11 +156,11 @@ def display_confirmation(n_clicks):
     ],
     prevent_initial_call='initial_duplicate'
 )
-def display_selected_runfile(selected_values, session_name, del_runfile, selRow, existing_data,
+def display_selected_runfile(selected_values, session_name, del_runfile, selRow, n1, n2, existing_data,
                              existing_columns, data_store):
     if not ctx.triggered:
         raise PreventUpdate
-    dff = pd.DataFrame(columns=ui.column_list)
+    dff = pd.DataFrame(columns=column_list)
     # Initialize default values
     if check_user_exists():
         pid_lmtoy_path = os.path.join(WORK_LMT, 'lmtoy_run', f'lmtoy_{current_user.username}')
@@ -223,34 +215,13 @@ fixed_states = [
     State(Runfile.TABLE.value, 'data'),
 ]
 # Define dynamic Output objects based on a list of field names
-field_names = ui.column_list
-dynamic_outputs = [Output(field, 'value') for field in field_names]
+field_names = column_list
+dynamic_outputs = [Output(field, 'value', allow_duplicate=True) for field in field_names]
 dynamic_states = [State(field, 'value') for field in field_names]
 # Combine fixed and dynamic Output objects
 
 all_outputs = fixed_outputs + dynamic_outputs
 all_states = fixed_states + dynamic_states
-
-
-# display multiply input
-def layoutTotable(input_data):
-    if isinstance(input_data, list):
-        output = input_data[0] if len(input_data) == 1 else ",".join(map(str, sorted(input_data)))
-    else:
-        output = input_data
-
-    return output
-
-
-def TableToLayout(input):
-    output = input
-    if ',' in input:
-        output = input.split(',')
-    return output
-
-
-# data format need to revise
-revise_data = [1, 3, 20, 21, 22, 23, 24]
 
 
 # todo add more parameters to save
@@ -265,17 +236,16 @@ revise_data = [1, 3, 20, 21, 22, 23, 24]
         Input(Runfile.TABLE.value, "selected_rows"),
         Input(Storage.DATA_STORE.value, 'data')],
     all_states,
-    prevent_initial_call=True
+    prevent_initial_call=True,
 )
 def new_job(n1, n2, n3, n4, n5, selected_row, data, df_data, *state_values):
-    # ui.column_list = state_values
     if df_data:
         df = pd.DataFrame(df_data)
         df.fillna('', inplace=True)
     else:
-        df = pd.DataFrame(columns=ui.column_list)
+        df = pd.DataFrame(columns=column_list)
     triggered_id = ctx.triggered_id
-    output_values = [False] + [''] * (len(ui.column_list) + 1)
+    output_values = [False] + [''] * (len(column_list) + 1)
 
     if selected_row is not None and len(selected_row) > 0:
         if triggered_id in [Table.NEW_ROW_BTN.value, Table.EDIT_ROW_BTN.value]:
@@ -283,21 +253,17 @@ def new_job(n1, n2, n3, n4, n5, selected_row, data, df_data, *state_values):
 
             # set modal to open and data to remain the same
             output_values[0] = True
-            output_values[2:] = [selected[col] for col in ui.column_list]
-            output_values[1] = TableToLayout(output_values[1])
-            output_values[3] = TableToLayout(output_values[3])
+            output_values[2:] = pf.table_layout([selected[col] for col in column_list])
+
         elif triggered_id == Table.DEL_ROW_BTN.value:
             df.drop(df.index[selected_row[0]], inplace=True)
             pf.save_runfile(df, data['runfile'])
         elif triggered_id in [Parameter.SAVE_ROW_BTN.value, Parameter.UPDATE_BTN.value]:
             # if there are more obsnums then join them using ' '
+            parameters = pf.layout_table(list(state_values))
 
-            parameters = list(state_values)
-            for i in revise_data:
-                parameters[i] = layoutTotable(state_values[i])
-
-            new_row = {key: value for key, value in zip(ui.column_list, parameters)}
-
+            new_row = {key: value for key, value in zip(column_list, parameters)}
+            print('revised_beam', new_row[column_list[3]])
             if triggered_id == Parameter.SAVE_ROW_BTN.value:
                 df = df._append(new_row, ignore_index=True)
             else:
@@ -426,5 +392,32 @@ def update_obsnum_options(selected_source):
     with open(file_name, 'r') as json_file:
         data = json.load(json_file)
     obsnums = data[selected_source]
-    options = [{'label': obsnum, 'value': obsnum} for obsnum in obsnums]
+    options = [{'label': obsnum, 'value': str(obsnum)} for obsnum in obsnums]
     return options
+
+
+# source and obsnum can't be None
+@app.callback(
+    Output('source-alert', 'is_open'),
+    Output('source-alert', 'children'),
+    Input(column_list[0], 'value'),
+    Input(column_list[1], 'value'),
+)
+def source_exist(source, obsnum):
+    if source is None:
+        return True, 'Please select a source!'
+    elif obsnum is None:
+        return True, 'Please select one or more obsnum!'
+    else:
+        return False, ''
+
+
+@app.callback(
+    Output(column_list[3], 'value'),
+    [Input('all-beam', 'value')],
+    State(column_list[3], 'options'),
+)
+def select_all_beam(all_selected, options):
+    all_or_none = [option['value'] for option in options if all_selected]
+    print('all_or_none', all_or_none)
+    return all_or_none
