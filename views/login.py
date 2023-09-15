@@ -33,7 +33,6 @@ else:
 # lmtoy_run path which includes the PIDs
 pid_options = get_pid_option(lmtoy_pid_path)
 
-print(pid_options)
 layout = html.Div(
     children=[
         html.Div(

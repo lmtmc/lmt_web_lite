@@ -1,22 +1,48 @@
 # lmt_web
-1. Make sure lmtoy is available.
-2. Create a virtual environment: python3 -m venv env
-3. Activate the virtual environment: source env/bin/activate 
-4. Install the required packages: pip install -r requirements.txt
-   Make sure the versions of FLask-SQLAlchemy and SQLAlchemy are like below. 
+## Introduction <br>
+This web application serves as an interface for managing pipeline jobs and configurations. Here are the instructions to get it up and running.
+## Requirements 
+Ensure lmtoy is installed and accessible on your system. If not, change the path in 'config.txt' to your work_lmt
+## Setup
+### Environment and Dependencies
+1. <b>Create a virtual environment:</b></br> python3 -m venv env
+2. <b>Activate the virtual environment:</b> <br> source env/bin/activate 
+3. <b>Install the required packages:</b> <br> pip install -r requirements.txt
+   <br><b>Note:</b> Make sure the versions of FLask-SQLAlchemy and SQLAlchemy are like below. 
    Flask-SQLAlchemy==2.5.1
    SQLAlchemy==1.4.36
-5. Optional: Change the path in 'config.txt' to your work_lmt in case the program couldn't find the environment variable WORK_LMT
-6. Optional: The repo includes a 'users.db'. If you want to create a new users.db or add a user, you can revise and run the code in users_mgt.py
-7. Run the application by: python3 app.py. The app will be running on http://127.0.0.1:8000
-   If you run the app in a remote server, you can localforward it to your local machine by adding 'localforward 5000 127.0.0.1:8000' in .ssh/config which will set up local port forwarding from port 5000 on your local machine to port 8000 on the remote server. And then open it using a web browser using the address of http://127.0.0.1:5000. 
-   If you want to change the port that the app is running on, go the bottom of "app.py" and change port='8000' to your desired number.
-8. Login using pid. For example pid = 2023-S1-US-17 password = 1234
-9. After logging in, the users' previous jobs will show up. You can also view the current jobs on unity.
-10. If you want to create a new job, click create new button. 
-11. The previous session will show up and if there's no session available you can add a new one by clicking 'ADD SESSION' button.
-12. After selecting one of the sessions, the available runfiles will show up. If there's no runfile, you can click the "MAKE RUNS" button to create some sample runfiles.
-13. Select one of the runfiles, its content will show up. You can edit the values of the parameter and save it to a new file by input a filename and click 'SAVE' button. If you don't put a filename it will save the new data to the original file. 'ADD A ROW' and 'ADD A COLUMN' functions need more work. And if you click MAKE RUNS again, it will reset those runfiles.
-14. If you choose '2023-S1-US-17.run1' and click the orange 'Submit' button, it will execute 'sbatch_lmtoy.sh 2023-S1-US-17.run1'
-15. Jobs running on unity container will show the jobs on unity by lmthelpdesk account and update every 10 second.
-16. Next step: record job running status and show that in the job history table.
+4. <b>Optional</b>:<br>
+1.The repo includes a 'users.db'. If you want to create a new users.db or add a user, 
+you can revise and run the code in users_mgt.py (needs more work for the database organization)<br>
+2.You can revise the config.txt file for file directories.<br>
+## Run the App<br>
+   1. Start the Application by python3 app.py. The app will be running on http://127.0.0.1:8000
+   2. If you run the app in a remote server, you can localforward it to your local machine by adding 'localforward 5000 127.0.0.1:8000' in .ssh/config which will set up local port forwarding from port 5000 on your local machine to port 8000 on the remote server. And then open it using a web browser using the address of http://127.0.0.1:5000. 
+   3. If you want to change the port that the app is running on, go the bottom of "app.py" and change port='8000' to your desired number.
+### Usage
+1. <b>Login:</b></br>
+Use PID for login.<br> E.g., PID = '2023-S1-US-17' Password = '1234' <br> PID = '2021-S1-MX-3' Password = '1234'
+2. <b>Job Management:</b><br>Once logged in, you will see a list of the users' previous jobs. You can also view the current jobs on unity.
+3. <b>Create a new job</b><br> click "new job" button on the top right. 
+4. <b>Session</b><br>
+   The previous sessions or default session will appear. <br>
+   Clone a session by selecting it and clicking 'CLONE SESSION'. (If there's no session selected, the new session will not be cloned. Here needs a message to remind the user). <br>
+   The input name has to start with 'session'.
+5. <b>Runfile</b><br>Once selected one of the sessions, the available runfiles will appear. <br>
+   Choose one of the runfiles, which will then display will its content in the table. <br> 
+   On the left corner of the table there are the session and name of the runfile. On the right corner of the table there are buttons for deleting and cloning the selected runfile.<br>
+6. <b>Row editing</b><br>
+   Select a row, it highlights, and the options to edit, delete and clone appear.<br>
+   Edit the row parameters and click 'Update' to save changes.<br>
+   Clone and edit the row parameter and click 'Save new row' to add a new row. <br>
+7. The "SUBMIT JOB" button currently performs a simply dry-run function (need validation functions from the pipeline)
+
+## Next step: 
+1. <b>Data validation:</b>
+2. <b>Exam each parameter in detail.</b> 
+   1. source: can't be none and exists for each runfile?
+   2. obsnums: multiply selections, can it be none?
+   3. bank: only available for some projects?
+   4. Time Range: define min, max, step values?
+   5. Resoulution (px_list): better way to display?
+   6. And so on...

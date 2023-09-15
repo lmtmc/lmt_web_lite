@@ -374,8 +374,8 @@ parameter_layout = dbc.Card(
         ], style={'height': parameter_body_height, "overflowY": "auto"}),
         dbc.CardFooter([
             html.Div([
-                html.Button([html.I(className="far fa-save me-2"), 'Save Table'], id=Runfile.SAVE_TABLE_BTN.value,
-                            className='me-2'),
+                # html.Button([html.I(className="far fa-save me-2"), 'Save Table'], id=Runfile.SAVE_TABLE_BTN.value,
+                #             className='me-2'),
                 html.Button([html.I(className="fa fa-paper-plane me-2"), 'Submit Job'], id=Runfile.RUN_BTN.value,
                             n_clicks=0),
             ], className='d-flex justify-content-end')
