@@ -412,12 +412,27 @@ def source_exist(source, obsnum):
         return False, ''
 
 
+# @app.callback(
+#     Output(column_list[3], 'value'),
+#     [Input('all-beam', 'n_clicks')],
+#     State(column_list[3], 'options'),
+# )
+# def select_all_beam(n1, options):
+#     all_or_none = []
+#     all_or_none = [option['value'] for option in options if ctx.triggered_id == 'all-beam']
+#     print('all_or_none', all_or_none)
+#     return all_or_none
 @app.callback(
     Output(column_list[3], 'value'),
-    [Input('all-beam', 'value')],
-    State(column_list[3], 'options'),
+    [Input('all-beam', 'n_clicks')],
+    [State(column_list[3], 'options'), State(column_list[3], 'value')]
 )
-def select_all_beam(all_selected, options):
-    all_or_none = [option['value'] for option in options if all_selected]
-    print('all_or_none', all_or_none)
-    return all_or_none
+def select_all_beam(n_clicks, options, current_values):
+    if ctx.triggered_id == 'all-beam':
+        all_values = [option['value'] for option in options]
+
+        if set(current_values) == set(all_values):  # if all are selected, unselect all
+            return []
+        else:  # otherwise, select all
+            return all_values
+    return current_values  # in case the callback is triggered from other inputs (if any)

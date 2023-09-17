@@ -225,8 +225,17 @@ edit_parameter_layout = [
         dbc.Label('Select which beam', className='large-label'),
         dbc.Row([
             dbc.Col([dbc.Label('Bank'), dbc.RadioItems(id=column_list[2], options=bank_options, inline=True)], ),
-            dbc.Col([dbc.Label('Beam'), dbc.Checklist(id=column_list[3], options=beam_options, inline=True),
-                     dbc.Checklist(id='all-beam', options=[{'label': 'Select All', 'value': 'All'}], inline=True)]),
+            # dbc.Col([dbc.Row([dbc.Label('Beam'), dbc.Button('Check All', id='all-beam')]),
+            #          dbc.Checklist(id=column_list[3], options=beam_options, inline=True), ]),
+            dbc.Col([
+                dbc.Row([
+                    dbc.Col(dbc.Label('Beam'), width={"size": 6, "offset": 0}),
+                    dbc.Col(dbc.Button('Check All', id='all-beam'), width={"size": 6, "offset": 0})
+                ]),
+                dbc.Row([
+                    dbc.Col(dbc.Checklist(id=column_list[3], options=beam_options, inline=True), width=12)
+                ])
+            ]),
             # todo rangeslider not working
             dbc.Col([dbc.Label('Time Range'), dcc.RangeSlider(id=column_list[4], min=0, max=10, value=[3, 7],
                                                               tooltip={"placement": "bottom", "always_visible": True}
