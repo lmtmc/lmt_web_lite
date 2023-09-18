@@ -88,23 +88,6 @@ def get_session_list(default_session, pid_path):
     ]
 
 
-# def clone_session(pid_path, name, original_session):
-#     if not name:
-#         return False, "Please input a name!"
-#     if not name.startswith("session"):
-#         return False, f"Please input a name start with session"
-#
-#     new_session_path = os.path.join(pid_path, name)
-#     # Check if the session directory already exists
-#     if os.path.exists(new_session_path):
-#         # If the directory not exist, create it
-#         return False, f'Session {name} already exists'
-#     os.mkdir(new_session_path)
-#     original_session_path = os.path.join(pid_path, original_session, 'lmtoy_run')
-#     new_session = os.path.join(new_session_path, 'lmtoy_run')
-#     shutil.copytree(original_session_path, new_session)
-#     return True, f"Folder {name} created successfully!"
-
 def clone_session(pid_path, name, original_path):
     if not name:
         return False, "Please input a name!"
@@ -194,12 +177,6 @@ def initialize_common_variables(runfile, selRow, init_session):
     return df, runfile_title, highlight
 
 
-# def generate_runfile_option(pid_path):
-#     session_names = get_session_info(pid_path).keys()
-#     return {session_name: get_runfile_option(pid_path + f'/{session_name}/lmtoy_run/lmtoy_{current_user.username}')
-#             for session_name in session_names}
-
-
 def df_runfile(filename):
     data = []
     if os.path.exists(filename):
@@ -241,6 +218,13 @@ def table_layout(table_data):
         output[4] = default_time_range
     else:
         output[4] = ast.literal_eval(output[4])
+
+    for i in range(20, 25):
+        print('table_data', table_data[i])
+        if table_data[i] == '' or table_data[i] == '0':
+            output[i] = 0
+        else:
+            output[i] = 1
     print('time range', output[4])
     return output
 
@@ -257,9 +241,14 @@ def layout_table(layout_data):
     else:
         output[3] = ''
 
-    print('time before', layout_data[4])
     output[4] = f'[{layout_data[4][0]},{layout_data[4][1]}]'
-    print('time type', type(output[4]))
+
+    for i in range(20, 25):
+        print('layout_data', layout_data[i])
+        if not layout_data[i]:
+            output[i] = 0
+        else:
+            output[i] = 1
     return output
 
 

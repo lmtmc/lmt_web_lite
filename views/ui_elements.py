@@ -130,6 +130,8 @@ runfile_table = dash_table.DataTable(
     style_header={
         'fontWeight': 'bold',
     },
+    # fixed_rows={'headers': True},
+    # fixed_columns={'headers': True, 'data': 2}
 )
 
 session_modal = pf.create_modal(
@@ -178,6 +180,8 @@ bank_options = [
     {'label': 'Not Apply', 'value': ''},
 ]
 beam_options = [{'label': str(i), 'value': str(i)} for i in range(0, 16)]
+
+radio_select_options = [{'label': '1', 'value': 1}, {'label': '0', 'value': 0}]
 
 
 def create_input_field(label_text, input_id, value, input_type='number', min_val=0, max_val=10, step=0.1, ):
@@ -229,13 +233,16 @@ edit_parameter_layout = [
             #          dbc.Checklist(id=column_list[3], options=beam_options, inline=True), ]),
             dbc.Col([
                 dbc.Row([
-                    dbc.Col(dbc.Label('Beam'), width={"size": 6, "offset": 0}),
-                    dbc.Col(dbc.Button('Check All', id='all-beam'), width={"size": 6, "offset": 0})
+                    dbc.Col(dbc.Label('Beam'), width={"size": 3, "offset": 0}),
+                    dbc.Col(dbc.Button('Select All', id='all-beam', size='sm', color='info'),
+                            style={'display': 'flex', 'justify-content': 'flex-end'})
                 ]),
                 dbc.Row([
                     dbc.Col(dbc.Checklist(id=column_list[3], options=beam_options, inline=True), width=12)
-                ])
+                ]),
+
             ]),
+
             # todo rangeslider not working
             dbc.Col([dbc.Label('Time Range'), dcc.RangeSlider(id=column_list[4], min=0, max=10, value=[3, 7],
                                                               tooltip={"placement": "bottom", "always_visible": True}
@@ -301,12 +308,13 @@ edit_parameter_layout = [
     html.Div([
         dbc.Label('Advanced Output & others', className='large-label'),
         dbc.Row([
-            dbc.Col(dbc.Checklist(id=column_list[20], options=[{'label': 'restart', 'value': '1'}])),
-            dbc.Col(dbc.Checklist(id=column_list[21], options=[{'label': 'admit', 'value': '1'}])),
-            dbc.Col(dbc.Checklist(id=column_list[22], options=[{'label': 'maskmoment', 'value': '1'}])),
-            dbc.Col(dbc.Checklist(id=column_list[23], options=[{'label': 'Dataverse', 'value': '1'}])),
-            dbc.Col(dbc.Checklist(id=column_list[24], options=[{'label': 'Cleanup after run', 'value': '1'}])),
-        ])],
+            dbc.Col([dbc.Label('restart'), dbc.RadioItems(id=column_list[20], options=radio_select_options, inline=True)]),
+            dbc.Col([dbc.Label('admit'), dbc.RadioItems(id=column_list[21], options=radio_select_options, inline=True)]),
+            dbc.Col([dbc.Label('maskmoment'), dbc.RadioItems(id=column_list[22], options=radio_select_options, inline=True)]),
+            dbc.Col([dbc.Label('Dataverse'), dbc.RadioItems(id=column_list[23], options=radio_select_options, inline=True)]),
+            dbc.Col([dbc.Label('Cleanup after run'), dbc.RadioItems(id=column_list[24], options=radio_select_options, inline=True)]),
+        ])
+    ],
         style={'margin-bottom': '20px'}),
 
     html.Div([
