@@ -111,4 +111,5 @@ def toggle_navbar_collapse(n, is_open):
 
 # export FLASK_ENV=development
 if __name__ == '__main__':
+    # @todo  make the port an optional command line arg
     app.server.run(port='8000', debug=True)
