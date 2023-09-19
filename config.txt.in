@@ -3,7 +3,7 @@
 con = sqlite:///users.db
 
 [path]
-work_lmt = /home/lmt/work_lmt
+work_lmt = @WORK_LMT@
 
 [connect]
 user = lmthelpdesk_umass_edu
