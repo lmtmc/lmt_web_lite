@@ -26,10 +26,10 @@ work_lmt = os.environ.get('WORK_LMT')
 
 if work_lmt:
     lmtoy_pid_path = os.path.join(work_lmt, '/lmtoy_run')
-    print('Environment variable LMT_WORK exists')
+    print('Environment variable WORK_LMT exists')
 else:
     lmtoy_pid_path = config['path']['work_lmt'] + '/lmtoy_run'
-    print('Environment variable LMT_WORK not exists, get it from config.txt')
+    print('Environment variable WORK_LMT not exists, get it from config.txt')
 # lmtoy_run path which includes the PIDs
 pid_options = get_pid_option(lmtoy_pid_path)
 
