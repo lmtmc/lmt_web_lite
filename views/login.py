@@ -25,8 +25,8 @@ def get_pid_option(path):
 work_lmt = os.environ.get('WORK_LMT')
 
 if work_lmt:
-    lmtoy_pid_path = os.path.join(work_lmt, '/lmtoy_run')
-    print('Environment variable WORK_LMT exists')
+    lmtoy_pid_path = os.path.join(work_lmt, 'lmtoy_run')
+    print('login: WORK_LMT = ', work_lmt)
 else:
     lmtoy_pid_path = config['path']['work_lmt'] + '/lmtoy_run'
     print('Environment variable WORK_LMT not exists, get it from config.txt')
