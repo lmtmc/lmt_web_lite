@@ -11,7 +11,7 @@ user = 'lmthelpdesk_umass_edu'
 work_lmt = os.environ.get('WORK_LMT')
 if work_lmt:
     lmtoy_pid_path = work_lmt + '/lmtoy_run'
-    print('Environment variable WORK_LMT exists')
+    print('account: WORK_LMT =',work_lmt)
 else:
     lmtoy_pid_path = config['path']['work_lmt']
     print('Environment variable WORK_LMT not exists, get it from config.txt')
