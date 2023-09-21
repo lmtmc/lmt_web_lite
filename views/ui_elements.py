@@ -1,6 +1,7 @@
 # slider and checklist cause issue
 from dash import dcc, html, Input, Output, State, ALL, MATCH, dash_table, ctx, no_update
 import dash_bootstrap_components as dbc
+import dash_draggable
 from flask_login import current_user
 from functions import project_function as pf
 from enum import Enum
@@ -85,11 +86,51 @@ column_list = [
 
 ]
 
+link_bar = dbc.Row(
+    [
+        dbc.Col(id='current-joblist', width='auto'),
+        dbc.Col(id='user-name', width='auto'),
+        dbc.Col(id='logout', width='auto'),
+        dbc.Col(
+            dbc.Row(
+                [
+                    dbc.Col(html.I(className="bi bi-question-circle-fill"), width="auto"),
+                    dbc.Col(dbc.NavLink("Help", href="/help"), width="auto"),
+                ],
+            ),
+        )
+    ],
+    className='ms-auto flex-nowrap mt-3 mt-md-3 me-5', align="center",
+)
+
+navbar = dbc.Navbar(
+    [
+        html.A(
+            dbc.Row(
+                [dbc.Col(html.Img(src='/assets/lmt_img.jpg', height='30px'), ),
+                 dbc.Col(
+                     dbc.NavbarBrand('JOB RUNNER', className='ms-2', style={'fontSize': '24px', 'color': 'black'})), ],
+                # ms meaning margin start
+                align='right',
+                className='ms-5'
+            ),
+            href='/account', style={'textDecoration': 'none'}
+        ),
+        dbc.NavbarToggler(id='navbar-toggler', n_clicks=0),
+        dbc.Collapse(
+            link_bar,
+            id='navbar-collapse',
+            is_open=False,
+            navbar=True
+        )
+    ],
+    dark=True
+)
 
 class Parameter(Enum):
     UPDATE_BTN = 'update-row'
     SAVE_ROW_BTN = 'save-row'
-    MODAL = 'new-parameter-modal'
+    MODAL = 'draggable-modal'
     SOURCE_DROPDOWN = '_s'
     OBSNUM_DROPDOWN = 'obsnum(s)'
 
@@ -141,7 +182,7 @@ session_modal = pf.create_modal(
         html.Div(id=Session.MESSAGE.value)
     ],
     html.Button("Save", id=Session.SAVE_BTN.value, className="ml-auto"),
-    'new-session-modal'
+    'new-session-modal', 'new-session-modal-header'
 )
 session_layout = dbc.Card(
     [
@@ -153,7 +194,6 @@ session_layout = dbc.Card(
                                        persistence_type="session",
                                        active_item='session_default', style={'overflow': 'auto'})),
                 session_modal,
-                # html.Div(dbc.Alert(id='session-del-alert', is_open=False)),
                 html.Div(dcc.ConfirmDialog(
                     id=Session.CONFIRM_DEL.value,
                     message='Are you sure you want to delete the session?'
@@ -184,32 +224,21 @@ beam_options = [{'label': str(i), 'value': str(i)} for i in range(0, 16)]
 radio_select_options = [{'label': '1', 'value': 1}, {'label': '0', 'value': 0}]
 
 
-def create_input_field(label_text, input_id, value, input_type='number', min_val=0, max_val=10, step=0.1, ):
+def create_input_field(label_text, input_id, input_type='number', min_val=0, max_val=10, step=0.1, ):
     return dbc.Col([
         dbc.Label(label_text, className='me-2'),
-        dbc.Input(id=input_id, value=value, type=input_type, min=min_val, max=max_val, step=step, )
+        dbc.Input(id=input_id,  type=input_type, min=min_val, max=max_val, step=step, )
     ])
-
-
-values_dict1 = {
-    'b_regions': 1,
-    'l_regions': 1,
-    'slice': 1,
-}
-values_dict2 = {
-    'dv': 2,
-    'dw': 2,
-}
 
 
 def create_label_input_pair(label_text, input_component):
     return html.Div([dbc.Label(label_text, className='me-2'), input_component])
 
 
-input_fields_1 = [create_input_field(field, input_id=field, value=values_dict1[field]) for field in
+input_fields_1 = [create_input_field(field, input_id=field, ) for field in
                   column_list[5:8]]
 input_fields_2 = [
-    create_input_field(field, input_id=field, input_type=None, min_val=None, max_val=None, value=values_dict2[field])
+    create_input_field(field, input_id=field, input_type=None, min_val=None, max_val=None,)
     for field in column_list[9:11]]
 
 # todo add components
@@ -331,13 +360,13 @@ edit_parameter_layout = [
 ]
 
 runfile_modal = pf.create_modal('Edit parameter',
-                                # new_job.layout,
+
                                 edit_parameter_layout,
                                 [
                                     html.Button("Update", id=Parameter.UPDATE_BTN.value, className="ml-auto"),
-                                    html.Button("Save new row", id=Parameter.SAVE_ROW_BTN.value, className="ml-auto")
+                                    html.Button("Save new row", id=Parameter.SAVE_ROW_BTN.value, className="ml-auto"),
                                 ],
-                                Parameter.MODAL.value)
+                                Parameter.MODAL.value, 'draggable-header')
 clone_runfile_modal = pf.create_modal('Input the new runfile name',
                                       html.Div([html.Label(current_user.username if current_user else None),
                                                 dcc.Input(id=Runfile.NAME_INPUT.value)]),
@@ -346,7 +375,7 @@ clone_runfile_modal = pf.create_modal('Input the new runfile name',
                                                     is_open=False),
                                           html.Button("Clone", id=Runfile.SAVE_CLONE_RUNFILE_BTN.value)
                                       ],
-                                      Runfile.CLONE_RUNFILE_MODAL.value)
+                                      Runfile.CLONE_RUNFILE_MODAL.value, 'clone-parameter-header')
 parameter_layout = dbc.Card(
     [
         dbc.CardHeader(
@@ -381,14 +410,19 @@ parameter_layout = dbc.Card(
         dbc.CardBody([
             runfile_table,
             runfile_modal,
+            html.Div(id='js-container'),
             clone_runfile_modal,
             html.Div(dbc.Alert(id=Runfile.VALIDATION_ALERT.value, is_open=False, dismissable=True, duration=3000)),
             html.Br(),
-            html.Div(dcc.ConfirmDialog(
-                id=Runfile.CONFIRM_DEL_ALERT.value,
-                message='Are you sure you want to delete the runfile?'
-            ), style={'position': 'relative', "top": "100px"}),
         ], style={'height': parameter_body_height, "overflowY": "auto"}),
+
+        html.Div(dcc.ConfirmDialog(
+            id=Runfile.CONFIRM_DEL_ALERT.value,
+            message='Are you sure to delete the runfile?'
+        ),
+            id='confirm-dialog-container',  # Give it an ID for styling
+        ),
+
         dbc.CardFooter([
             html.Div([
                 # html.Button([html.I(className="far fa-save me-2"), 'Save Table'], id=Runfile.SAVE_TABLE_BTN.value,

@@ -3,51 +3,12 @@ from my_server import app
 from flask_login import logout_user, current_user
 from flask import session
 import dash_bootstrap_components as dbc
-from views import login, account, joblist_unity, project
+from views import login, account, joblist_unity, project, ui_elements as ui
+import argparse
 
-link_bar = dbc.Row(
-    [
-        dbc.Col(id='current-joblist', width='auto'),
-        dbc.Col(id='user-name', width='auto'),
-        dbc.Col(id='logout', width='auto'),
-        dbc.Col(
-            dbc.Row(
-                [
-                    dbc.Col(html.I(className="bi bi-question-circle-fill"), width="auto"),
-                    dbc.Col(dbc.NavLink("Help", href="/help"), width="auto"),
-                ],
-            ),
-        )
-    ],
-    className='ms-auto flex-nowrap mt-3 mt-md-3 me-5', align="center",
-)
-
-navbar = dbc.Navbar(
-    [
-        html.A(
-            dbc.Row(
-                [dbc.Col(html.Img(src='/assets/lmt_img.jpg', height='30px'), ),
-                 dbc.Col(
-                     dbc.NavbarBrand('JOB RUNNER', className='ms-2', style={'fontSize': '24px', 'color': 'black'})), ],
-                # ms meaning margin start
-                align='right',
-                className='ms-5'
-            ),
-            href='/account', style={'textDecoration': 'none'}
-        ),
-        dbc.NavbarToggler(id='navbar-toggler', n_clicks=0),
-        dbc.Collapse(
-            link_bar,
-            id='navbar-collapse',
-            is_open=False,
-            navbar=True
-        )
-    ],
-    dark=True
-)
 app.layout = html.Div(
     [
-        navbar,
+        ui.navbar,
         html.Br(),
         html.Div(id='body-content', className='content'),
         # keep track of the current URL, the app will handle the location change without a full page refresh
@@ -111,5 +72,8 @@ def toggle_navbar_collapse(n, is_open):
 
 # export FLASK_ENV=development
 if __name__ == '__main__':
-    # @todo  make the port an optional command line arg
-    app.server.run(port='8000', debug=True)
+    parser = argparse.ArgumentParser(description="Run the Dash app")
+    parser.add_argument("-p", "--port", type=int, default=8000,
+                        help="Port to run the Dash app on")
+    args = parser.parse_args()
+    app.server.run(port=args.port, debug=True)
