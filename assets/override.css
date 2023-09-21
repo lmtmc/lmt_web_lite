@@ -338,3 +338,40 @@ h1, h2, h3, h4, h5, h6 {
 .Select-menu-outer {
 display : block !important;
 }
+
+.draggable-modal {
+    position: fixed;
+    z-index: 1050;
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    outline: 0;
+}
+
+.draggable-header{
+    background-color: #33C3F0;
+}
+.vertical-align-center {
+    display: flex;
+    align-items: center;
+}
+
+/*.strike-through {*/
+/*    text-decoration: line-through;*/
+/*    text-decoration-thickness: 3px;*/
+/*}*/
+.strike-through {
+    position: relative;
+}
+
+.strike-through::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: -5px;    /* Adjust this to control how much longer on the left */
+    right: -5px;   /* Adjust this to control how much longer on the right */
+    height: 3px;   /* The thickness of the line */
+    background-color: currentColor; /* Use the text's current color for the line */
+}
