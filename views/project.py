@@ -24,14 +24,13 @@ SHOW_STYLE = {'display': 'block'}
 
 # root directory of the session's working area
 work_lmt = pf.get_work_lmt_path(config)
-# lmtoy_pid_path = os.path.join(work_lmt, 'lmtoy_run')
 PID = current_user.username if current_user else None
 # default session
 init_session = 'session0'
 PIS = 0
 myFmt = '%Y-%m-%d %H:%M:%S'
 
-column_list = ui.column_list
+table_column = ui.table_column
 
 # if any of the update_btn get trigged, update the session list
 update_btn = [Session.SAVE_BTN.value, Session.CONFIRM_DEL.value,
@@ -47,7 +46,6 @@ layout = html.Div(
             [
                 dbc.Col(ui.session_layout, width=4),
                 dbc.Col(ui.parameter_layout, width=8),
-
                 html.Br(),
 
             ]
@@ -143,11 +141,10 @@ def display_selected_runfile(selected_values, session_name, del_runfile, selRow,
                              existing_columns, data_store):
     if not ctx.triggered:
         raise PreventUpdate
-    dff = pd.DataFrame(columns=column_list)
+    dff = pd.DataFrame(columns=table_column)
     # Initialize default values
     print('selected_values', selected_values, 'session_name', session_name)
     if pf.check_user_exists():
-        # pid_lmtoy_path = os.path.join(work_lmt, 'lmtoy_run', f'lmtoy_{current_user.username}')
         pid_lmtoy_path = pf.get_pid_lmtoy_path(work_lmt, current_user.username)
         first_runfile = pf.find_runfiles(pid_lmtoy_path, current_user.username)[0]
         df, runfile_title, highlight = pf.initialize_common_variables(
@@ -200,7 +197,7 @@ fixed_states = [
     State(Runfile.TABLE.value, 'data'),
 ]
 # Define dynamic Output objects based on a list of field names
-field_names = column_list
+field_names = table_column
 dynamic_outputs = [Output(field, 'value', allow_duplicate=True) for field in field_names]
 dynamic_states = [State(field, 'value') for field in field_names]
 # Combine fixed and dynamic Output objects
@@ -228,9 +225,9 @@ def new_job(n1, n2, n3, n4, n5, selected_row, data, df_data, *state_values):
         df = pd.DataFrame(df_data)
         df.fillna('', inplace=True)
     else:
-        df = pd.DataFrame(columns=column_list)
+        df = pd.DataFrame(columns=table_column)
     triggered_id = ctx.triggered_id
-    output_values = [False] + [''] * (len(column_list) + 1)
+    output_values = [False] + [''] * (len(table_column) + 1)
 
     if selected_row is not None and len(selected_row) > 0:
         if triggered_id in [Table.NEW_ROW_BTN.value, Table.EDIT_ROW_BTN.value]:
@@ -238,7 +235,7 @@ def new_job(n1, n2, n3, n4, n5, selected_row, data, df_data, *state_values):
 
             # set modal to open and data to remain the same
             output_values[0] = True
-            output_values[2:] = pf.table_layout([selected[col] for col in column_list])
+            output_values[2:] = pf.table_layout([selected[col] for col in table_column])
 
         elif triggered_id == Table.DEL_ROW_BTN.value:
             df.drop(df.index[selected_row[0]], inplace=True)
@@ -247,8 +244,8 @@ def new_job(n1, n2, n3, n4, n5, selected_row, data, df_data, *state_values):
             # if there are more obsnums then join them using ' '
             parameters = pf.layout_table(list(state_values))
 
-            new_row = {key: value for key, value in zip(column_list, parameters)}
-            print('revised_beam', new_row[column_list[3]])
+            new_row = {key: value for key, value in zip(table_column, parameters)}
+            print('revised_beam', new_row[table_column[3]])
             if triggered_id == Parameter.SAVE_ROW_BTN.value:
                 df = df._append(new_row, ignore_index=True)
             else:
@@ -385,8 +382,8 @@ def update_obsnum_options(selected_source):
 @app.callback(
     Output('source-alert', 'is_open'),
     Output('source-alert', 'children'),
-    Input(column_list[0], 'value'),
-    Input(column_list[1], 'value'),
+    Input(table_column[0], 'value'),
+    Input(table_column[1], 'value'),
 )
 def source_exist(source, obsnum):
     if source is None:
@@ -398,19 +395,33 @@ def source_exist(source, obsnum):
 
 
 @app.callback(
-    Output(column_list[3], 'value'),
-    [Input('all-beam', 'n_clicks')],
-    [State(column_list[3], 'options'), State(column_list[3], 'value')]
+    [
+        Output(table_column[3], 'value'),
+        Output(table_column[3], 'options'),
+    ],
+    [
+        Input('all-beam', 'n_clicks'),
+        Input(table_column[3], 'value')
+    ],
+    [State(table_column[3], 'options'), ],
+    prevent_initial_call=True
 )
-def select_all_beam(n_clicks, options, current_values):
-    if ctx.triggered_id == 'all-beam':
-        all_values = [option['value'] for option in options]
+def select_all_beam(n_clicks, current_values, options ):
+    all_values = [option['value'] for option in options]
 
+    if ctx.triggered_id == 'all-beam':
         if set(current_values) == set(all_values):  # if all are selected, unselect all
-            return []
+            current_values = []
         else:  # otherwise, select all
-            return all_values
-    return current_values  # in case the callback is triggered from other inputs (if any)
+            current_values = all_values
+    # Apply the strike-through class to selected options
+    for option in options:
+        if option['value'] in current_values:
+            option['label']['props']['className'] = 'strike-through'
+        else:
+            option['label']['props']['className'] = None
+
+    return current_values, options
 
 
 # todo modal draggable

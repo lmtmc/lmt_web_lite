@@ -43,6 +43,7 @@ class Table(Enum):
     NEW_ROW_BTN = 'new-row'
 
 
+# columns_list from runfile
 column_list = [
     # Section1
     '_s',  # 0 dropdown (signle selection)
@@ -50,7 +51,7 @@ column_list = [
 
     # Section2: Select which beam
     'bank',  # 2 radiobutton (bank 1 or bank 2)
-    'beam',  # 3 with all checklist (0-15) and an all beam?
+    'px_list',  # 3 with all checklist (0-15) and an all beam?
     'time_range',  # 4 a slider
     # Section3: Select baseline and spectral range
     # baseline
@@ -68,7 +69,7 @@ column_list = [
     'otf_cal',  # 14 radio button 0 1
     # Section5: Gridding
     'extend',  # 15 label input Map Extent
-    'pix_list',  # 16 label input Resolution
+    'resolution',  # 16 label input Resolution
     'cell',  # 17 label input cell
     'otf_select',  # 18 radio button jinc gauss triangle box
     'RMS',  # 19 RMS weighted checkbox yes
@@ -85,6 +86,9 @@ column_list = [
     'srdp',  # 28
 
 ]
+# change the column name from px_list to beam
+table_column = column_list
+table_column[3] = 'beam'
 
 link_bar = dbc.Row(
     [
@@ -126,6 +130,7 @@ navbar = dbc.Navbar(
     ],
     dark=True
 )
+
 
 class Parameter(Enum):
     UPDATE_BTN = 'update-row'
@@ -219,7 +224,8 @@ bank_options = [
     {'label': '1', 'value': '1'},
     {'label': 'Not Apply', 'value': ''},
 ]
-beam_options = [{'label': str(i), 'value': str(i)} for i in range(0, 16)]
+# beam_options = [{'label': str(i), 'value': str(i)} for i in range(0, 16)]
+beam_options = [{'label': html.Div(str(i)), 'value': str(i)} for i in range(0, 16)]
 
 radio_select_options = [{'label': '1', 'value': 1}, {'label': '0', 'value': 0}]
 
@@ -227,7 +233,7 @@ radio_select_options = [{'label': '1', 'value': 1}, {'label': '0', 'value': 0}]
 def create_input_field(label_text, input_id, input_type='number', min_val=0, max_val=10, step=0.1, ):
     return dbc.Col([
         dbc.Label(label_text, className='me-2'),
-        dbc.Input(id=input_id,  type=input_type, min=min_val, max=max_val, step=step, )
+        dbc.Input(id=input_id, type=input_type, min=min_val, max=max_val, step=step, )
     ])
 
 
@@ -238,7 +244,7 @@ def create_label_input_pair(label_text, input_component):
 input_fields_1 = [create_input_field(field, input_id=field, ) for field in
                   column_list[5:8]]
 input_fields_2 = [
-    create_input_field(field, input_id=field, input_type=None, min_val=None, max_val=None,)
+    create_input_field(field, input_id=field, input_type=None, min_val=None, max_val=None, )
     for field in column_list[9:11]]
 
 # todo add components
@@ -255,19 +261,20 @@ edit_parameter_layout = [
     ], style={'margin-bottom': '20px'}),
 
     html.Div([
-        dbc.Label('Select which beam', className='large-label'),
+        dbc.Label('Beam', className='large-label'),
         dbc.Row([
             dbc.Col([dbc.Label('Bank'), dbc.RadioItems(id=column_list[2], options=bank_options, inline=True)], ),
             # dbc.Col([dbc.Row([dbc.Label('Beam'), dbc.Button('Check All', id='all-beam')]),
             #          dbc.Checklist(id=column_list[3], options=beam_options, inline=True), ]),
             dbc.Col([
                 dbc.Row([
-                    dbc.Col(dbc.Label('Beam'), width={"size": 3, "offset": 0}),
+                    dbc.Col(dbc.Label('Exclude Beams'), width={"size": 'auto', "offset": 0}),
                     dbc.Col(dbc.Button('Select All', id='all-beam', size='sm', color='info'),
                             style={'display': 'flex', 'justify-content': 'flex-end'})
                 ]),
                 dbc.Row([
-                    dbc.Col(dbc.Checklist(id=column_list[3], options=beam_options, inline=True), width=12)
+                    dbc.Col(dbc.Checklist(id=column_list[3], options=beam_options,
+                                          inline=True), width=12)
                 ]),
 
             ]),
@@ -337,11 +344,16 @@ edit_parameter_layout = [
     html.Div([
         dbc.Label('Advanced Output & others', className='large-label'),
         dbc.Row([
-            dbc.Col([dbc.Label('restart'), dbc.RadioItems(id=column_list[20], options=radio_select_options, inline=True)]),
-            dbc.Col([dbc.Label('admit'), dbc.RadioItems(id=column_list[21], options=radio_select_options, inline=True)]),
-            dbc.Col([dbc.Label('maskmoment'), dbc.RadioItems(id=column_list[22], options=radio_select_options, inline=True)]),
-            dbc.Col([dbc.Label('Dataverse'), dbc.RadioItems(id=column_list[23], options=radio_select_options, inline=True)]),
-            dbc.Col([dbc.Label('Cleanup after run'), dbc.RadioItems(id=column_list[24], options=radio_select_options, inline=True)]),
+            dbc.Col(
+                [dbc.Label('restart'), dbc.RadioItems(id=column_list[20], options=radio_select_options, inline=True)]),
+            dbc.Col(
+                [dbc.Label('admit'), dbc.RadioItems(id=column_list[21], options=radio_select_options, inline=True)]),
+            dbc.Col([dbc.Label('maskmoment'),
+                     dbc.RadioItems(id=column_list[22], options=radio_select_options, inline=True)]),
+            dbc.Col([dbc.Label('Dataverse'),
+                     dbc.RadioItems(id=column_list[23], options=radio_select_options, inline=True)]),
+            dbc.Col([dbc.Label('Cleanup after run'),
+                     dbc.RadioItems(id=column_list[24], options=radio_select_options, inline=True)]),
         ])
     ],
         style={'margin-bottom': '20px'}),
