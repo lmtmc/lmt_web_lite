@@ -10,7 +10,7 @@ import dash_bootstrap_components as dbc
 import pandas as pd
 from flask_login import current_user
 
-from my_server import app, Job, db
+from my_server import app
 from config import config
 from functions import project_function as pf
 from views import ui_elements as ui
@@ -22,12 +22,9 @@ TABLE_STYLE = {'overflow': 'auto'}
 HIDE_STYLE = {'display': 'none'}
 SHOW_STYLE = {'display': 'block'}
 
-# if any of the update_btn get trigged, update the session list
-
-user = 'lmthelpdesk_umass_edu'
 # root directory of the session's working area
-WORK_LMT = os.environ.get('WORK_LMT', config['path']['work_lmt'])
-lmtoy_pid_path = os.environ.get('WORK_LMT', config['path']['work_lmt'])
+work_lmt = pf.get_work_lmt_path(config)
+# lmtoy_pid_path = os.path.join(work_lmt, 'lmtoy_run')
 PID = current_user.username if current_user else None
 # default session
 init_session = 'session0'
@@ -36,23 +33,11 @@ myFmt = '%Y-%m-%d %H:%M:%S'
 
 column_list = ui.column_list
 
-
-def create_session_directory():
-    pid_path = os.path.join(WORK_LMT, current_user.username)
-    if not os.path.exists(pid_path):
-        os.mkdir(pid_path)
-    return pid_path
-
-
+# if any of the update_btn get trigged, update the session list
 update_btn = [Session.SAVE_BTN.value, Session.CONFIRM_DEL.value,
               Runfile.DEL_BTN.value, Runfile.SAVE_CLONE_RUNFILE_BTN.value]
 
-
-def check_user_exists():
-    return current_user and current_user.is_authenticated
-
-
-default_data = {'runfile': current_user.username + '_default_runfile'} if check_user_exists() else {'runfile': None}
+default_data = {'runfile': current_user.username + '_default_runfile'} if pf.check_user_exists() else {'runfile': None}
 
 layout = html.Div(
     [
@@ -62,12 +47,11 @@ layout = html.Div(
             [
                 dbc.Col(ui.session_layout, width=4),
                 dbc.Col(ui.parameter_layout, width=8),
-            ]),
 
-        html.Br(),
+                html.Br(),
 
-    ]
-)
+            ]
+        )])
 
 
 # display the sessions
@@ -97,11 +81,11 @@ def update_session_display(*args):
     n1, n2, n3, n4, n5, n6, n7, active_session, stored_data, table_data, name = args
     triggered_id = ctx.triggered_id
 
-    if not check_user_exists():
+    if not pf.check_user_exists():
         return no_update, no_update, "User is not authenticated"
 
-    pid_path = create_session_directory()
-    pid_lmtoy_path = os.path.join(WORK_LMT, 'lmtoy_run', f'lmtoy_{current_user.username}')
+    pid_path = pf.create_session_directory(work_lmt)
+    pid_lmtoy_path = pf.get_pid_lmtoy_path(work_lmt, current_user.username)
     modal_open, message = no_update, ''
 
     if active_session:
@@ -134,7 +118,6 @@ def display_confirmation(n_clicks):
 @app.callback(
     [
         Output(Runfile.TABLE.value, 'data', allow_duplicate=True),
-        # Output(Runfile.TABLE.value, 'columns'),
         Output(Runfile.TABLE.value, 'style_data_conditional'),
         Output(Runfile.CONTENT_TITLE.value, 'children'),
         Output(Runfile.PARAMETER_LAYOUT.value, 'style'),
@@ -162,8 +145,10 @@ def display_selected_runfile(selected_values, session_name, del_runfile, selRow,
         raise PreventUpdate
     dff = pd.DataFrame(columns=column_list)
     # Initialize default values
-    if check_user_exists():
-        pid_lmtoy_path = os.path.join(WORK_LMT, 'lmtoy_run', f'lmtoy_{current_user.username}')
+    print('selected_values', selected_values, 'session_name', session_name)
+    if pf.check_user_exists():
+        # pid_lmtoy_path = os.path.join(work_lmt, 'lmtoy_run', f'lmtoy_{current_user.username}')
+        pid_lmtoy_path = pf.get_pid_lmtoy_path(work_lmt, current_user.username)
         first_runfile = pf.find_runfiles(pid_lmtoy_path, current_user.username)[0]
         df, runfile_title, highlight = pf.initialize_common_variables(
             os.path.join(pid_lmtoy_path, first_runfile), selRow, init_session)
@@ -369,7 +354,7 @@ def submit_runfile(n, data_store):
     prevent_initial_call=True
 )
 def update_options(n1, n2):
-    if not check_user_exists():
+    if not pf.check_user_exists():
         return no_update
 
     file_name = '/home/lmt/work_lmt/lmtoy_run/lmtoy_' + current_user.username + '/' + current_user.username + '_source.json'
@@ -386,7 +371,7 @@ def update_options(n1, n2):
     prevent_initial_call=True
 )
 def update_obsnum_options(selected_source):
-    if not check_user_exists() or not selected_source:
+    if not pf.check_user_exists() or not selected_source:
         return no_update
     file_name = '/home/lmt/work_lmt/lmtoy_run/lmtoy_' + current_user.username + '/' + current_user.username + '_source.json'
     with open(file_name, 'r') as json_file:
@@ -412,16 +397,6 @@ def source_exist(source, obsnum):
         return False, ''
 
 
-# @app.callback(
-#     Output(column_list[3], 'value'),
-#     [Input('all-beam', 'n_clicks')],
-#     State(column_list[3], 'options'),
-# )
-# def select_all_beam(n1, options):
-#     all_or_none = []
-#     all_or_none = [option['value'] for option in options if ctx.triggered_id == 'all-beam']
-#     print('all_or_none', all_or_none)
-#     return all_or_none
 @app.callback(
     Output(column_list[3], 'value'),
     [Input('all-beam', 'n_clicks')],
@@ -436,3 +411,18 @@ def select_all_beam(n_clicks, options, current_values):
         else:  # otherwise, select all
             return all_values
     return current_values  # in case the callback is triggered from other inputs (if any)
+
+
+# todo modal draggable
+app.clientside_callback(
+    """
+    function(is_open) {
+        if (is_open) {
+            makeModalDraggable();
+        }
+        return null;
+    }
+    """,
+    Output("js-container", "children"),
+    [Input("draggable-modal", "is_open")],
+)

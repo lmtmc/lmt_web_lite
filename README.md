@@ -8,11 +8,14 @@ This web application serves as an interface for managing pipeline jobs and confi
 
 Ensure LMTOY is installed and accessible on your system. Then configure it to make a valid config.txt:
 
-      ./configure
-
+```
+./configure
+```      
 under rare circumstances you might need to run something like
-
-      ./configure --with-work=/home/lmt/work_lmt
+```
+./configure --with-work=/home/lmt/work_lmt
+```
+      
 
 but normally your $WORK_LMT environment variable from LMTOY is used.
 
