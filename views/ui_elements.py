@@ -1,7 +1,6 @@
 # slider and checklist cause issue
 from dash import dcc, html, Input, Output, State, ALL, MATCH, dash_table, ctx, no_update
 import dash_bootstrap_components as dbc
-import dash_draggable
 from flask_login import current_user
 from functions import project_function as pf
 from enum import Enum
@@ -280,11 +279,12 @@ edit_parameter_layout = [
             ]),
 
             # todo rangeslider not working
-            dbc.Col([dbc.Label('Time Range'), dcc.RangeSlider(id=column_list[4], min=0, max=10, value=[3, 7],
-                                                              tooltip={"placement": "bottom", "always_visible": True}
-                                                              # marks={i: str(i) for i in range(11)}
-                                                              )]),
-            # dbc.Col([dbc.Label('Time Range'), dcc.Input(id='time_range')]),
+            dbc.Col([
+                dbc.Label('Time Range'),
+                dcc.Input(id=column_list[4], type='text', placeholder='min, max'),
+
+            ]),
+
         ], style={'margin-bottom': '20px'}),
     ]),
 

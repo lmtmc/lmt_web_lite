@@ -25,8 +25,10 @@ def get_work_lmt_path(config):
         return None
     return work_lmt
 
+
 def get_pid_lmtoy_path(work_lmt, username):
     return os.path.join(work_lmt, 'lmtoy_run', f'lmtoy_{username}')
+
 
 def create_session_directory(WORK_LMT):
     pid_path = os.path.join(WORK_LMT, current_user.username)
@@ -241,9 +243,7 @@ def table_layout(table_data):
     # 1,2,3 to ['1', '2', '3']
     if output[3]:
         output[3] = table_data[3].split(',')
-    if output[4] == '':
-        output[4] = default_time_range
-    else:
+    if output[4]:
         output[4] = ast.literal_eval(output[4])
 
     for i in range(20, 25):
@@ -268,7 +268,7 @@ def layout_table(layout_data):
     else:
         output[3] = ''
 
-    output[4] = f'[{layout_data[4][0]},{layout_data[4][1]}]'
+    output[4] = f'[{layout_data[4]}]'
 
     for i in range(20, 25):
         print('layout_data', layout_data[i])

@@ -1,5 +1,6 @@
 # todo organize the parameter
-# todo px_list not displaying
+# todo revise time range
+# todo cleanup the saved runfile
 import os
 import time
 import json
@@ -437,3 +438,4 @@ app.clientside_callback(
     Output("js-container", "children"),
     [Input("draggable-modal", "is_open")],
 )
+
