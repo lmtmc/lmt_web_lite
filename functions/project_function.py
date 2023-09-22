@@ -231,7 +231,8 @@ def save_runfile(df, runfile_path):
     for row in df.to_dict('records'):
         line = 'SLpipeline.sh'
         for column, value in row.items():
-            line += f" {column}{separator}{value}"
+            if value is not None and str(value).strip()!='':
+                line += f" {column}{separator}{value}"
         lines.append(line)
     with open(runfile_path, 'w') as f:
         f.write('\n'.join(lines))
@@ -258,7 +259,6 @@ def table_layout(table_data):
 
 def layout_table(layout_data):
     output = layout_data
-    print('layout_data[3]', layout_data[3])
     output[1] = ",".join(layout_data[1])
 
     if output[3]:
@@ -267,8 +267,8 @@ def layout_table(layout_data):
         output[3] = ",".join(sorted_beam)
     else:
         output[3] = ''
-
-    output[4] = f'[{layout_data[4]}]'
+    if output[4]:
+        output[4] = f'[{layout_data[4]}]'
 
     for i in range(20, 25):
         print('layout_data', layout_data[i])
