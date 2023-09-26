@@ -14,8 +14,8 @@ under rare circumstances you might need to run something like
 
       ./configure --with-work=/home/lmt/work_lmt
 
-but normally your $WORK_LMT environment variable from LMTOY is used.
-
+but normally your $WORK_LMT environment variable from LMTOY is used during the configure stage. During run-time again any 
+present $WORK_LMT will be used, but if not, the value in config.txt will be used.
 
 ## Setup
 
@@ -46,9 +46,9 @@ but normally your $WORK_LMT environment variable from LMTOY is used.
 ### Usage
 
 1. <b>Login:</b></br>
-Use the ProjectId (PID) for login. E.g.,<br>
-PID = '2023-S1-US-17' Password = '1234' <br>
-PID = '2021-S1-MX-3' Password = '1234'
+   Use the ProjectId (PID) for login. E.g.,<br>
+   PID = '2023-S1-US-17' Password = '1234' <br>
+   PID = '2021-S1-MX-3' Password = '1234'
 2. <b>Job Management:</b><br>
    Once logged in, you will see a list of the users' previous jobs. You can also view the current jobs on unity.
 3. <b>Create a new job</b><br>
@@ -77,5 +77,5 @@ PID = '2021-S1-MX-3' Password = '1234'
    2. obsnums: multiply selections, can it be none?
    3. bank: only available for some projects?
    4. Time Range: define min, max, step values?
-   5. Resolution (px_list): better way to display?
+   5. Resolution (pix_list): better way to display?
    6. And so on...
