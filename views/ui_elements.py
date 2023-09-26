@@ -186,7 +186,7 @@ session_modal = pf.create_modal(
         html.Div(id=Session.MESSAGE.value)
     ],
     html.Button("Save", id=Session.SAVE_BTN.value, className="ml-auto"),
-    'new-session-modal', 'new-session-modal-header'
+    'new-session-modal'
 )
 session_layout = dbc.Card(
     [
@@ -205,7 +205,6 @@ session_layout = dbc.Card(
             ], style={'overflow': 'auto', 'max-height': session_height}),
 
         dbc.CardFooter(dbc.Row([
-            # dbc.Col(html.Div('Previous Sessions', className='custom-bold '), width='auto'),
             dbc.Col(html.Button([html.I(className="fas fa-trash me-2"), 'Delete Session'],
                                 id=Session.DEL_BTN.value, style={'margin-left': 'auto'},
                                 className='ms-auto'), width='auto'),
@@ -263,8 +262,6 @@ edit_parameter_layout = [
         dbc.Label('Beam', className='large-label'),
         dbc.Row([
             dbc.Col([dbc.Label('Bank'), dbc.RadioItems(id=column_list[2], options=bank_options, inline=True)], ),
-            # dbc.Col([dbc.Row([dbc.Label('Beam'), dbc.Button('Check All', id='all-beam')]),
-            #          dbc.Checklist(id=column_list[3], options=beam_options, inline=True), ]),
             dbc.Col([
                 dbc.Row([
                     dbc.Col(dbc.Label('Exclude Beams'), width={"size": 'auto', "offset": 0}),
@@ -378,7 +375,7 @@ runfile_modal = pf.create_modal('Edit parameter',
                                     html.Button("Update", id=Parameter.UPDATE_BTN.value, className="ml-auto"),
                                     html.Button("Save new row", id=Parameter.SAVE_ROW_BTN.value, className="ml-auto"),
                                 ],
-                                Parameter.MODAL.value, 'draggable-header')
+                                Parameter.MODAL.value)
 clone_runfile_modal = pf.create_modal('Input the new runfile name',
                                       html.Div([html.Label(current_user.username if current_user else None),
                                                 dcc.Input(id=Runfile.NAME_INPUT.value)]),
@@ -387,7 +384,7 @@ clone_runfile_modal = pf.create_modal('Input the new runfile name',
                                                     is_open=False),
                                           html.Button("Clone", id=Runfile.SAVE_CLONE_RUNFILE_BTN.value)
                                       ],
-                                      Runfile.CLONE_RUNFILE_MODAL.value, 'clone-parameter-header')
+                                      Runfile.CLONE_RUNFILE_MODAL.value)
 parameter_layout = dbc.Card(
     [
         dbc.CardHeader(
@@ -421,12 +418,14 @@ parameter_layout = dbc.Card(
         ),
         dbc.CardBody([
             runfile_table,
-            runfile_modal,
+            html.Div(runfile_modal, style={'max-height':'200px', 'overflowY':'auto'}),
             html.Div(id='js-container'),
             clone_runfile_modal,
             html.Div(dbc.Alert(id=Runfile.VALIDATION_ALERT.value, is_open=False, dismissable=True, duration=3000)),
             html.Br(),
-        ], style={'height': parameter_body_height, "overflowY": "auto"}),
+        ],
+            # style={'height': parameter_body_height, "overflowY": "auto"}
+            ),
 
         html.Div(dcc.ConfirmDialog(
             id=Runfile.CONFIRM_DEL_ALERT.value,
@@ -437,13 +436,11 @@ parameter_layout = dbc.Card(
 
         dbc.CardFooter([
             html.Div([
-                # html.Button([html.I(className="far fa-save me-2"), 'Save Table'], id=Runfile.SAVE_TABLE_BTN.value,
-                #             className='me-2'),
                 html.Button([html.I(className="fa fa-paper-plane me-2"), 'Submit Job'], id=Runfile.RUN_BTN.value,
                             n_clicks=0),
             ], className='d-flex justify-content-end')
         ])
     ],
     id=Runfile.PARAMETER_LAYOUT.value,
-    style={'height': session_height, "overflowY": "auto"}
+    # style={'height': session_height, "overflowY": "auto"}
 )

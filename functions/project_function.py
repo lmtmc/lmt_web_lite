@@ -231,7 +231,7 @@ def save_runfile(df, runfile_path):
     for row in df.to_dict('records'):
         line = 'SLpipeline.sh'
         for column, value in row.items():
-            if value is not None and str(value).strip()!='':
+            if value is not None and str(value).strip() != '':
                 line += f" {column}{separator}{value}"
         lines.append(line)
     with open(runfile_path, 'w') as f:
@@ -279,13 +279,13 @@ def layout_table(layout_data):
     return output
 
 
-def create_modal(header_label, body_elements, footer_elements, modal_id, modal_head_id, ):
+def create_modal(header_label, body_elements, footer_elements, modal_id):
     return dbc.Modal(
         [
-            dbc.ModalHeader(dbc.Label(header_label, className='custom-bold'), id=modal_head_id),
+            dbc.ModalHeader(dbc.Label(header_label, className='custom-bold')),
             dbc.ModalBody(body_elements),
             dbc.ModalFooter(footer_elements)
-        ], id=modal_id, size='lg', centered=True, backdrop='static'
+        ], id=modal_id, size='lg', centered=True, backdrop='static', scrollable=True
     )
 
 

@@ -1,11 +1,11 @@
 # todo organize the parameter
-# todo revise time range
-# todo cleanup the saved runfile
+# todo modal draggable
+# todo selected runfile icon visible
 import os
 import time
 import json
 
-from dash import dcc, html, Input, Output, State, ALL, MATCH, dash_table, ctx, no_update
+from dash import dcc, html, Input, Output, State, ALL, MATCH, dash_table, ctx, no_update, ClientsideFunction
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 import pandas as pd
@@ -427,14 +427,11 @@ def select_all_beam(n_clicks, current_values, options ):
 
 # todo modal draggable
 app.clientside_callback(
-    """
+    # ClientsideFunction(namespace='clientside', function_name='make_draggable'),
+    '''
     function(is_open) {
-        if (is_open) {
-            makeModalDraggable();
-        }
-        return null;
-    }
-    """,
+    return dash_clientside.clientside.make_draggable(is_open);}
+    ''',
     Output("js-container", "children"),
     [Input("draggable-modal", "is_open")],
 )
