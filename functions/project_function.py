@@ -3,13 +3,42 @@ import shutil
 from pathlib import Path
 import dash_bootstrap_components as dbc
 from flask_login import current_user
-from dash import no_update
+from dash import no_update, html, dcc
 import pandas as pd
 import subprocess
 import json
 import ast
 
 default_time_range = [3, 7]
+
+
+def get_work_lmt_path(config):
+    work_lmt = os.environ.get('WORK_LMT')
+
+    if work_lmt:
+        print(f'account: WORK_LMT = {work_lmt}')
+    elif 'path' in config and 'work_lmt' in config['path']:
+        work_lmt = config['path']['work_lmt']
+        print('Environment variable WORK_LMT not exists, get it from config.txt')
+    else:
+        print('Could not find the value of work_lmt')
+        return None
+    return work_lmt
+
+
+def get_pid_lmtoy_path(work_lmt, username):
+    return os.path.join(work_lmt, 'lmtoy_run', f'lmtoy_{username}')
+
+
+def create_session_directory(WORK_LMT):
+    pid_path = os.path.join(WORK_LMT, current_user.username)
+    if not os.path.exists(pid_path):
+        os.mkdir(pid_path)
+    return pid_path
+
+
+def check_user_exists():
+    return current_user and current_user.is_authenticated
 
 
 # Functions
@@ -81,7 +110,7 @@ def get_session_list(default_session, pid_path):
     return [
         dbc.AccordionItem(
             [dbc.RadioItems(id={'type': 'runfile-radio', 'index': session['name']},
-                            options=get_runfile_option(session['path']))],
+                            options=get_runfile_option(session['path']), )],
             title=session['name'], className='mb-2', item_id=session['name']
         )
         for session in session_info
@@ -202,7 +231,8 @@ def save_runfile(df, runfile_path):
     for row in df.to_dict('records'):
         line = 'SLpipeline.sh'
         for column, value in row.items():
-            line += f" {column}{separator}{value}"
+            if value is not None and str(value).strip() != '':
+                line += f" {column}{separator}{value}"
         lines.append(line)
     with open(runfile_path, 'w') as f:
         f.write('\n'.join(lines))
@@ -214,9 +244,7 @@ def table_layout(table_data):
     # 1,2,3 to ['1', '2', '3']
     if output[3]:
         output[3] = table_data[3].split(',')
-    if output[4] == '':
-        output[4] = default_time_range
-    else:
+    if output[4]:
         output[4] = ast.literal_eval(output[4])
 
     for i in range(20, 25):
@@ -231,7 +259,6 @@ def table_layout(table_data):
 
 def layout_table(layout_data):
     output = layout_data
-    print('layout_data[3]', layout_data[3])
     output[1] = ",".join(layout_data[1])
 
     if output[3]:
@@ -240,8 +267,8 @@ def layout_table(layout_data):
         output[3] = ",".join(sorted_beam)
     else:
         output[3] = ''
-
-    output[4] = f'[{layout_data[4][0]},{layout_data[4][1]}]'
+    if output[4]:
+        output[4] = f'[{layout_data[4]}]'
 
     for i in range(20, 25):
         print('layout_data', layout_data[i])
@@ -252,13 +279,13 @@ def layout_table(layout_data):
     return output
 
 
-def create_modal(header_label, body_elements, footer_elements, modal_id, size='lg', centered=True):
+def create_modal(header_label, body_elements, footer_elements, modal_id):
     return dbc.Modal(
         [
             dbc.ModalHeader(dbc.Label(header_label, className='custom-bold')),
             dbc.ModalBody(body_elements),
             dbc.ModalFooter(footer_elements)
-        ], id=modal_id, size=size, centered=centered
+        ], id=modal_id, size='lg', centered=True, backdrop='static', scrollable=True
     )
 
 
@@ -304,17 +331,10 @@ def get_selected_runfile(ctx, data_store):
     return None
 
 
-# def get_dataframe_and_columns(selected_runfile):
-#     """Return DataFrame and columns based on selected runfile."""
-#     df = df_runfile(selected_runfile)
-#     columns = [{'name': col, 'id': col, 'deletable': False, 'hideable': True} for col in df.columns]
-#     return df, columns
-
-
 def get_highlight(selRow):
     """Return highlighting based on selected rows."""
     if selRow:
-        return [{"if": {"row_index": i}, "backgroundColor": "yellow"} for i in selRow]
+        return [{"if": {"row_index": i}, "backgroundColor": 'yellow'} for i in selRow]
     return no_update
 
 

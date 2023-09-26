@@ -6,15 +6,13 @@ import pandas as pd
 import os
 from config import config
 from flask_login import current_user
+from functions import project_function as pf
 
-user = 'lmthelpdesk_umass_edu'
 work_lmt = os.environ.get('WORK_LMT')
-if work_lmt:
-    lmtoy_pid_path = work_lmt + '/lmtoy_run'
-    print('account: WORK_LMT =',work_lmt)
-else:
-    lmtoy_pid_path = config['path']['work_lmt']
-    print('Environment variable WORK_LMT not exists, get it from config.txt')
+
+# root directory of the session's working area
+work_lmt = pf.get_work_lmt_path(config)
+lmtoy_pid_path = os.path.join(work_lmt, 'lmtoy_run')
 
 job_list = dbc.Card(
     [

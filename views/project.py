@@ -1,16 +1,17 @@
 # todo organize the parameter
-# todo px_list not displaying
+# todo modal draggable
+# todo selected runfile icon visible
 import os
 import time
 import json
 
-from dash import dcc, html, Input, Output, State, ALL, MATCH, dash_table, ctx, no_update
+from dash import dcc, html, Input, Output, State, ALL, MATCH, dash_table, ctx, no_update, ClientsideFunction
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 import pandas as pd
 from flask_login import current_user
 
-from my_server import app, Job, db
+from my_server import app
 from config import config
 from functions import project_function as pf
 from views import ui_elements as ui
@@ -22,37 +23,21 @@ TABLE_STYLE = {'overflow': 'auto'}
 HIDE_STYLE = {'display': 'none'}
 SHOW_STYLE = {'display': 'block'}
 
-# if any of the update_btn get trigged, update the session list
-
-user = 'lmthelpdesk_umass_edu'
 # root directory of the session's working area
-WORK_LMT = os.environ.get('WORK_LMT', config['path']['work_lmt'])
-lmtoy_pid_path = os.environ.get('WORK_LMT', config['path']['work_lmt'])
+work_lmt = pf.get_work_lmt_path(config)
 PID = current_user.username if current_user else None
 # default session
 init_session = 'session0'
 PIS = 0
 myFmt = '%Y-%m-%d %H:%M:%S'
 
-column_list = ui.column_list
+table_column = ui.table_column
 
-
-def create_session_directory():
-    pid_path = os.path.join(WORK_LMT, current_user.username)
-    if not os.path.exists(pid_path):
-        os.mkdir(pid_path)
-    return pid_path
-
-
+# if any of the update_btn get trigged, update the session list
 update_btn = [Session.SAVE_BTN.value, Session.CONFIRM_DEL.value,
               Runfile.DEL_BTN.value, Runfile.SAVE_CLONE_RUNFILE_BTN.value]
 
-
-def check_user_exists():
-    return current_user and current_user.is_authenticated
-
-
-default_data = {'runfile': current_user.username + '_default_runfile'} if check_user_exists() else {'runfile': None}
+default_data = {'runfile': current_user.username + '_default_runfile'} if pf.check_user_exists() else {'runfile': None}
 
 layout = html.Div(
     [
@@ -62,12 +47,10 @@ layout = html.Div(
             [
                 dbc.Col(ui.session_layout, width=4),
                 dbc.Col(ui.parameter_layout, width=8),
-            ]),
+                html.Br(),
 
-        html.Br(),
-
-    ]
-)
+            ]
+        )])
 
 
 # display the sessions
@@ -97,11 +80,11 @@ def update_session_display(*args):
     n1, n2, n3, n4, n5, n6, n7, active_session, stored_data, table_data, name = args
     triggered_id = ctx.triggered_id
 
-    if not check_user_exists():
+    if not pf.check_user_exists():
         return no_update, no_update, "User is not authenticated"
 
-    pid_path = create_session_directory()
-    pid_lmtoy_path = os.path.join(WORK_LMT, 'lmtoy_run', f'lmtoy_{current_user.username}')
+    pid_path = pf.create_session_directory(work_lmt)
+    pid_lmtoy_path = pf.get_pid_lmtoy_path(work_lmt, current_user.username)
     modal_open, message = no_update, ''
 
     if active_session:
@@ -134,7 +117,6 @@ def display_confirmation(n_clicks):
 @app.callback(
     [
         Output(Runfile.TABLE.value, 'data', allow_duplicate=True),
-        # Output(Runfile.TABLE.value, 'columns'),
         Output(Runfile.TABLE.value, 'style_data_conditional'),
         Output(Runfile.CONTENT_TITLE.value, 'children'),
         Output(Runfile.PARAMETER_LAYOUT.value, 'style'),
@@ -160,10 +142,11 @@ def display_selected_runfile(selected_values, session_name, del_runfile, selRow,
                              existing_columns, data_store):
     if not ctx.triggered:
         raise PreventUpdate
-    dff = pd.DataFrame(columns=column_list)
+    dff = pd.DataFrame(columns=table_column)
     # Initialize default values
-    if check_user_exists():
-        pid_lmtoy_path = os.path.join(WORK_LMT, 'lmtoy_run', f'lmtoy_{current_user.username}')
+    print('selected_values', selected_values, 'session_name', session_name)
+    if pf.check_user_exists():
+        pid_lmtoy_path = pf.get_pid_lmtoy_path(work_lmt, current_user.username)
         first_runfile = pf.find_runfiles(pid_lmtoy_path, current_user.username)[0]
         df, runfile_title, highlight = pf.initialize_common_variables(
             os.path.join(pid_lmtoy_path, first_runfile), selRow, init_session)
@@ -215,7 +198,7 @@ fixed_states = [
     State(Runfile.TABLE.value, 'data'),
 ]
 # Define dynamic Output objects based on a list of field names
-field_names = column_list
+field_names = table_column
 dynamic_outputs = [Output(field, 'value', allow_duplicate=True) for field in field_names]
 dynamic_states = [State(field, 'value') for field in field_names]
 # Combine fixed and dynamic Output objects
@@ -243,9 +226,9 @@ def new_job(n1, n2, n3, n4, n5, selected_row, data, df_data, *state_values):
         df = pd.DataFrame(df_data)
         df.fillna('', inplace=True)
     else:
-        df = pd.DataFrame(columns=column_list)
+        df = pd.DataFrame(columns=table_column)
     triggered_id = ctx.triggered_id
-    output_values = [False] + [''] * (len(column_list) + 1)
+    output_values = [False] + [''] * (len(table_column) + 1)
 
     if selected_row is not None and len(selected_row) > 0:
         if triggered_id in [Table.NEW_ROW_BTN.value, Table.EDIT_ROW_BTN.value]:
@@ -253,7 +236,7 @@ def new_job(n1, n2, n3, n4, n5, selected_row, data, df_data, *state_values):
 
             # set modal to open and data to remain the same
             output_values[0] = True
-            output_values[2:] = pf.table_layout([selected[col] for col in column_list])
+            output_values[2:] = pf.table_layout([selected[col] for col in table_column])
 
         elif triggered_id == Table.DEL_ROW_BTN.value:
             df.drop(df.index[selected_row[0]], inplace=True)
@@ -262,8 +245,8 @@ def new_job(n1, n2, n3, n4, n5, selected_row, data, df_data, *state_values):
             # if there are more obsnums then join them using ' '
             parameters = pf.layout_table(list(state_values))
 
-            new_row = {key: value for key, value in zip(column_list, parameters)}
-            print('revised_beam', new_row[column_list[3]])
+            new_row = {key: value for key, value in zip(table_column, parameters)}
+            print('revised_beam', new_row[table_column[3]])
             if triggered_id == Parameter.SAVE_ROW_BTN.value:
                 df = df._append(new_row, ignore_index=True)
             else:
@@ -369,7 +352,7 @@ def submit_runfile(n, data_store):
     prevent_initial_call=True
 )
 def update_options(n1, n2):
-    if not check_user_exists():
+    if not pf.check_user_exists():
         return no_update
 
     file_name = '/home/lmt/work_lmt/lmtoy_run/lmtoy_' + current_user.username + '/' + current_user.username + '_source.json'
@@ -386,7 +369,7 @@ def update_options(n1, n2):
     prevent_initial_call=True
 )
 def update_obsnum_options(selected_source):
-    if not check_user_exists() or not selected_source:
+    if not pf.check_user_exists() or not selected_source:
         return no_update
     file_name = '/home/lmt/work_lmt/lmtoy_run/lmtoy_' + current_user.username + '/' + current_user.username + '_source.json'
     with open(file_name, 'r') as json_file:
@@ -400,8 +383,8 @@ def update_obsnum_options(selected_source):
 @app.callback(
     Output('source-alert', 'is_open'),
     Output('source-alert', 'children'),
-    Input(column_list[0], 'value'),
-    Input(column_list[1], 'value'),
+    Input(table_column[0], 'value'),
+    Input(table_column[1], 'value'),
 )
 def source_exist(source, obsnum):
     if source is None:
@@ -412,27 +395,44 @@ def source_exist(source, obsnum):
         return False, ''
 
 
-# @app.callback(
-#     Output(column_list[3], 'value'),
-#     [Input('all-beam', 'n_clicks')],
-#     State(column_list[3], 'options'),
-# )
-# def select_all_beam(n1, options):
-#     all_or_none = []
-#     all_or_none = [option['value'] for option in options if ctx.triggered_id == 'all-beam']
-#     print('all_or_none', all_or_none)
-#     return all_or_none
 @app.callback(
-    Output(column_list[3], 'value'),
-    [Input('all-beam', 'n_clicks')],
-    [State(column_list[3], 'options'), State(column_list[3], 'value')]
+    [
+        Output(table_column[3], 'value'),
+        Output(table_column[3], 'options'),
+    ],
+    [
+        Input('all-beam', 'n_clicks'),
+        Input(table_column[3], 'value')
+    ],
+    [State(table_column[3], 'options'), ],
+    prevent_initial_call=True
 )
-def select_all_beam(n_clicks, options, current_values):
-    if ctx.triggered_id == 'all-beam':
-        all_values = [option['value'] for option in options]
+def select_all_beam(n_clicks, current_values, options ):
+    all_values = [option['value'] for option in options]
 
+    if ctx.triggered_id == 'all-beam':
         if set(current_values) == set(all_values):  # if all are selected, unselect all
-            return []
+            current_values = []
         else:  # otherwise, select all
-            return all_values
-    return current_values  # in case the callback is triggered from other inputs (if any)
+            current_values = all_values
+    # Apply the strike-through class to selected options
+    for option in options:
+        if option['value'] in current_values:
+            option['label']['props']['className'] = 'strike-through'
+        else:
+            option['label']['props']['className'] = None
+
+    return current_values, options
+
+
+# todo modal draggable
+app.clientside_callback(
+    # ClientsideFunction(namespace='clientside', function_name='make_draggable'),
+    '''
+    function(is_open) {
+    return dash_clientside.clientside.make_draggable(is_open);}
+    ''',
+    Output("js-container", "children"),
+    [Input("draggable-modal", "is_open")],
+)
+

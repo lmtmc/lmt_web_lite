@@ -42,6 +42,7 @@ class Table(Enum):
     NEW_ROW_BTN = 'new-row'
 
 
+# columns_list from runfile
 column_list = [
     # Section1
     '_s',  # 0 dropdown (signle selection)
@@ -49,7 +50,7 @@ column_list = [
 
     # Section2: Select which beam
     'bank',  # 2 radiobutton (bank 1 or bank 2)
-    'beam',  # 3 with all checklist (0-15) and an all beam?
+    'px_list',  # 3 with all checklist (0-15) and an all beam?
     'time_range',  # 4 a slider
     # Section3: Select baseline and spectral range
     # baseline
@@ -67,7 +68,7 @@ column_list = [
     'otf_cal',  # 14 radio button 0 1
     # Section5: Gridding
     'extend',  # 15 label input Map Extent
-    'pix_list',  # 16 label input Resolution
+    'resolution',  # 16 label input Resolution
     'cell',  # 17 label input cell
     'otf_select',  # 18 radio button jinc gauss triangle box
     'RMS',  # 19 RMS weighted checkbox yes
@@ -84,12 +85,56 @@ column_list = [
     'srdp',  # 28
 
 ]
+# change the column name from px_list to beam
+table_column = column_list
+table_column[3] = 'beam'
+
+link_bar = dbc.Row(
+    [
+        dbc.Col(id='current-joblist', width='auto'),
+        dbc.Col(id='user-name', width='auto'),
+        dbc.Col(id='logout', width='auto'),
+        dbc.Col(
+            dbc.Row(
+                [
+                    dbc.Col(html.I(className="bi bi-question-circle-fill"), width="auto"),
+                    dbc.Col(dbc.NavLink("Help", href="/help"), width="auto"),
+                ],
+            ),
+        )
+    ],
+    className='ms-auto flex-nowrap mt-3 mt-md-3 me-5', align="center",
+)
+
+navbar = dbc.Navbar(
+    [
+        html.A(
+            dbc.Row(
+                [dbc.Col(html.Img(src='/assets/lmt_img.jpg', height='30px'), ),
+                 dbc.Col(
+                     dbc.NavbarBrand('JOB RUNNER', className='ms-2', style={'fontSize': '24px', 'color': 'black'})), ],
+                # ms meaning margin start
+                align='right',
+                className='ms-5'
+            ),
+            href='/account', style={'textDecoration': 'none'}
+        ),
+        dbc.NavbarToggler(id='navbar-toggler', n_clicks=0),
+        dbc.Collapse(
+            link_bar,
+            id='navbar-collapse',
+            is_open=False,
+            navbar=True
+        )
+    ],
+    dark=True
+)
 
 
 class Parameter(Enum):
     UPDATE_BTN = 'update-row'
     SAVE_ROW_BTN = 'save-row'
-    MODAL = 'new-parameter-modal'
+    MODAL = 'draggable-modal'
     SOURCE_DROPDOWN = '_s'
     OBSNUM_DROPDOWN = 'obsnum(s)'
 
@@ -153,7 +198,6 @@ session_layout = dbc.Card(
                                        persistence_type="session",
                                        active_item='session_default', style={'overflow': 'auto'})),
                 session_modal,
-                # html.Div(dbc.Alert(id='session-del-alert', is_open=False)),
                 html.Div(dcc.ConfirmDialog(
                     id=Session.CONFIRM_DEL.value,
                     message='Are you sure you want to delete the session?'
@@ -161,7 +205,6 @@ session_layout = dbc.Card(
             ], style={'overflow': 'auto', 'max-height': session_height}),
 
         dbc.CardFooter(dbc.Row([
-            # dbc.Col(html.Div('Previous Sessions', className='custom-bold '), width='auto'),
             dbc.Col(html.Button([html.I(className="fas fa-trash me-2"), 'Delete Session'],
                                 id=Session.DEL_BTN.value, style={'margin-left': 'auto'},
                                 className='ms-auto'), width='auto'),
@@ -179,37 +222,27 @@ bank_options = [
     {'label': '1', 'value': '1'},
     {'label': 'Not Apply', 'value': ''},
 ]
-beam_options = [{'label': str(i), 'value': str(i)} for i in range(0, 16)]
+# beam_options = [{'label': str(i), 'value': str(i)} for i in range(0, 16)]
+beam_options = [{'label': html.Div(str(i)), 'value': str(i)} for i in range(0, 16)]
 
 radio_select_options = [{'label': '1', 'value': 1}, {'label': '0', 'value': 0}]
 
 
-def create_input_field(label_text, input_id, value, input_type='number', min_val=0, max_val=10, step=0.1, ):
+def create_input_field(label_text, input_id, input_type='number', min_val=0, max_val=10, step=0.1, ):
     return dbc.Col([
         dbc.Label(label_text, className='me-2'),
-        dbc.Input(id=input_id, value=value, type=input_type, min=min_val, max=max_val, step=step, )
+        dbc.Input(id=input_id, type=input_type, min=min_val, max=max_val, step=step, )
     ])
-
-
-values_dict1 = {
-    'b_regions': 1,
-    'l_regions': 1,
-    'slice': 1,
-}
-values_dict2 = {
-    'dv': 2,
-    'dw': 2,
-}
 
 
 def create_label_input_pair(label_text, input_component):
     return html.Div([dbc.Label(label_text, className='me-2'), input_component])
 
 
-input_fields_1 = [create_input_field(field, input_id=field, value=values_dict1[field]) for field in
+input_fields_1 = [create_input_field(field, input_id=field, ) for field in
                   column_list[5:8]]
 input_fields_2 = [
-    create_input_field(field, input_id=field, input_type=None, min_val=None, max_val=None, value=values_dict2[field])
+    create_input_field(field, input_id=field, input_type=None, min_val=None, max_val=None, )
     for field in column_list[9:11]]
 
 # todo add components
@@ -226,29 +259,29 @@ edit_parameter_layout = [
     ], style={'margin-bottom': '20px'}),
 
     html.Div([
-        dbc.Label('Select which beam', className='large-label'),
+        dbc.Label('Beam', className='large-label'),
         dbc.Row([
             dbc.Col([dbc.Label('Bank'), dbc.RadioItems(id=column_list[2], options=bank_options, inline=True)], ),
-            # dbc.Col([dbc.Row([dbc.Label('Beam'), dbc.Button('Check All', id='all-beam')]),
-            #          dbc.Checklist(id=column_list[3], options=beam_options, inline=True), ]),
             dbc.Col([
                 dbc.Row([
-                    dbc.Col(dbc.Label('Beam'), width={"size": 3, "offset": 0}),
+                    dbc.Col(dbc.Label('Exclude Beams'), width={"size": 'auto', "offset": 0}),
                     dbc.Col(dbc.Button('Select All', id='all-beam', size='sm', color='info'),
                             style={'display': 'flex', 'justify-content': 'flex-end'})
                 ]),
                 dbc.Row([
-                    dbc.Col(dbc.Checklist(id=column_list[3], options=beam_options, inline=True), width=12)
+                    dbc.Col(dbc.Checklist(id=column_list[3], options=beam_options,
+                                          inline=True), width=12)
                 ]),
 
             ]),
 
             # todo rangeslider not working
-            dbc.Col([dbc.Label('Time Range'), dcc.RangeSlider(id=column_list[4], min=0, max=10, value=[3, 7],
-                                                              tooltip={"placement": "bottom", "always_visible": True}
-                                                              # marks={i: str(i) for i in range(11)}
-                                                              )]),
-            # dbc.Col([dbc.Label('Time Range'), dcc.Input(id='time_range')]),
+            dbc.Col([
+                dbc.Label('Time Range'),
+                dcc.Input(id=column_list[4], type='text', placeholder='min, max'),
+
+            ]),
+
         ], style={'margin-bottom': '20px'}),
     ]),
 
@@ -308,11 +341,16 @@ edit_parameter_layout = [
     html.Div([
         dbc.Label('Advanced Output & others', className='large-label'),
         dbc.Row([
-            dbc.Col([dbc.Label('restart'), dbc.RadioItems(id=column_list[20], options=radio_select_options, inline=True)]),
-            dbc.Col([dbc.Label('admit'), dbc.RadioItems(id=column_list[21], options=radio_select_options, inline=True)]),
-            dbc.Col([dbc.Label('maskmoment'), dbc.RadioItems(id=column_list[22], options=radio_select_options, inline=True)]),
-            dbc.Col([dbc.Label('Dataverse'), dbc.RadioItems(id=column_list[23], options=radio_select_options, inline=True)]),
-            dbc.Col([dbc.Label('Cleanup after run'), dbc.RadioItems(id=column_list[24], options=radio_select_options, inline=True)]),
+            dbc.Col(
+                [dbc.Label('restart'), dbc.RadioItems(id=column_list[20], options=radio_select_options, inline=True)]),
+            dbc.Col(
+                [dbc.Label('admit'), dbc.RadioItems(id=column_list[21], options=radio_select_options, inline=True)]),
+            dbc.Col([dbc.Label('maskmoment'),
+                     dbc.RadioItems(id=column_list[22], options=radio_select_options, inline=True)]),
+            dbc.Col([dbc.Label('Dataverse'),
+                     dbc.RadioItems(id=column_list[23], options=radio_select_options, inline=True)]),
+            dbc.Col([dbc.Label('Cleanup after run'),
+                     dbc.RadioItems(id=column_list[24], options=radio_select_options, inline=True)]),
         ])
     ],
         style={'margin-bottom': '20px'}),
@@ -331,11 +369,11 @@ edit_parameter_layout = [
 ]
 
 runfile_modal = pf.create_modal('Edit parameter',
-                                # new_job.layout,
+
                                 edit_parameter_layout,
                                 [
                                     html.Button("Update", id=Parameter.UPDATE_BTN.value, className="ml-auto"),
-                                    html.Button("Save new row", id=Parameter.SAVE_ROW_BTN.value, className="ml-auto")
+                                    html.Button("Save new row", id=Parameter.SAVE_ROW_BTN.value, className="ml-auto"),
                                 ],
                                 Parameter.MODAL.value)
 clone_runfile_modal = pf.create_modal('Input the new runfile name',
@@ -380,24 +418,29 @@ parameter_layout = dbc.Card(
         ),
         dbc.CardBody([
             runfile_table,
-            runfile_modal,
+            html.Div(runfile_modal, style={'max-height':'200px', 'overflowY':'auto'}),
+            html.Div(id='js-container'),
             clone_runfile_modal,
             html.Div(dbc.Alert(id=Runfile.VALIDATION_ALERT.value, is_open=False, dismissable=True, duration=3000)),
             html.Br(),
-            html.Div(dcc.ConfirmDialog(
-                id=Runfile.CONFIRM_DEL_ALERT.value,
-                message='Are you sure you want to delete the runfile?'
-            ), style={'position': 'relative', "top": "100px"}),
-        ], style={'height': parameter_body_height, "overflowY": "auto"}),
+        ],
+            # style={'height': parameter_body_height, "overflowY": "auto"}
+            ),
+
+        html.Div(dcc.ConfirmDialog(
+            id=Runfile.CONFIRM_DEL_ALERT.value,
+            message='Are you sure to delete the runfile?'
+        ),
+            id='confirm-dialog-container',  # Give it an ID for styling
+        ),
+
         dbc.CardFooter([
             html.Div([
-                # html.Button([html.I(className="far fa-save me-2"), 'Save Table'], id=Runfile.SAVE_TABLE_BTN.value,
-                #             className='me-2'),
                 html.Button([html.I(className="fa fa-paper-plane me-2"), 'Submit Job'], id=Runfile.RUN_BTN.value,
                             n_clicks=0),
             ], className='d-flex justify-content-end')
         ])
     ],
     id=Runfile.PARAMETER_LAYOUT.value,
-    style={'height': session_height, "overflowY": "auto"}
+    # style={'height': session_height, "overflowY": "auto"}
 )
