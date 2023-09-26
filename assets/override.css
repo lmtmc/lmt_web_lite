@@ -339,29 +339,20 @@ h1, h2, h3, h4, h5, h6 {
 display : block !important;
 }
 
-.draggable-modal {
+#draggable-modal {
     position: fixed;
     z-index: 1050;
-    left: 0px;
-    top: 0px;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
+    left: 30%;
+    width: 60%;
+    height: 400px;
     outline: 0;
 }
 
-.draggable-header{
-    background-color: #33C3F0;
-}
 .vertical-align-center {
     display: flex;
     align-items: center;
 }
 
-/*.strike-through {*/
-/*    text-decoration: line-through;*/
-/*    text-decoration-thickness: 3px;*/
-/*}*/
 .strike-through {
     position: relative;
 }
