@@ -17,7 +17,10 @@ under rare circumstances you might need to run something like
 ```
       
 
-but normally your $WORK_LMT environment variable from LMTOY is used.
+
+but normally your $WORK_LMT environment variable from LMTOY is used during the configure stage. During run-time again any 
+present $WORK_LMT will be used, but if not, the value in config.txt will be used.
+
 
 ## Setup
 
@@ -102,5 +105,5 @@ but normally your $WORK_LMT environment variable from LMTOY is used.
    2. obsnums: multiply selections, can it be none?
    3. bank: only available for some projects?
    4. Time Range: define min, max, step values?
-   5. Resolution (px_list): better way to display?
+   5. Resolution (pix_list): better way to display?
    6. And so on...
