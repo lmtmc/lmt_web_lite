@@ -89,47 +89,6 @@ column_list = [
 table_column = column_list
 table_column[3] = 'beam'
 
-link_bar = dbc.Row(
-    [
-        dbc.Col(id='current-joblist', width='auto'),
-        dbc.Col(id='user-name', width='auto'),
-        dbc.Col(id='logout', width='auto'),
-        dbc.Col(
-            dbc.Row(
-                [
-                    dbc.Col(html.I(className="bi bi-question-circle-fill"), width="auto"),
-                    dbc.Col(dbc.NavLink("Help", href="/help"), width="auto"),
-                ],
-            ),
-        )
-    ],
-    className='ms-auto flex-nowrap mt-3 mt-md-3 me-5', align="center",
-)
-
-navbar = dbc.Navbar(
-    [
-        html.A(
-            dbc.Row(
-                [dbc.Col(html.Img(src='/assets/lmt_img.jpg', height='30px'), ),
-                 dbc.Col(
-                     dbc.NavbarBrand('JOB RUNNER', className='ms-2', style={'fontSize': '24px', 'color': 'black'})), ],
-                # ms meaning margin start
-                align='right',
-                className='ms-5'
-            ),
-            href='/account', style={'textDecoration': 'none'}
-        ),
-        dbc.NavbarToggler(id='navbar-toggler', n_clicks=0),
-        dbc.Collapse(
-            link_bar,
-            id='navbar-collapse',
-            is_open=False,
-            navbar=True
-        )
-    ],
-    dark=True
-)
-
 
 class Parameter(Enum):
     UPDATE_BTN = 'update-row'
@@ -157,11 +116,8 @@ columns = [{"name": col, "id": col, 'hideable': True, 'resizable': True}
 runfile_table = dash_table.DataTable(
     id=Runfile.TABLE.value,
     row_selectable='single',
-    # editable=True,
     data=[],
     filter_action="native",
-    # row_deletable=True,
-    # page_size=8,
     columns=columns,
     style_cell={
         'textAlign': 'left',
@@ -175,14 +131,12 @@ runfile_table = dash_table.DataTable(
     style_header={
         'fontWeight': 'bold',
     },
-    # fixed_rows={'headers': True},
-    # fixed_columns={'headers': True, 'data': 2}
 )
 
 session_modal = pf.create_modal(
     'Create a new session',
     [
-        dbc.Input(id=Session.NAME_INPUT.value, placeholder='Enter a name starting with session...', type='text'),
+        dbc.Input(id=Session.NAME_INPUT.value, placeholder='Enter a session number', min=0, max=100, step=1, type='number'),
         html.Div(id=Session.MESSAGE.value)
     ],
     html.Button("Save", id=Session.SAVE_BTN.value, className="ml-auto"),
@@ -222,7 +176,6 @@ bank_options = [
     {'label': '1', 'value': '1'},
     {'label': 'Not Apply', 'value': ''},
 ]
-# beam_options = [{'label': str(i), 'value': str(i)} for i in range(0, 16)]
 beam_options = [{'label': html.Div(str(i)), 'value': str(i)} for i in range(0, 16)]
 
 radio_select_options = [{'label': '1', 'value': 1}, {'label': '0', 'value': 0}]
@@ -442,5 +395,45 @@ parameter_layout = dbc.Card(
         ])
     ],
     id=Runfile.PARAMETER_LAYOUT.value,
-    # style={'height': session_height, "overflowY": "auto"}
+)
+
+link_bar = dbc.Row(
+    [
+        dbc.Col(id='current-joblist', width='auto'),
+        dbc.Col(id='user-name', width='auto'),
+        dbc.Col(id='logout', width='auto'),
+        dbc.Col(
+            dbc.Row(
+                [
+                    dbc.Col(html.I(className="bi bi-question-circle-fill"), width="auto"),
+                    dbc.Col(dbc.NavLink("Help", href="/help"), width="auto"),
+                ],
+            ),
+        )
+    ],
+    className='ms-auto flex-nowrap mt-3 mt-md-3 me-5', align="center",
+)
+
+navbar = dbc.Navbar(
+    [
+        html.A(
+            dbc.Row(
+                [dbc.Col(html.Img(src='/assets/lmt_img.jpg', height='30px'), ),
+                 dbc.Col(
+                     dbc.NavbarBrand('JOB RUNNER', className='ms-2', style={'fontSize': '24px', 'color': 'black'})), ],
+                # ms meaning margin start
+                align='right',
+                className='ms-5'
+            ),
+            href='/account', style={'textDecoration': 'none'}
+        ),
+        dbc.NavbarToggler(id='navbar-toggler', n_clicks=0),
+        dbc.Collapse(
+            link_bar,
+            id='navbar-collapse',
+            is_open=False,
+            navbar=True
+        )
+    ],
+    dark=True
 )
