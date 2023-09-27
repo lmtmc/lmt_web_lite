@@ -23,7 +23,8 @@ HIDE_STYLE = {'display': 'none'}
 SHOW_STYLE = {'display': 'block'}
 
 # root directory of the session's working area
-work_lmt = pf.get_work_lmt_path(config)
+default_work_lmt = pf.get_work_lmt_path(config)
+default_session_name = os.path.join(default_work_lmt, '/lmtoy_run/lmtoy_')
 PID = current_user.username if current_user else None
 # default session
 init_session = 'session-0'
@@ -79,29 +80,28 @@ def update_session_display(n1, n2, n3, n4, n5, n6, n7, active_session, stored_da
     triggered_id = ctx.triggered_id
     if not pf.check_user_exists():
         return no_update, no_update, "User is not authenticated"
-
-    pid_path = pf.create_session_directory(work_lmt)
-    pid_lmtoy_path = pf.get_pid_lmtoy_path(work_lmt, current_user.username)
+    default_pid_path = pf.create_session_directory(default_work_lmt)
     modal_open, message = no_update, ''
-
     if active_session:
-        # PIS = active_session.split('-')[1]
-        PID = current_user.username
-        print(work_lmt, PID, active_session)
+        if active_session != init_session:
+            PID = current_user.username
+            new_session_path = os.path.join(default_work_lmt, PID, active_session)
+            os.environ['WORK_LMT'] = new_session_path
+            pid_path = pf.create_session_directory(new_session_path)
+            pid_lmtoy_path = os.path.join(pid_path, 'lmtoy')
         if triggered_id == Session.NEW_BTN.value:
             modal_open, message = pf.handle_new_session()
         elif triggered_id == Session.SAVE_BTN.value:
             new_session_name = f'Session-{name}'
-            modal_open, message = pf.handle_save_session(init_session, active_session, pid_path, pid_lmtoy_path, new_session_name)
-            print('modal_open', modal_open)
+            modal_open, message = pf.handle_save_session(init_session, active_session, pid_path, pid_lmtoy_path,
+                                                         new_session_name)
         elif triggered_id == Session.CONFIRM_DEL.value:
             message = pf.handle_delete_session(pid_path, active_session)
         if triggered_id in update_btn:
             time.sleep(1)
     else:
         print('Please select a session first!')
-
-    session_list = pf.get_session_list(init_session, pid_path)
+    session_list = pf.get_session_list(init_session, default_pid_path)
 
     return session_list, modal_open, message
 
@@ -147,10 +147,9 @@ def display_selected_runfile(selected_values, del_runfile, selRow, n1, n2, exist
         raise PreventUpdate
     dff = pd.DataFrame(columns=table_column)
     # Initialize default values
-
+    work_lmt = pf.get_work_lmt_path(config)
     if pf.check_user_exists():
         pid_lmtoy_path = pf.get_pid_lmtoy_path(work_lmt, current_user.username)
-        print('work_lmt', work_lmt)
         first_runfile = pf.find_runfiles(pid_lmtoy_path, current_user.username)[0]
         df, runfile_title, highlight = pf.initialize_common_variables(
             os.path.join(pid_lmtoy_path, first_runfile), selRow, init_session)
@@ -358,8 +357,8 @@ def submit_runfile(n, data_store):
 def update_options(n1, n2):
     if not pf.check_user_exists():
         return no_update
-
-    file_name = '/home/lmt/work_lmt/lmtoy_run/lmtoy_' + current_user.username + '/' + current_user.username + '_source.json'
+    work_lmt = pf.get_work_lmt_path(config)
+    file_name = default_session_name + current_user.username + '/' + current_user.username + '_source.json'
     with open(file_name, 'r') as json_file:
         data = json.load(json_file)
     # Create options for the dropdown
