@@ -92,7 +92,7 @@ def get_session_info(default_session, pid_path):
         new_sessions = [
             {'name': file, 'path': os.path.join(pid_path, file)}
             for file in sorted(os.listdir(pid_path))
-            if file.startswith('session')
+            if file.startswith('Session')
         ]
 
         session_info.extend(new_sessions)
@@ -107,6 +107,7 @@ def get_runfile_option(session_path):
 
 def get_session_list(default_session, pid_path):
     session_info = get_session_info(default_session, pid_path)
+    print('session_info', session_info)
     return [
         dbc.AccordionItem(
             [dbc.RadioItems(id={'type': 'runfile-radio', 'index': session['name']},
@@ -120,18 +121,16 @@ def get_session_list(default_session, pid_path):
 def clone_session(pid_path, name, original_path):
     if not name:
         return False, "Please input a name!"
-    if not name.startswith("session"):
-        return False, f"Please input a name start with session"
 
     new_session_path = os.path.join(pid_path, name)
     # Check if the session directory already exists
     if os.path.exists(new_session_path):
         # If the directory not exist, create it
-        return False, f'Session {name} already exists'
+        return False, f'{name} already exists'
     os.mkdir(new_session_path)
     for file in original_path:
         shutil.copy(file, new_session_path)
-    return True, f"Folder {name} created successfully!"
+    return True, '{name} created successfully!'
 
 
 def clone_runfile(runfile, name):
@@ -164,13 +163,14 @@ def handle_new_session():
 def handle_save_session(init_session, active_session, pid_path, pid_lmtoy_path, name):
     file_path = construct_file_paths(init_session, active_session, pid_path, pid_lmtoy_path, current_user.username)
     [session_added, message] = clone_session(pid_path, name, file_path)
+    print('session_add', session_added)
     return not session_added, message
 
 
 def handle_delete_session(pid_path, active_session):
     session_path = os.path.join(pid_path, active_session)
     del_session(session_path)
-    return "Session deleted successfully"
+    return "Session deleted successfully!"
 
 
 def handle_delete_runfile(stored_data):

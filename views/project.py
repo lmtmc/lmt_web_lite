@@ -1,5 +1,4 @@
 # todo organize the parameter
-# todo modal draggable
 # todo selected runfile icon visible
 import os
 import time
@@ -27,7 +26,7 @@ SHOW_STYLE = {'display': 'block'}
 work_lmt = pf.get_work_lmt_path(config)
 PID = current_user.username if current_user else None
 # default session
-init_session = 'session0'
+init_session = 'session-0'
 PIS = 0
 myFmt = '%Y-%m-%d %H:%M:%S'
 
@@ -76,10 +75,8 @@ layout = html.Div(
         State(Session.NAME_INPUT.value, 'value')
     ],
 )
-def update_session_display(*args):
-    n1, n2, n3, n4, n5, n6, n7, active_session, stored_data, table_data, name = args
+def update_session_display(n1, n2, n3, n4, n5, n6, n7, active_session, stored_data, table_data, name):
     triggered_id = ctx.triggered_id
-
     if not pf.check_user_exists():
         return no_update, no_update, "User is not authenticated"
 
@@ -88,17 +85,26 @@ def update_session_display(*args):
     modal_open, message = no_update, ''
 
     if active_session:
+        # PIS = active_session.split('-')[1]
+        PID = current_user.username
+        print(work_lmt, PID, active_session)
+        WORK_LMT = os.path.join(work_lmt, PID, active_session)
+        os.environ['WORK_LMT'] = WORK_LMT
         if triggered_id == Session.NEW_BTN.value:
             modal_open, message = pf.handle_new_session()
         elif triggered_id == Session.SAVE_BTN.value:
-            modal_open, message = pf.handle_save_session(init_session, active_session, pid_path, pid_lmtoy_path, name)
+            new_session_name = f'Session-{name}'
+            modal_open, message = pf.handle_save_session(init_session, active_session, pid_path, pid_lmtoy_path, new_session_name)
+            print('modal_open', modal_open)
         elif triggered_id == Session.CONFIRM_DEL.value:
             message = pf.handle_delete_session(pid_path, active_session)
         if triggered_id in update_btn:
             time.sleep(1)
     else:
         print('Please select a session first!')
+
     session_list = pf.get_session_list(init_session, pid_path)
+
     return session_list, modal_open, message
 
 
@@ -124,7 +130,6 @@ def display_confirmation(n_clicks):
     ],
     [
         Input({'type': 'runfile-radio', 'index': ALL}, 'value'),
-        Input({'type': 'runfile-radio', 'index': ALL}, 'session_name'),
         Input(Runfile.CONFIRM_DEL_ALERT.value, 'submit_n_clicks'),
         Input(Runfile.TABLE.value, "selected_rows"),
         Input(Parameter.SAVE_ROW_BTN.value, 'n_clicks'),
@@ -138,15 +143,16 @@ def display_confirmation(n_clicks):
     ],
     prevent_initial_call='initial_duplicate'
 )
-def display_selected_runfile(selected_values, session_name, del_runfile, selRow, n1, n2, existing_data,
+def display_selected_runfile(selected_values, del_runfile, selRow, n1, n2, existing_data,
                              existing_columns, data_store):
     if not ctx.triggered:
         raise PreventUpdate
     dff = pd.DataFrame(columns=table_column)
     # Initialize default values
-    print('selected_values', selected_values, 'session_name', session_name)
+
     if pf.check_user_exists():
         pid_lmtoy_path = pf.get_pid_lmtoy_path(work_lmt, current_user.username)
+        print('work_lmt', work_lmt)
         first_runfile = pf.find_runfiles(pid_lmtoy_path, current_user.username)[0]
         df, runfile_title, highlight = pf.initialize_common_variables(
             os.path.join(pid_lmtoy_path, first_runfile), selRow, init_session)
@@ -246,7 +252,7 @@ def new_job(n1, n2, n3, n4, n5, selected_row, data, df_data, *state_values):
             parameters = pf.layout_table(list(state_values))
 
             new_row = {key: value for key, value in zip(table_column, parameters)}
-            print('revised_beam', new_row[table_column[3]])
+
             if triggered_id == Parameter.SAVE_ROW_BTN.value:
                 df = df._append(new_row, ignore_index=True)
             else:
@@ -407,7 +413,7 @@ def source_exist(source, obsnum):
     [State(table_column[3], 'options'), ],
     prevent_initial_call=True
 )
-def select_all_beam(n_clicks, current_values, options ):
+def select_all_beam(n_clicks, current_values, options):
     all_values = [option['value'] for option in options]
 
     if ctx.triggered_id == 'all-beam':
@@ -436,3 +442,12 @@ app.clientside_callback(
     [Input("draggable-modal", "is_open")],
 )
 
+# @app.callback(
+#     [Output({'type': 'runfile-radio', 'index': ALL}, 'value'), Output(Runfile.TABLE.value, "selected_rows")],
+#     [Input({'type': 'runfile-radio', 'index': ALL}, 'value'), Input(Runfile.TABLE.value, "selected_rows"),]
+# )
+# def update_table_selections(selected_rows_1, selected_rows_2):
+#     # Update both tables' selected rows to keep them synchronized
+#     print('selected_runfile', selected_rows_1)
+#     print('selected_row', selected_rows_2)
+#     return selected_rows_1, selected_rows_1
