@@ -132,6 +132,7 @@ def clone_session(pid_path, name, original_path):
     print('clone here', os.environ.get('WORK_LMT'))
     # use lmtoy_run the clone PID to a new session
     commands = [
+        'mkdir -p $WORK_LMT'
         'cd $WORK_LMT',
         'lmtoy_run $PID'
     ]
