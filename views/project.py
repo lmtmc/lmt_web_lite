@@ -88,8 +88,6 @@ def update_session_display(n1, n2, n3, n4, n5, n6, n7, active_session, stored_da
         # PIS = active_session.split('-')[1]
         PID = current_user.username
         print(work_lmt, PID, active_session)
-        WORK_LMT = os.path.join(work_lmt, PID, active_session)
-        os.environ['WORK_LMT'] = WORK_LMT
         if triggered_id == Session.NEW_BTN.value:
             modal_open, message = pf.handle_new_session()
         elif triggered_id == Session.SAVE_BTN.value:

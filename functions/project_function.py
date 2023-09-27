@@ -107,7 +107,6 @@ def get_runfile_option(session_path):
 
 def get_session_list(default_session, pid_path):
     session_info = get_session_info(default_session, pid_path)
-    print('session_info', session_info)
     return [
         dbc.AccordionItem(
             [dbc.RadioItems(id={'type': 'runfile-radio', 'index': session['name']},
@@ -127,9 +126,26 @@ def clone_session(pid_path, name, original_path):
     if os.path.exists(new_session_path):
         # If the directory not exist, create it
         return False, f'{name} already exists'
-    os.mkdir(new_session_path)
-    for file in original_path:
-        shutil.copy(file, new_session_path)
+    print('WORK_LMT path', new_session_path)
+    os.environ['WORK_LMT'] = new_session_path
+    os.environ['PID'] = current_user.username
+    print('clone here', os.environ.get('WORK_LMT'))
+    # use lmtoy_run the clone PID to a new session
+    commands = [
+        'cd $WORK_LMT',
+        'lmtoy_run $PID'
+    ]
+    for cmd in commands:
+        process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = process.communicate()
+        if process.returncode != 0:
+            print(f"Error executing command: {cmd}")
+            print(err.decode('utf-8'))
+        else:
+            print(out.decode('utf-8'))
+    # os.mkdir(new_session_path)
+    # for file in original_path:
+    #     shutil.copy(file, new_session_path)
     return True, '{name} created successfully!'
 
 
