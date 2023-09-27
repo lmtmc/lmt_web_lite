@@ -61,6 +61,7 @@ def find_files(folder_path, prefix):
 
 def find_runfiles(folder_path, prefix):
     matching_files = find_files(folder_path, prefix)
+
     if not matching_files:
         print("No matching files found. Running 'mk_runs.py'")
         subprocess.run(["python3", "mk_runs.py"])
@@ -85,18 +86,18 @@ def construct_file_paths(init_session, session_name, pid_path, pid_lmtoy_path, u
 
 # get the session names and their paths in a folder
 def get_session_info(default_session, pid_path):
+
     default_session_path = os.path.join(os.path.dirname(pid_path), 'lmtoy_run', f'lmtoy_{current_user.username}')
     session_info = [{'name': default_session, 'path': default_session_path}]
 
     if ensure_path_exists(pid_path):
         new_sessions = [
-            {'name': file, 'path': os.path.join(pid_path, file)}
+            {'name': file, 'path': os.path.join(pid_path, file, 'lmtoy_run', f'lmtoy_{current_user.username}')}
             for file in sorted(os.listdir(pid_path))
             if file.startswith('Session')
         ]
 
         session_info.extend(new_sessions)
-
     return session_info
 
 
@@ -126,10 +127,10 @@ def clone_session(pid_path, name, original_path):
     if os.path.exists(new_session_path):
         # If the directory not exist, create it
         return False, f'{name} already exists'
-    print('WORK_LMT path', new_session_path)
+
     os.environ['WORK_LMT'] = new_session_path
     os.environ['PID'] = current_user.username
-    print('clone here', os.environ.get('WORK_LMT'))
+
     # use lmtoy_run the clone PID to a new session
     commands = [
         'mkdir -p $WORK_LMT'
@@ -180,7 +181,6 @@ def handle_new_session():
 def handle_save_session(init_session, active_session, pid_path, pid_lmtoy_path, name):
     file_path = construct_file_paths(init_session, active_session, pid_path, pid_lmtoy_path, current_user.username)
     [session_added, message] = clone_session(pid_path, name, file_path)
-    print('session_add', session_added)
     return not session_added, message
 
 
@@ -265,12 +265,12 @@ def table_layout(table_data):
         output[4] = ast.literal_eval(output[4])
 
     for i in range(20, 25):
-        print('table_data', table_data[i])
+
         if table_data[i] == '' or table_data[i] == '0':
             output[i] = 0
         else:
             output[i] = 1
-    print('time range', output[4])
+
     return output
 
 
@@ -288,7 +288,7 @@ def layout_table(layout_data):
         output[4] = f'[{layout_data[4]}]'
 
     for i in range(20, 25):
-        print('layout_data', layout_data[i])
+
         if not layout_data[i]:
             output[i] = 0
         else:
