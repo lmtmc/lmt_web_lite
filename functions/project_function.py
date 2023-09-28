@@ -27,7 +27,10 @@ def get_work_lmt_path(config):
 
 
 def get_pid_lmtoy_path(work_lmt, username):
-    return os.path.join(work_lmt, 'lmtoy_run', f'lmtoy_{username}')
+    if work_lmt:
+        return os.path.join(work_lmt, 'lmtoy_run', f'lmtoy_{username}')
+    else:
+        return ''
 
 
 def create_session_directory(WORK_LMT):
@@ -56,7 +59,15 @@ def load_source_data(file_name):
 
 # find files with prefix
 def find_files(folder_path, prefix):
-    return sorted([filename for filename in os.listdir(folder_path) if os.path.isfile(filename) and filename.startswith(prefix)])
+    if not folder_path:
+        raise ValueError("The provided folder path is empty or None.")
+
+    if not os.path.exists(folder_path):
+        raise FileNotFoundError(f"No such directory: {folder_path}")
+
+    files = [filename for filename in os.listdir(folder_path) if
+             os.path.isfile(os.path.join(folder_path, filename)) and filename.startswith(prefix)]
+    return sorted(files)
 
 
 def find_runfiles(folder_path, prefix):
@@ -85,7 +96,6 @@ def find_runfiles(folder_path, prefix):
 
 # get the session names and their paths in a folder
 def get_session_info(default_session, pid_path):
-
     default_session_path = os.path.join(os.path.dirname(pid_path), 'lmtoy_run', f'lmtoy_{current_user.username}')
     session_info = [{'name': default_session, 'path': default_session_path}]
 

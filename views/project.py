@@ -149,14 +149,14 @@ def display_selected_runfile(selected_values, del_runfile, selRow, n1, n2, exist
     highlight = no_update
     runfile_title = ''
     # Initialize default values
-    work_lmt = os.environ.get('WORK_LMT')
+    work_lmt = pf.get_work_lmt_path(config)
     if pf.check_user_exists():
         pid_lmtoy_path = pf.get_pid_lmtoy_path(work_lmt, current_user.username)
         runfiles = pf.find_runfiles(pid_lmtoy_path, current_user.username)
-        print('runfiles',runfiles)
         if runfiles and len(runfiles) > 0:
             first_runfile = runfiles[0]
-            df, runfile_title, highlight = pf.initialize_common_variables(os.path.join(pid_lmtoy_path, first_runfile), selRow, init_session)
+            df, runfile_title, highlight = pf.initialize_common_variables(os.path.join(pid_lmtoy_path, first_runfile),
+                                                                          selRow, init_session)
     # Fetching runfile from session
     selected_runfile = pf.get_selected_runfile(ctx, data_store)
     # If a different runfile is selected, reinitialize variables
