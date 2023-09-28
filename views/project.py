@@ -87,6 +87,7 @@ def update_session_display(n1, n2, n3, n4, n5, n6, n7, active_session, stored_da
             PID = current_user.username
             new_session_path = os.path.join(default_work_lmt, PID, active_session)
             os.environ['WORK_LMT'] = new_session_path
+            print('new_session_path', new_session_path)
             pid_path = pf.create_session_directory(new_session_path)
             pid_lmtoy_path = os.path.join(pid_path, 'lmtoy')
         if triggered_id == Session.NEW_BTN.value:
@@ -96,7 +97,7 @@ def update_session_display(n1, n2, n3, n4, n5, n6, n7, active_session, stored_da
             modal_open, message = pf.handle_save_session(init_session, active_session, pid_path, pid_lmtoy_path,
                                                          new_session_name)
         elif triggered_id == Session.CONFIRM_DEL.value:
-            message = pf.handle_delete_session(pid_path, active_session)
+            message = pf.handle_delete_session(default_pid_path, active_session)
         if triggered_id in update_btn:
             time.sleep(1)
     else:
