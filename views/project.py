@@ -25,6 +25,7 @@ SHOW_STYLE = {'display': 'block'}
 # root directory of the session's working area
 default_work_lmt = pf.get_work_lmt_path(config)
 default_session_name = os.path.join(default_work_lmt, '/lmtoy_run/lmtoy_')
+
 PID = current_user.username if current_user else None
 # default session
 init_session = 'session-0'
@@ -87,9 +88,8 @@ def update_session_display(n1, n2, n3, n4, n5, n6, n7, active_session, stored_da
             PID = current_user.username
             new_session_path = os.path.join(default_work_lmt, PID, active_session)
             os.environ['WORK_LMT'] = new_session_path
-            print('new_session_path', new_session_path)
-            pid_path = pf.create_session_directory(new_session_path)
-            pid_lmtoy_path = os.path.join(pid_path, 'lmtoy')
+            # pid_path = pf.create_session_directory(new_session_path)
+            # pid_lmtoy_path = os.path.join(pid_path, 'lmtoy')
         if triggered_id == Session.NEW_BTN.value:
             modal_open, message = pf.handle_new_session()
         elif triggered_id == Session.SAVE_BTN.value:
@@ -146,13 +146,15 @@ def display_selected_runfile(selected_values, del_runfile, selRow, n1, n2, exist
     if not ctx.triggered:
         raise PreventUpdate
     dff = pd.DataFrame(columns=table_column)
+    highlight = no_update
     # Initialize default values
-    work_lmt = pf.get_work_lmt_path(config)
+    work_lmt = os.environ.get('WORK_LMT')
     if pf.check_user_exists():
         pid_lmtoy_path = pf.get_pid_lmtoy_path(work_lmt, current_user.username)
-        first_runfile = pf.find_runfiles(pid_lmtoy_path, current_user.username)[0]
-        df, runfile_title, highlight = pf.initialize_common_variables(
-            os.path.join(pid_lmtoy_path, first_runfile), selRow, init_session)
+        runfiles = pf.find_runfiles(pid_lmtoy_path, current_user.username)
+        if runfiles and len(runfiles) > 0:
+            first_runfile = runfiles[0]
+            df, runfile_title, highlight = pf.initialize_common_variables(os.path.join(pid_lmtoy_path, first_runfile), selRow, init_session)
     # Fetching runfile from session
     selected_runfile = pf.get_selected_runfile(ctx, data_store)
     # If a different runfile is selected, reinitialize variables
