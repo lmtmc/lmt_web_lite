@@ -151,7 +151,7 @@ session_layout = dbc.Card(
                                        flush=True,
                                        persistence=True,
                                        persistence_type="session",
-                                       active_item='session_0', style={'overflow': 'auto'})),
+                                       active_item='session-0', style={'overflow': 'auto'})),
                 session_modal,
                 html.Div(dcc.ConfirmDialog(
                     id=Session.CONFIRM_DEL.value,

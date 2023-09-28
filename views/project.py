@@ -94,8 +94,7 @@ def update_session_display(n1, n2, n3, n4, n5, n6, n7, active_session, stored_da
             modal_open, message = pf.handle_new_session()
         elif triggered_id == Session.SAVE_BTN.value:
             new_session_name = f'Session-{name}'
-            modal_open, message = pf.handle_save_session(init_session, active_session, pid_path, pid_lmtoy_path,
-                                                         new_session_name)
+            modal_open, message = pf.handle_save_session(default_pid_path, new_session_name)
         elif triggered_id == Session.CONFIRM_DEL.value:
             message = pf.handle_delete_session(default_pid_path, active_session)
         if triggered_id in update_btn:
