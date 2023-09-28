@@ -85,11 +85,10 @@ def find_runfiles(folder_path, prefix):
     matching_files = find_files(folder_path, prefix)
     if not matching_files:
         print("No matching files found. Running 'mk_runs.py'")
-        mk_runs_path = get_pid_lmtoy_path(os.environ.get('WORK_LMT'), current_user.username)
+        mk_runs_path = os.path.join(get_pid_lmtoy_path(os.environ.get('WORK_LMT'), current_user.username), 'mk_runs.py')
         print('mk_runs_path', mk_runs_path)
         commands = [
-            f'cd {mk_runs_path}',
-            'python mk_runs.py'
+            f'python {mk_runs_path}',
         ]
         process_cmd(commands)
         matching_files = find_files(folder_path, prefix)
