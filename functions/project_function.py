@@ -56,6 +56,7 @@ def load_source_data(file_name):
         data = json.load(json_file)
     return data
 
+
 def process_cmd(commands):
     for cmd in commands:
         process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -65,6 +66,7 @@ def process_cmd(commands):
             print(err.decode('utf-8'))
         else:
             print(out.decode('utf-8'))
+
 
 # find files with prefix
 def find_files(folder_path, prefix):
@@ -84,8 +86,9 @@ def find_runfiles(folder_path, prefix):
     if not matching_files:
         print("No matching files found. Running 'mk_runs.py'")
         mk_runs_path = get_pid_lmtoy_path(os.environ.get('WORK_LMT'), current_user.username)
+        print('mk_runs_path', mk_runs_path)
         commands = [
-            'cd mk_runs_path',
+            f'cd {mk_runs_path}',
             'python mk_runs.py'
         ]
         process_cmd(commands)
