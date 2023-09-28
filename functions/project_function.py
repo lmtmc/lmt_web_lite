@@ -56,6 +56,15 @@ def load_source_data(file_name):
         data = json.load(json_file)
     return data
 
+def process_cmd(commands):
+    for cmd in commands:
+        process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = process.communicate()
+        if process.returncode != 0:
+            print(f"Error executing command: {cmd}")
+            print(err.decode('utf-8'))
+        else:
+            print(out.decode('utf-8'))
 
 # find files with prefix
 def find_files(folder_path, prefix):
@@ -74,7 +83,12 @@ def find_runfiles(folder_path, prefix):
     matching_files = find_files(folder_path, prefix)
     if not matching_files:
         print("No matching files found. Running 'mk_runs.py'")
-        subprocess.Popen(["python3", "mk_runs.py"], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        mk_runs_path = get_pid_lmtoy_path(os.environ.get('WORK_LMT'), current_user.username)
+        commands = [
+            'cd mk_runs_path',
+            'python mk_runs.py'
+        ]
+        process_cmd(commands)
         matching_files = find_files(folder_path, prefix)
         if matching_files:
             print(f"Matching files: {matching_files}")
@@ -146,14 +160,7 @@ def handle_save_session(pid_path, name):
         'cd $WORK_LMT',
         'lmtoy_run $PID'
     ]
-    for cmd in commands:
-        process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        out, err = process.communicate()
-        if process.returncode != 0:
-            print(f"Error executing command: {cmd}")
-            print(err.decode('utf-8'))
-        else:
-            print(out.decode('utf-8'))
+    process_cmd(commands)
     # os.mkdir(new_session_path)
     # for file in original_path:
     #     shutil.copy(file, new_session_path)
