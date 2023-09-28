@@ -56,15 +56,14 @@ def load_source_data(file_name):
 
 # find files with prefix
 def find_files(folder_path, prefix):
-    return sorted([filename for filename in os.listdir(folder_path) if filename.startswith(prefix)])
+    return sorted([filename for filename in os.listdir(folder_path) if os.path.isfile(filename) and filename.startswith(prefix)])
 
 
 def find_runfiles(folder_path, prefix):
     matching_files = find_files(folder_path, prefix)
-
     if not matching_files:
         print("No matching files found. Running 'mk_runs.py'")
-        subprocess.run(["python3", "mk_runs.py"])
+        subprocess.Popen(["python3", "mk_runs.py"], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         matching_files = find_files(folder_path, prefix)
         if matching_files:
             print(f"Matching files: {matching_files}")
@@ -148,7 +147,7 @@ def handle_save_session(pid_path, name):
     # os.mkdir(new_session_path)
     # for file in original_path:
     #     shutil.copy(file, new_session_path)
-    return True, '{name} created successfully!'
+    return True, f'{name} created successfully!'
 
 
 def clone_runfile(runfile, name):
