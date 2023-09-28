@@ -73,15 +73,15 @@ def find_runfiles(folder_path, prefix):
     return matching_files
 
 
-# Function to find and construct file paths
-def construct_file_paths(init_session, session_name, pid_path, pid_lmtoy_path, username):
-    if session_name == init_session:
-        files = find_runfiles(pid_lmtoy_path, username + '.')
-        return [os.path.join(pid_lmtoy_path, file) for file in files]
-    else:
-        session_path = os.path.join(pid_path, session_name)
-        files = find_runfiles(session_path, username + '.')
-        return [os.path.join(session_path, file) for file in files]
+# # Function to find and construct file paths
+# def construct_file_paths(init_session, session_name, pid_path, pid_lmtoy_path, username):
+#     if session_name == init_session:
+#         files = find_runfiles(pid_lmtoy_path, username + '.')
+#         return [os.path.join(pid_lmtoy_path, file) for file in files]
+#     else:
+#         session_path = os.path.join(pid_path, session_name)
+#         files = find_runfiles(session_path, username + '.')
+#         return [os.path.join(session_path, file) for file in files]
 
 
 # get the session names and their paths in a folder
@@ -118,7 +118,7 @@ def get_session_list(default_session, pid_path):
     ]
 
 
-def clone_session(pid_path, name, original_path):
+def handle_save_session(pid_path, name):
     if not name:
         return False, "Please input a name!"
 
@@ -178,11 +178,10 @@ def handle_new_session():
     return True, ''
 
 
-def handle_save_session(init_session, active_session, pid_path, pid_lmtoy_path, name):
-    file_path = construct_file_paths(init_session, active_session, pid_path, pid_lmtoy_path, current_user.username)
-    [session_added, message] = clone_session(pid_path, name, file_path)
-    return not session_added, message
-
+# def handle_save_session(init_session, active_session, pid_path, pid_lmtoy_path, name):
+#     file_path = construct_file_paths(init_session, active_session, pid_path, pid_lmtoy_path, current_user.username)
+#     [session_added, message] = clone_session(pid_path, name, file_path)
+#     return not session_added, message
 
 def handle_delete_session(pid_path, active_session):
     session_path = os.path.join(pid_path, active_session)
