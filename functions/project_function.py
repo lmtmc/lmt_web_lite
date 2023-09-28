@@ -90,7 +90,13 @@ def find_runfiles(folder_path, prefix):
         # commands = [
         #     f'python {mk_runs_path}',
         # ]
-        subprocess.run(['python', mk_runs_path], capture_output=True, text=True)
+        result = subprocess.run(['python', mk_runs_path], capture_output=True, text=True)
+        # checks if the command ran successfully(return code 0)
+        if result.returncode == 0:
+            output = result.stdout  # converts the stdout string to a regular string
+        else:
+            output = result.stderr.decode()  # convert the error message to a string
+        print(output)
         matching_files = find_files(folder_path, prefix)
         if matching_files:
             print(f"Matching files: {matching_files}")
