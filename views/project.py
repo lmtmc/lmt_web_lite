@@ -362,18 +362,20 @@ def submit_runfile(n, data_store):
 def update_options(n1, n2):
     if not pf.check_user_exists():
         return no_update
-
     # Create options for the dropdown
     json_file_name = default_session_name + current_user.username + '/' + current_user.username + '_source.json'
-    with open(json_file_name, 'r') as json_file:
-        data = json.load(json_file)
-    source_options = [{'label': source, 'value': source} for source in data.keys()]
-    # get default mk_runs.py
-    default_mk_path = default_session_name + current_user.username
-    sys.path.insert(0, default_mk_path)
-    from mk_runs import on
-    print(on)
 
+    if os.path.exists(json_file_name):
+        with open(json_file_name, 'r') as json_file:
+            data = json.load(json_file)
+
+    # get default mk_runs.py
+    else:
+        default_mk_path = default_session_name + current_user.username
+        sys.path.insert(0, default_mk_path)
+        from mk_runs import on
+        data = on
+    source_options = [{'label': source, 'value': source} for source in data.keys()]
     return [source_options]
 
 
