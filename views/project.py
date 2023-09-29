@@ -3,6 +3,7 @@
 import os
 import time
 import json
+import sys
 
 from dash import dcc, html, Input, Output, State, ALL, MATCH, dash_table, ctx, no_update, ClientsideFunction
 from dash.exceptions import PreventUpdate
@@ -24,8 +25,8 @@ SHOW_STYLE = {'display': 'block'}
 
 # root directory of the session's working area
 default_work_lmt = pf.get_work_lmt_path(config)
-default_session_name = os.path.join(default_work_lmt, '/lmtoy_run/lmtoy_')
-
+default_session_name = os.path.join(default_work_lmt, 'lmtoy_run/lmtoy_')
+print('default_work_lmt', default_work_lmt, 'default_session_name', default_session_name)
 PID = current_user.username if current_user else None
 # default session
 init_session = 'session-0'
@@ -361,13 +362,19 @@ def submit_runfile(n, data_store):
 def update_options(n1, n2):
     if not pf.check_user_exists():
         return no_update
-    work_lmt = pf.get_work_lmt_path(config)
-    file_name = default_session_name + current_user.username + '/' + current_user.username + '_source.json'
-    with open(file_name, 'r') as json_file:
-        data = json.load(json_file)
+
     # Create options for the dropdown
-    options = [{'label': source, 'value': source} for source in data.keys()]
-    return [options]
+    json_file_name = default_session_name + current_user.username + '/' + current_user.username + '_source.json'
+    with open(json_file_name, 'r') as json_file:
+        data = json.load(json_file)
+    source_options = [{'label': source, 'value': source} for source in data.keys()]
+    # get default mk_runs.py
+    default_mk_path = default_session_name + current_user.username
+    sys.path.insert(0, default_mk_path)
+    from mk_runs import on
+    print(on)
+
+    return [source_options]
 
 
 @app.callback(
