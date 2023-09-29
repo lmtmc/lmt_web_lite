@@ -1,5 +1,6 @@
 import os
 import shutil
+import sys
 from pathlib import Path
 import dash_bootstrap_components as dbc
 from flask_login import current_user
@@ -83,14 +84,17 @@ def find_files(folder_path, prefix):
 
 def find_runfiles(folder_path, prefix):
     matching_files = find_files(folder_path, prefix)
+    mk_runs_path = get_pid_lmtoy_path(os.environ.get('WORK_LMT'), current_user.username)
+    mk_runs_file = os.path.join(mk_runs_path, 'mk_runs.py')
+    sys.path.append(mk_runs_path)
+    import mk_runs
+    print(mk_runs.on)
     if not matching_files:
         print("No matching files found. Running 'mk_runs.py'")
-        mk_runs_path = os.path.join(get_pid_lmtoy_path(os.environ.get('WORK_LMT'), current_user.username), 'mk_runs.py')
+        result = subprocess.run(['python', mk_runs_file], capture_output=True, text=True,
+                                cwd=mk_runs_path)
 
-        print('mk_runs_path', mk_runs_path)
 
-        result = subprocess.run(['python', mk_runs_path], capture_output=True, text=True,
-                                cwd=os.path.dirname(mk_runs_path))
         # checks if the command ran successfully(return code 0)
         if result.returncode == 0:
             output = result.stdout  # converts the stdout string to a regular string
