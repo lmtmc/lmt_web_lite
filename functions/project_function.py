@@ -86,15 +86,11 @@ def find_runfiles(folder_path, prefix):
     matching_files = find_files(folder_path, prefix)
     mk_runs_path = get_pid_lmtoy_path(os.environ.get('WORK_LMT'), current_user.username)
     mk_runs_file = os.path.join(mk_runs_path, 'mk_runs.py')
-    sys.path.append(mk_runs_path)
-    import mk_runs
-    print(mk_runs.on)
+
     if not matching_files:
         print("No matching files found. Running 'mk_runs.py'")
         result = subprocess.run(['python', mk_runs_file], capture_output=True, text=True,
                                 cwd=mk_runs_path)
-
-
         # checks if the command ran successfully(return code 0)
         if result.returncode == 0:
             output = result.stdout  # converts the stdout string to a regular string
@@ -360,7 +356,7 @@ def first_file_path(folder_path):
 
 def get_runfile_title(runfile_path, init_session):
     parts = runfile_path.split('/')
-    session_string = next((part for part in parts if 'session' in part), init_session)
+    session_string = next((part for part in parts if 'Session' in part), init_session)
     runfile_title = os.path.basename(runfile_path)
     return f'{session_string}: {runfile_title}'
 
