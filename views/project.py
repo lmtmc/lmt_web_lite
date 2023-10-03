@@ -71,14 +71,15 @@ layout = html.Div(
         Input(Parameter.UPDATE_BTN.value, 'n_clicks'),
         Input(Runfile.SAVE_CLONE_RUNFILE_BTN.value, 'n_clicks'),
         Input(Session.SESSION_LIST.value, 'active_item'),
-        Input(Storage.DATA_STORE.value, 'data')
+
     ],
     [
-        State(Runfile.TABLE.value, 'data'),
+        # State(Storage.DATA_STORE.value, 'data'),
+        # State(Runfile.TABLE.value, 'data'),
         State(Session.NAME_INPUT.value, 'value')
     ],
 )
-def update_session_display(n1, n2, n3, n4, n5, n6, n7, active_session, stored_data, table_data, name):
+def update_session_display(n1, n2, n3, n4, n5, n6, n7, active_session,  name):
     triggered_id = ctx.triggered_id
     if not pf.check_user_exists():
         return no_update, no_update, "User is not authenticated"
@@ -103,7 +104,6 @@ def update_session_display(n1, n2, n3, n4, n5, n6, n7, active_session, stored_da
     else:
         print('Please select a session first!')
     session_list = pf.get_session_list(init_session, default_pid_path)
-
     return session_list, modal_open, message
 
 
@@ -125,24 +125,24 @@ def display_confirmation(n_clicks):
         Output(Runfile.TABLE.value, 'style_data_conditional'),
         Output(Runfile.CONTENT_TITLE.value, 'children'),
         Output(Runfile.PARAMETER_LAYOUT.value, 'style'),
-        Output(Storage.DATA_STORE.value, 'data'),
+        Output(Storage.DATA_STORE.value, 'data', allow_duplicate=True),
     ],
     [
         Input({'type': 'runfile-radio', 'index': ALL}, 'value'),
         Input(Runfile.CONFIRM_DEL_ALERT.value, 'submit_n_clicks'),
-        Input(Runfile.TABLE.value, "selected_rows"),
         Input(Parameter.SAVE_ROW_BTN.value, 'n_clicks'),
         Input(Parameter.UPDATE_BTN.value, 'n_clicks'),
 
     ],
     [
+        State(Runfile.TABLE.value, "selected_rows"),
         State(Runfile.TABLE.value, 'data'),
         State(Runfile.TABLE.value, 'columns'),
         State(Storage.DATA_STORE.value, 'data')
     ],
     prevent_initial_call='initial_duplicate'
 )
-def display_selected_runfile(selected_values, del_runfile, selRow, n1, n2, existing_data,
+def display_selected_runfile(selected_values, del_runfile, n1, n2, selRow, existing_data,
                              existing_columns, data_store):
     if not ctx.triggered:
         raise PreventUpdate
@@ -153,23 +153,27 @@ def display_selected_runfile(selected_values, del_runfile, selRow, n1, n2, exist
     work_lmt = pf.get_work_lmt_path(config)
     if pf.check_user_exists():
         pid_lmtoy_path = pf.get_pid_lmtoy_path(work_lmt, current_user.username)
-        runfiles = pf.find_runfiles(pid_lmtoy_path, current_user.username)
-        if runfiles and len(runfiles) > 0:
-            first_runfile = runfiles[0]
-            df, runfile_title, highlight = pf.initialize_common_variables(os.path.join(pid_lmtoy_path, first_runfile),
-                                                                          selRow, init_session)
+        # runfiles = pf.find_runfiles(pid_lmtoy_path, current_user.username)
+        # if runfiles and len(runfiles) > 0:
+        #     first_runfile = runfiles[0]
+        #     print('first_runfile', first_runfile)
+        #     df, runfile_title, highlight = pf.initialize_common_variables(os.path.join(pid_lmtoy_path, first_runfile),
+        #                                                                   selRow, init_session)
     # Fetching runfile from session
     selected_runfile = pf.get_selected_runfile(ctx, data_store)
+    if selected_runfile is None:
+        selected_runfile = data_store['runfile']
     # If a different runfile is selected, reinitialize variables
     if selected_runfile:
         df, runfile_title, highlight = pf.initialize_common_variables(selected_runfile, selRow, init_session)
         data_store['runfile'] = selected_runfile
+        if selRow:
+            data_store['selected_row'] = selRow
 
         if ctx.triggered_id == Runfile.CONFIRM_DEL_ALERT.value:
             pf.del_runfile(selected_runfile)
         dff = pd.concat([df, dff])
     parameter_display = PARAMETER_SHOW  # This seems to be constant, so defined it here
-
     return dff.to_dict('records'), highlight, runfile_title, parameter_display, data_store
 
 
@@ -203,7 +207,10 @@ fixed_outputs = [
     Output(Runfile.TABLE.value, 'data'),
 ]
 fixed_states = [
+    State(Runfile.TABLE.value, "selected_rows"),
+    State(Storage.DATA_STORE.value, 'data'),
     State(Runfile.TABLE.value, 'data'),
+
 ]
 # Define dynamic Output objects based on a list of field names
 field_names = table_column
@@ -224,8 +231,9 @@ all_states = fixed_states + dynamic_states
         Input(Table.DEL_ROW_BTN.value, 'n_clicks'),
         Input(Parameter.SAVE_ROW_BTN.value, 'n_clicks'),
         Input(Parameter.UPDATE_BTN.value, 'n_clicks'),
-        Input(Runfile.TABLE.value, "selected_rows"),
-        Input(Storage.DATA_STORE.value, 'data')],
+        # Input(Runfile.TABLE.value, "selected_rows"),
+        # Input(Storage.DATA_STORE.value, 'data')
+    ],
     all_states,
     prevent_initial_call=True,
 )
@@ -261,7 +269,6 @@ def new_job(n1, n2, n3, n4, n5, selected_row, data, df_data, *state_values):
                 df.iloc[selected_row[0]] = new_row
             pf.save_runfile(df, data['runfile'])
     output_values[1] = df.to_dict('records')
-
     return output_values
 
 
@@ -352,14 +359,16 @@ def submit_runfile(n, data_store):
 @app.callback(
     [
         Output(Parameter.SOURCE_DROPDOWN.value, 'options'),
+        Output(Storage.DATA_STORE.value, 'data'),
     ],
     [
         Input(Table.NEW_ROW_BTN.value, 'n_clicks'),
         Input(Table.EDIT_ROW_BTN.value, 'n_clicks'),
     ],
+    State(Storage.DATA_STORE.value, 'data'),
     prevent_initial_call=True
 )
-def update_options(n1, n2):
+def update_options(n1, n2, stored_data):
     if not pf.check_user_exists():
         return no_update
     # Create options for the dropdown
@@ -368,29 +377,31 @@ def update_options(n1, n2):
     if os.path.exists(json_file_name):
         with open(json_file_name, 'r') as json_file:
             data = json.load(json_file)
-
-    # get default mk_runs.py
+    #
+    # # get default mk_runs.py
     else:
         default_mk_path = default_session_name + current_user.username
         sys.path.insert(0, default_mk_path)
         from mk_runs import on
         data = on
     source_options = [{'label': source, 'value': source} for source in data.keys()]
-    return [source_options]
+    stored_data['source'] = data
+    return source_options, stored_data
 
 
 @app.callback(
     Output(Parameter.OBSNUM_DROPDOWN.value, 'options'),
     Input(Parameter.SOURCE_DROPDOWN.value, 'value'),
+    State(Storage.DATA_STORE.value, 'data'),
     prevent_initial_call=True
 )
-def update_obsnum_options(selected_source):
+def update_obsnum_options(selected_source, stored_data):
     if not pf.check_user_exists() or not selected_source:
         return no_update
-    file_name = '/home/lmt/work_lmt/lmtoy_run/lmtoy_' + current_user.username + '/' + current_user.username + '_source.json'
-    with open(file_name, 'r') as json_file:
-        data = json.load(json_file)
-    obsnums = data[selected_source]
+    # file_name = '/home/lmt/work_lmt/lmtoy_run/lmtoy_' + current_user.username + '/' + current_user.username + '_source.json'
+    # with open(file_name, 'r') as json_file:
+    #     data = json.load(json_file)
+    obsnums = stored_data['source'][selected_source]
     options = [{'label': obsnum, 'value': str(obsnum)} for obsnum in obsnums]
     return options
 

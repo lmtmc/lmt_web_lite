@@ -106,7 +106,7 @@ class Storage(Enum):
 session_height = '600px'
 parameter_body_height = '500px'
 # UI Elements
-data_store = dcc.Store(id='data-store', data={'runfile': None}, storage_type='session'),
+data_store = dcc.Store(id='data-store', data={'runfile': None, 'source': {}, 'selected_row': None}, storage_type='session'),
 url_location = dcc.Location(id='url_session1', refresh=True),
 
 # Generate column data dynamically
@@ -137,7 +137,8 @@ runfile_table = dash_table.DataTable(
 session_modal = pf.create_modal(
     'Create a new session',
     [
-        dbc.Input(id=Session.NAME_INPUT.value, placeholder='Enter a session number', min=0, max=100, step=1, type='number'),
+        dbc.Input(id=Session.NAME_INPUT.value, placeholder='Enter a session number', min=0, max=100, step=1,
+                  type='number'),
         html.Div(id=Session.MESSAGE.value)
     ],
     html.Button("Save", id=Session.SAVE_BTN.value, className="ml-auto"),
@@ -372,14 +373,14 @@ parameter_layout = dbc.Card(
         ),
         dbc.CardBody([
             runfile_table,
-            html.Div(runfile_modal, style={'max-height':'200px', 'overflowY':'auto'}),
+            html.Div(runfile_modal, style={'max-height': '200px', 'overflowY': 'auto'}),
             html.Div(id='js-container'),
             clone_runfile_modal,
             html.Div(dbc.Alert(id=Runfile.VALIDATION_ALERT.value, is_open=False, dismissable=True, duration=3000)),
             html.Br(),
         ],
             # style={'height': parameter_body_height, "overflowY": "auto"}
-            ),
+        ),
 
         html.Div(dcc.ConfirmDialog(
             id=Runfile.CONFIRM_DEL_ALERT.value,

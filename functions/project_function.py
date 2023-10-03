@@ -96,7 +96,6 @@ def find_runfiles(folder_path, prefix):
             output = result.stdout  # converts the stdout string to a regular string
         else:
             output = result.stderr  # convert the error message to a string
-        print(output)
         matching_files = find_files(folder_path, prefix)
         if matching_files:
             print(f"Matching files: {matching_files}")
@@ -142,7 +141,8 @@ def get_session_list(default_session, pid_path):
     return [
         dbc.AccordionItem(
             [dbc.RadioItems(id={'type': 'runfile-radio', 'index': session['name']},
-                            options=get_runfile_option(session['path']), )],
+                            options=get_runfile_option(session['path']),
+                            className='my-radio-items')],
             title=session['name'], className='mb-2', item_id=session['name']
         )
         for session in session_info
