@@ -381,9 +381,11 @@ def update_options(n1, n2, stored_data):
     # # get default mk_runs.py
     else:
         default_mk_path = default_session_name + current_user.username
+        print('path to import mk_runs', default_mk_path)
         sys.path.insert(0, default_mk_path)
         from mk_runs import on
         data = on
+        print('on', on)
     source_options = [{'label': source, 'value': source} for source in data.keys()]
     stored_data['source'] = data
     return source_options, stored_data

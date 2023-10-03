@@ -119,6 +119,7 @@ runfile_table = dash_table.DataTable(
     data=[],
     filter_action="native",
     columns=columns,
+    page_size=7,
     style_cell={
         'textAlign': 'left',
         'font-size': '15px',
