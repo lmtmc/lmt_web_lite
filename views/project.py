@@ -382,6 +382,8 @@ def update_options(n1, n2, stored_data):
     else:
         default_mk_path = default_session_name + current_user.username
         print('path to import mk_runs', default_mk_path)
+        if "mk_runs" in sys.modules:
+            del sys.modules["mk_runs"]
         sys.path.insert(0, default_mk_path)
         from mk_runs import on
         data = on
