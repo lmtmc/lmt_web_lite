@@ -106,7 +106,8 @@ class Storage(Enum):
 session_height = '600px'
 parameter_body_height = '500px'
 # UI Elements
-data_store = dcc.Store(id='data-store', data={'runfile': None, 'source': {}, 'selected_row': None}, storage_type='session'),
+data_store = dcc.Store(id='data-store', data={'pid': None, 'runfile': None, 'source': {}, 'selected_row': None},
+                       storage_type='session'),
 url_location = dcc.Location(id='url_session1', refresh=True),
 
 # Generate column data dynamically

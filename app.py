@@ -13,6 +13,7 @@ app.layout = html.Div(
         html.Div(id='body-content', className='content'),
         # keep track of the current URL, the app will handle the location change without a full page refresh
         dcc.Location(id='url', refresh=False),
+        html.Div(ui.data_store)
     ]
 )
 
@@ -70,10 +71,11 @@ def toggle_navbar_collapse(n, is_open):
     return is_open
 
 
+parser = argparse.ArgumentParser(description="Run the Dash app")
+parser.add_argument("-p", "--port", type=int, default=8000,
+                    help="Port to run the Dash app on")
+args = parser.parse_args()
+
 # export FLASK_ENV=development
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Run the Dash app")
-    parser.add_argument("-p", "--port", type=int, default=8000,
-                        help="Port to run the Dash app on")
-    args = parser.parse_args()
     app.server.run(port=args.port, debug=True)

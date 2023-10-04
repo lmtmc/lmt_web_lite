@@ -9,6 +9,8 @@ import pandas as pd
 import subprocess
 import json
 import ast
+import re
+import time
 
 default_time_range = [3, 7]
 
@@ -25,13 +27,6 @@ def get_work_lmt_path(config):
         print('Could not find the value of work_lmt')
         return None
     return work_lmt
-
-
-def get_pid_lmtoy_path(work_lmt, username):
-    if work_lmt:
-        return os.path.join(work_lmt, 'lmtoy_run', f'lmtoy_{username}')
-    else:
-        return ''
 
 
 def create_session_directory(WORK_LMT):
@@ -82,37 +77,44 @@ def find_files(folder_path, prefix):
     return sorted(files)
 
 
+def mk_runs(pid):
+    # make make_runs.py path
+    mk_runs_path = os.path.join(os.environ.get('WORK_LMT'), 'lmtoy_run', f'lmtoy_{pid}')
+    print('new work_lmt', os.environ.get('WORK_LMT'))
+    mk_runs_file = os.path.join(mk_runs_path, 'mk_runs.py')
+    print(f"begin to run {mk_runs_file} in {mk_runs_path}")
+    result = subprocess.run(['python', mk_runs_file], capture_output=True, text=True, cwd=mk_runs_path)
+    print(f"running result {result}")
+    # checks if the command ran successfully(return code 0)
+    if result.returncode == 0:
+        output = result.stdout  # converts the stdout string to a regular string
+    else:
+        output = result.stderr  # convert the error message to a string
+    return output
+
+
+def get_source(pid):
+    output = mk_runs(pid)
+    pattern = r"(\w+)\[\d+/\d+\] : ([\d,]+)"
+    matches = re.findall(pattern, output)
+
+    sources = {name: list(map(int, obsnums.split(','))) for name, obsnums in matches}
+    return sources
+
+
 def find_runfiles(folder_path, prefix):
     matching_files = find_files(folder_path, prefix)
-    mk_runs_path = get_pid_lmtoy_path(os.environ.get('WORK_LMT'), current_user.username)
-    mk_runs_file = os.path.join(mk_runs_path, 'mk_runs.py')
-
     if not matching_files:
         print("No matching files found. Running 'mk_runs.py'")
-        result = subprocess.run(['python', mk_runs_file], capture_output=True, text=True,
-                                cwd=mk_runs_path)
-        # checks if the command ran successfully(return code 0)
-        if result.returncode == 0:
-            output = result.stdout  # converts the stdout string to a regular string
-        else:
-            output = result.stderr  # convert the error message to a string
+
         matching_files = find_files(folder_path, prefix)
         if matching_files:
             print(f"Matching files: {matching_files}")
         else:
+            mk_runs()
+            time.sleep(1)
             print("No matching files found even after running 'mk_runs.py'")
     return matching_files
-
-
-# # Function to find and construct file paths
-# def construct_file_paths(init_session, session_name, pid_path, pid_lmtoy_path, username):
-#     if session_name == init_session:
-#         files = find_runfiles(pid_lmtoy_path, username + '.')
-#         return [os.path.join(pid_lmtoy_path, file) for file in files]
-#     else:
-#         session_path = os.path.join(pid_path, session_name)
-#         files = find_runfiles(session_path, username + '.')
-#         return [os.path.join(session_path, file) for file in files]
 
 
 # get the session names and their paths in a folder

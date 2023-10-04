@@ -1,5 +1,5 @@
-# todo organize the parameter
-# todo selected runfile icon visible
+# todo clear session
+# clone row not working
 import os
 import time
 import json
@@ -25,31 +25,29 @@ SHOW_STYLE = {'display': 'block'}
 
 # root directory of the session's working area
 default_work_lmt = pf.get_work_lmt_path(config)
-default_session_name = os.path.join(default_work_lmt, 'lmtoy_run/lmtoy_')
-print('default_work_lmt', default_work_lmt, 'default_session_name', default_session_name)
-PID = current_user.username if current_user else None
-# default session
-init_session = 'session-0'
-PIS = 0
-myFmt = '%Y-%m-%d %H:%M:%S'
+default_session_prefix = os.path.join(default_work_lmt, 'lmtoy_run/lmtoy_')
+print('default_work_lmt', default_work_lmt, 'default_session_prefix', default_session_prefix)
 
+# default session name
+init_session = 'session-0'
+# data table column
 table_column = ui.table_column
 
 # if any of the update_btn get trigged, update the session list
 update_btn = [Session.SAVE_BTN.value, Session.CONFIRM_DEL.value,
               Runfile.DEL_BTN.value, Runfile.SAVE_CLONE_RUNFILE_BTN.value]
 
-default_data = {'runfile': current_user.username + '_default_runfile'} if pf.check_user_exists() else {'runfile': None}
-
 layout = html.Div(
     [
-        html.Div(ui.data_store),
+
         html.Div(ui.url_location),
         dbc.Row(
             [
                 dbc.Col(ui.session_layout, width=4),
                 dbc.Col(ui.parameter_layout, width=8),
+                # html.Div(ui.data_store),
                 html.Br(),
+                dcc.Location(id='project_url', refresh=False)
 
             ]
         )])
@@ -74,24 +72,21 @@ layout = html.Div(
 
     ],
     [
-        # State(Storage.DATA_STORE.value, 'data'),
-        # State(Runfile.TABLE.value, 'data'),
         State(Session.NAME_INPUT.value, 'value')
     ],
 )
-def update_session_display(n1, n2, n3, n4, n5, n6, n7, active_session,  name):
+def update_session_display(n1, n2, n3, n4, n5, n6, n7, active_session, name):
     triggered_id = ctx.triggered_id
     if not pf.check_user_exists():
         return no_update, no_update, "User is not authenticated"
     default_pid_path = pf.create_session_directory(default_work_lmt)
+
     modal_open, message = no_update, ''
     if active_session:
         if active_session != init_session:
             PID = current_user.username
             new_session_path = os.path.join(default_work_lmt, PID, active_session)
             os.environ['WORK_LMT'] = new_session_path
-            # pid_path = pf.create_session_directory(new_session_path)
-            # pid_lmtoy_path = os.path.join(pid_path, 'lmtoy')
         if triggered_id == Session.NEW_BTN.value:
             modal_open, message = pf.handle_new_session()
         elif triggered_id == Session.SAVE_BTN.value:
@@ -149,17 +144,6 @@ def display_selected_runfile(selected_values, del_runfile, n1, n2, selRow, exist
     dff = pd.DataFrame(columns=table_column)
     highlight = no_update
     runfile_title = ''
-    # Initialize default values
-    work_lmt = pf.get_work_lmt_path(config)
-    if pf.check_user_exists():
-        pid_lmtoy_path = pf.get_pid_lmtoy_path(work_lmt, current_user.username)
-        # runfiles = pf.find_runfiles(pid_lmtoy_path, current_user.username)
-        # if runfiles and len(runfiles) > 0:
-        #     first_runfile = runfiles[0]
-        #     print('first_runfile', first_runfile)
-        #     df, runfile_title, highlight = pf.initialize_common_variables(os.path.join(pid_lmtoy_path, first_runfile),
-        #                                                                   selRow, init_session)
-    # Fetching runfile from session
     selected_runfile = pf.get_selected_runfile(ctx, data_store)
     if selected_runfile is None:
         selected_runfile = data_store['runfile']
@@ -364,32 +348,35 @@ def submit_runfile(n, data_store):
     [
         Input(Table.NEW_ROW_BTN.value, 'n_clicks'),
         Input(Table.EDIT_ROW_BTN.value, 'n_clicks'),
+        Input(Session.SESSION_LIST.value, 'active_item'),
     ],
     State(Storage.DATA_STORE.value, 'data'),
-    prevent_initial_call=True
 )
-def update_options(n1, n2, stored_data):
+def update_options(n1, n2, active_item, stored_data):
     if not pf.check_user_exists():
         return no_update
     # Create options for the dropdown
-    json_file_name = default_session_name + current_user.username + '/' + current_user.username + '_source.json'
-
+    json_file_name = default_session_prefix + current_user.username + '/' + current_user.username + '_source.json'
+    print('stored_data', stored_data)
     if os.path.exists(json_file_name):
         with open(json_file_name, 'r') as json_file:
             data = json.load(json_file)
+            source_options = [{'label': source, 'value': source} for source in data.keys()]
+            stored_data['source'] = data
     #
     # # get default mk_runs.py
+    elif stored_data['source']:
+        sources = stored_data['source']
+        source_options = [{'label': source, 'value': source} for source in sources]
+
     else:
-        default_mk_path = default_session_name + current_user.username
-        print('path to import mk_runs', default_mk_path)
-        if "mk_runs" in sys.modules:
-            del sys.modules["mk_runs"]
-        sys.path.insert(0, default_mk_path)
-        from mk_runs import on
-        data = on
-        print('on', on)
-    source_options = [{'label': source, 'value': source} for source in data.keys()]
-    stored_data['source'] = data
+        sources = pf.get_source()
+        print('getting sources', sources)
+
+        source_options = [{'label': source, 'value': source} for source in sources]
+
+        stored_data['source'] = sources
+
     return source_options, stored_data
 
 
@@ -402,9 +389,7 @@ def update_options(n1, n2, stored_data):
 def update_obsnum_options(selected_source, stored_data):
     if not pf.check_user_exists() or not selected_source:
         return no_update
-    # file_name = '/home/lmt/work_lmt/lmtoy_run/lmtoy_' + current_user.username + '/' + current_user.username + '_source.json'
-    # with open(file_name, 'r') as json_file:
-    #     data = json.load(json_file)
+    print('source', stored_data['source'])
     obsnums = stored_data['source'][selected_source]
     options = [{'label': obsnum, 'value': str(obsnum)} for obsnum in obsnums]
     return options
@@ -466,13 +451,3 @@ app.clientside_callback(
     Output("js-container", "children"),
     [Input("draggable-modal", "is_open")],
 )
-
-# @app.callback(
-#     [Output({'type': 'runfile-radio', 'index': ALL}, 'value'), Output(Runfile.TABLE.value, "selected_rows")],
-#     [Input({'type': 'runfile-radio', 'index': ALL}, 'value'), Input(Runfile.TABLE.value, "selected_rows"),]
-# )
-# def update_table_selections(selected_rows_1, selected_rows_2):
-#     # Update both tables' selected rows to keep them synchronized
-#     print('selected_runfile', selected_rows_1)
-#     print('selected_row', selected_rows_2)
-#     return selected_rows_1, selected_rows_1

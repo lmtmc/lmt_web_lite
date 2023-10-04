@@ -6,18 +6,21 @@ import dash_bootstrap_components as dbc
 from my_server import app, User
 from flask_login import login_user
 from werkzeug.security import check_password_hash
+from functions import project_function as pf
+from views.ui_elements import Storage
+import time
 
-
+default_work_lmt = pf.get_work_lmt_path(config)
 # Function to get pid options from the given path
 def get_pid_option(path):
     result = []
     for folder_name in os.listdir(path):
         full_path = os.path.join(path, folder_name)
-        
+
         if os.path.isdir(full_path) and folder_name.startswith('lmtoy_'):
             label_value = os.path.basename(folder_name.split('_')[1])
             result.append({'label': label_value, 'value': label_value})
-            
+
     return result
 
 
@@ -30,6 +33,8 @@ if work_lmt:
 else:
     lmtoy_pid_path = config['path']['work_lmt'] + '/lmtoy_run'
     print('Environment variable WORK_LMT not exists, get it from config.txt')
+
+default_work_lmt = work_lmt
 # lmtoy_run path which includes the PIDs
 pid_options = get_pid_option(lmtoy_pid_path)
 
@@ -70,13 +75,17 @@ layout = html.Div(
 
 @app.callback(
     Output('pwd-box', 'value'),
+    Output(Storage.DATA_STORE.value, 'data', allow_duplicate=True),
     Input('url_login', 'pathname'),
     prevent_initial_call=True
 )
 def clear_password_on_logout(pathname):
     if pathname == '/logout' and not current_user.is_authenticated:
+        os.environ['WORK_LMT'] = default_work_lmt
         logout_user()
-        return ''  # Return an empty string to clear the password field
+        data = {'runfile': None, 'pid': None, 'source': {}, 'selected_row': None}
+        os.environ['WORK_LMT'] = default_work_lmt
+        return '', data  # Return an empty string to clear the password field
     return no_update  # No update if the condition is not met
 
 
@@ -99,19 +108,28 @@ def disable_login_button(pid, password):
     Output('url_login', 'pathname'),
     Output('output-state', 'children'),
     Output('output-state', 'is_open'),
+    Output(Storage.DATA_STORE.value, 'data', allow_duplicate=True),
     Input('login-button', 'n_clicks'),
     State('pid', 'value'),
     State('pwd-box', 'value'),
     State('output-state', 'is_open'),
+    State(Storage.DATA_STORE.value, 'data'),
+    prevent_initial_call='initial_duplicate'
 )
-def login_state(n_clicks, pid, password, is_open):
+def login_state(n_clicks, pid, password, is_open, data):
     if n_clicks:
         user = User.query.filter_by(username=pid).first()
         if user and check_password_hash(user.password, password):
             login_user(user)
-            return '/account', '', is_open
+            time.sleep(1)
+            print('pid', pid)
+            sources = pf.get_source(pid)
+            print('source', sources)
+            data['source'] = sources
+            data['pid'] = pid
+            return '/account', '', is_open, data
         else:
             print('invalid password')
-            return '/login', 'Invalid password', not is_open
+            return '/login', 'Invalid password', not is_open, data
     else:
         return no_update
