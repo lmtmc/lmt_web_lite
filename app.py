@@ -71,6 +71,7 @@ def toggle_navbar_collapse(n, is_open):
     return is_open
 
 
+# add a port arg to the command line
 parser = argparse.ArgumentParser(description="Run the Dash app")
 parser.add_argument("-p", "--port", type=int, default=8000,
                     help="Port to run the Dash app on")

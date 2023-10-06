@@ -104,6 +104,4 @@ present $WORK_LMT will be used, but if not, the value in config.txt will be used
    1. source: can't be none and exists for each runfile?
    2. obsnums: multiply selections, can it be none?
    3. bank: only available for some projects?
-   4. Time Range: define min, max, step values?
-   5. Resolution (pix_list): better way to display?
-   6. And so on...
+   4. And so on...

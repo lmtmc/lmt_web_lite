@@ -7,7 +7,6 @@ from flask_login import LoginManager, UserMixin
 from config import config
 import dash_bootstrap_components as dbc
 from datetime import datetime
-from flask_migrate import Migrate
 
 server = Flask(__name__)
 server.config['SECRET_KEY'] = os.urandom(12)
@@ -18,9 +17,7 @@ db = SQLAlchemy(server)
 
 # enable running the Dash app on the Flask server
 app = dash.Dash(__name__, server=server,
-                external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.FONT_AWESOME, dbc.icons.BOOTSTRAP,
-                                      #'https://cdn.jsdelivr.net/npm/sidebartemplate/dist/sidebar-template.min.css'
-                                      ],
+                external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.FONT_AWESOME, dbc.icons.BOOTSTRAP],
                 meta_tags=[
                     {'charset': 'utf-8'},
                     {'name': 'viewport',

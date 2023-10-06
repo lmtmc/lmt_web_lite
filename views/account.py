@@ -97,7 +97,7 @@ def display_job_history(n):
                          "enableCellTextSelection": True,
                          "ensureDomOrder": True,
                          "pagination": True, "paginationAutoPageSize": True},
-        style={'height': 500, "margin": 20, }
+        style={'height': 650, "margin": 20, }
     )
 
     return job_history_grid

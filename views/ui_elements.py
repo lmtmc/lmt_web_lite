@@ -103,8 +103,8 @@ class Storage(Enum):
     URL_LOCATION = 'url_session1'
 
 
-session_height = '600px'
-parameter_body_height = '500px'
+session_height = '650px'
+parameter_body_height = '650px'
 # UI Elements
 data_store = dcc.Store(id='data-store', data={'pid': None, 'runfile': None, 'source': {}, 'selected_row': None},
                        storage_type='session'),
@@ -120,7 +120,7 @@ runfile_table = dash_table.DataTable(
     data=[],
     filter_action="native",
     columns=columns,
-    page_size=7,
+    page_size=10,
     style_cell={
         'textAlign': 'left',
         'font-size': '15px',
@@ -128,7 +128,7 @@ runfile_table = dash_table.DataTable(
         'maxWidth': 125,
     },
     style_table={
-        'min-height': '400px',
+        'min-height': '500px',
         'overflowX': 'auto'
     },
     style_header={
@@ -163,11 +163,11 @@ session_layout = dbc.Card(
             ], style={'overflow': 'auto', 'max-height': session_height}),
 
         dbc.CardFooter(dbc.Row([
-            dbc.Col(html.Button([html.I(className="fas fa-trash me-2"), 'Delete Session'],
-                                id=Session.DEL_BTN.value, style={'margin-left': 'auto'},
+            dbc.Col(html.Button([html.I(className="fas fa-trash me-2"), 'Delete'],
+                                id=Session.DEL_BTN.value,
                                 className='ms-auto'), width='auto'),
-            dbc.Col(html.Button([html.I(className="fa-solid fa-clone me-2"), 'Clone Session'],
-                                id=Session.NEW_BTN.value, style={'margin-left': 'auto'},
+            dbc.Col(html.Button([html.I(className="fa-solid fa-clone me-2"), 'Clone'],
+                                id=Session.NEW_BTN.value,
                                 className='ms-auto'), width='auto')
         ], align='center', justify='end'
         ), ),
@@ -380,8 +380,7 @@ parameter_layout = dbc.Card(
             clone_runfile_modal,
             html.Div(dbc.Alert(id=Runfile.VALIDATION_ALERT.value, is_open=False, dismissable=True, duration=3000)),
             html.Br(),
-        ],
-            # style={'height': parameter_body_height, "overflowY": "auto"}
+        ], style={'overflow': 'auto', 'max-height': parameter_body_height}
         ),
 
         html.Div(dcc.ConfirmDialog(

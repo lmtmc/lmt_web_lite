@@ -1,5 +1,3 @@
-# todo clear session
-# clone row not working
 import os
 import time
 import json
@@ -43,8 +41,8 @@ layout = html.Div(
         html.Div(ui.url_location),
         dbc.Row(
             [
-                dbc.Col(ui.session_layout, width=4),
-                dbc.Col(ui.parameter_layout, width=8),
+                dbc.Col(ui.session_layout, width=2),
+                dbc.Col(ui.parameter_layout, width=10),
                 # html.Div(ui.data_store),
                 html.Br(),
                 dcc.Location(id='project_url', refresh=False)
@@ -162,6 +160,7 @@ def display_selected_runfile(selected_values, del_runfile, n1, n2, selRow, exist
 
 
 # Can not edit the default session
+# show runfile delete and clone button after selecting a runfile
 # show edit row button after selecting a row
 @app.callback(
     [
@@ -170,19 +169,33 @@ def display_selected_runfile(selected_values, del_runfile, n1, n2, selRow, exist
         Output(Table.DEL_ROW_BTN.value, 'style'),
         Output(Runfile.DEL_BTN.value, 'style'),
         Output(Runfile.CLONE_BTN.value, 'style'),
-        Output(Session.DEL_BTN.value, 'style')
+        Output(Session.DEL_BTN.value, 'style'),
+        Output(Session.NEW_BTN.value, 'style'),
     ],
     [
         Input(Session.SESSION_LIST.value, 'active_item'),
+        Input({'type': 'runfile-radio', 'index': ALL}, 'value'),
         Input(Runfile.TABLE.value, "selected_rows")
     ],
 )
-def default_session(active_session, selected_rows):
+def default_session(active_session, selected_runfile, selected_rows):
+    print('active_session', active_session, 'selected_runfile', selected_runfile, 'selected_rows', selected_rows)
+    if not active_session:
+        return [SHOW_STYLE] * 7
+
+        # Default all to hide
+    new_row_btn, edit_row_btn, del_row_btn, runfile_del, runfile_clone, session_del, session_new = [HIDE_STYLE] * 7
     if active_session == init_session:
-        return [HIDE_STYLE] * 6
-    show_or_hide = SHOW_STYLE if active_session and selected_rows else HIDE_STYLE
-    hide_delete_session = SHOW_STYLE if active_session and active_session != init_session else HIDE_STYLE
-    return show_or_hide, show_or_hide, show_or_hide, SHOW_STYLE, SHOW_STYLE, hide_delete_session
+        session_new = SHOW_STYLE
+    else:
+        session_del = SHOW_STYLE
+        if selected_runfile and selected_runfile[1]:
+
+            runfile_del, runfile_clone = [SHOW_STYLE] * 2
+        if selected_rows:
+            new_row_btn, edit_row_btn, del_row_btn = [SHOW_STYLE] * 3
+
+    return new_row_btn, edit_row_btn, del_row_btn, runfile_del, runfile_clone, session_del, session_new
 
 
 # Define fixed Output objects
@@ -215,8 +228,6 @@ all_states = fixed_states + dynamic_states
         Input(Table.DEL_ROW_BTN.value, 'n_clicks'),
         Input(Parameter.SAVE_ROW_BTN.value, 'n_clicks'),
         Input(Parameter.UPDATE_BTN.value, 'n_clicks'),
-        # Input(Runfile.TABLE.value, "selected_rows"),
-        # Input(Storage.DATA_STORE.value, 'data')
     ],
     all_states,
     prevent_initial_call=True,
@@ -248,11 +259,13 @@ def new_job(n1, n2, n3, n4, n5, selected_row, data, df_data, *state_values):
             new_row = {key: value for key, value in zip(table_column, parameters)}
 
             if triggered_id == Parameter.SAVE_ROW_BTN.value:
+                # add new row to the end of the table
                 df = df._append(new_row, ignore_index=True)
             else:
                 df.iloc[selected_row[0]] = new_row
             pf.save_runfile(df, data['runfile'])
     output_values[1] = df.to_dict('records')
+    print('output_values', output_values[1])
     return output_values
 
 
@@ -380,6 +393,7 @@ def update_options(n1, n2, active_item, stored_data):
     return source_options, stored_data
 
 
+# If the source dropdown is changed, update the obsnum dropdown
 @app.callback(
     Output(Parameter.OBSNUM_DROPDOWN.value, 'options'),
     Input(Parameter.SOURCE_DROPDOWN.value, 'value'),
@@ -441,7 +455,7 @@ def select_all_beam(n_clicks, current_values, options):
     return current_values, options
 
 
-# todo modal draggable
+# make modal draggable
 app.clientside_callback(
     # ClientsideFunction(namespace='clientside', function_name='make_draggable'),
     '''

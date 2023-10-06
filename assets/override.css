@@ -366,3 +366,7 @@ display : block !important;
     height: 3px;   /* The thickness of the line */
     background-color: currentColor; /* Use the text's current color for the line */
 }
+
+.my-radio-items .selected {  /* or whatever the actual class Dash uses for selected items */
+    background-color: yellow;  /* or any other styling changes you want */
+}

@@ -12,14 +12,25 @@ import ast
 import re
 import time
 
-default_time_range = [3, 7]
+
+# Function to get pid options from the given path
+def get_pid_option(path):
+    result = []
+    for folder_name in os.listdir(path):
+        full_path = os.path.join(path, folder_name)
+
+        if os.path.isdir(full_path) and folder_name.startswith('lmtoy_'):
+            label_value = os.path.basename(folder_name.split('_')[1])
+            result.append({'label': label_value, 'value': label_value})
+
+    return result
 
 
 def get_work_lmt_path(config):
     work_lmt = os.environ.get('WORK_LMT')
 
     if work_lmt:
-        print(f'account: WORK_LMT = {work_lmt}')
+        print(f'login: WORK_LMT = {work_lmt}')
     elif 'path' in config and 'work_lmt' in config['path']:
         work_lmt = config['path']['work_lmt']
         print('Environment variable WORK_LMT not exists, get it from config.txt')
@@ -93,12 +104,18 @@ def mk_runs(pid):
     return output
 
 
-def get_source(pid):
-    output = mk_runs(pid)
-    pattern = r"(\w+)\[\d+/\d+\] : ([\d,]+)"
-    matches = re.findall(pattern, output)
-
-    sources = {name: list(map(int, obsnums.split(','))) for name, obsnums in matches}
+def get_source(default_work_lmt, pid):
+    pid_path = os.path.join(default_work_lmt, 'lmtoy_run', f'lmtoy_{pid}')
+    json_file = os.path.join(pid_path, 'source.json')
+    print(f"json_file: {json_file}")
+    if os.path.exists(json_file):
+        json_data = load_source_data(json_file)
+        sources = json_data
+    else:
+        output = mk_runs(pid)
+        pattern = r"(\w+)\[\d+/\d+\] : ([\d,]+)"
+        matches = re.findall(pattern, output)
+        sources = {name: list(map(int, obsnums.split(','))) for name, obsnums in matches}
     return sources
 
 

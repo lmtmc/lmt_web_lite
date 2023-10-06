@@ -11,32 +11,9 @@ from views.ui_elements import Storage
 import time
 
 default_work_lmt = pf.get_work_lmt_path(config)
-# Function to get pid options from the given path
-def get_pid_option(path):
-    result = []
-    for folder_name in os.listdir(path):
-        full_path = os.path.join(path, folder_name)
-
-        if os.path.isdir(full_path) and folder_name.startswith('lmtoy_'):
-            label_value = os.path.basename(folder_name.split('_')[1])
-            result.append({'label': label_value, 'value': label_value})
-
-    return result
-
-
-# lmtoy_pid_path = config['path']['work_lmt']
-work_lmt = os.environ.get('WORK_LMT')
-
-if work_lmt:
-    lmtoy_pid_path = os.path.join(work_lmt, 'lmtoy_run')
-    print('login: WORK_LMT = ', work_lmt)
-else:
-    lmtoy_pid_path = config['path']['work_lmt'] + '/lmtoy_run'
-    print('Environment variable WORK_LMT not exists, get it from config.txt')
-
-default_work_lmt = work_lmt
-# lmtoy_run path which includes the PIDs
-pid_options = get_pid_option(lmtoy_pid_path)
+print('default_work_lmt', default_work_lmt)
+pid_options = pf.get_pid_option(os.path.join(default_work_lmt, 'lmtoy_run'))
+print('pid_options', pid_options)
 
 layout = html.Div(
     children=[
@@ -123,7 +100,7 @@ def login_state(n_clicks, pid, password, is_open, data):
             login_user(user)
             time.sleep(1)
             print('pid', pid)
-            sources = pf.get_source(pid)
+            sources = pf.get_source(default_work_lmt, pid)
             print('source', sources)
             data['source'] = sources
             data['pid'] = pid
