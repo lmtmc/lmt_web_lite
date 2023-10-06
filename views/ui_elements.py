@@ -104,7 +104,7 @@ class Storage(Enum):
 
 
 session_height = '650px'
-parameter_body_height = '650px'
+parameter_body_height = '550px'
 # UI Elements
 data_store = dcc.Store(id='data-store', data={'pid': None, 'runfile': None, 'source': {}, 'selected_row': None},
                        storage_type='session'),
@@ -128,7 +128,7 @@ runfile_table = dash_table.DataTable(
         'maxWidth': 125,
     },
     style_table={
-        'min-height': '500px',
+        'min-height': '420px',
         'overflowX': 'auto'
     },
     style_header={
@@ -371,7 +371,7 @@ parameter_layout = dbc.Card(
                             ]), width='auto', className='ms-auto')
                     ], align='center', justify='between')
                 ])
-            ])
+            ]), style={'height': '50px'}
         ),
         dbc.CardBody([
             runfile_table,

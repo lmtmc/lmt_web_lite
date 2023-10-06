@@ -99,9 +99,7 @@ def login_state(n_clicks, pid, password, is_open, data):
         if user and check_password_hash(user.password, password):
             login_user(user)
             time.sleep(1)
-            print('pid', pid)
             sources = pf.get_source(default_work_lmt, pid)
-            print('source', sources)
             data['source'] = sources
             data['pid'] = pid
             return '/account', '', is_open, data

@@ -43,8 +43,6 @@ layout = html.Div(
             [
                 dbc.Col(ui.session_layout, width=2),
                 dbc.Col(ui.parameter_layout, width=10),
-                # html.Div(ui.data_store),
-                html.Br(),
                 dcc.Location(id='project_url', refresh=False)
 
             ]
@@ -179,7 +177,6 @@ def display_selected_runfile(selected_values, del_runfile, n1, n2, selRow, exist
     ],
 )
 def default_session(active_session, selected_runfile, selected_rows):
-    print('active_session', active_session, 'selected_runfile', selected_runfile, 'selected_rows', selected_rows)
     if not active_session:
         return [SHOW_STYLE] * 7
 
@@ -265,7 +262,6 @@ def new_job(n1, n2, n3, n4, n5, selected_row, data, df_data, *state_values):
                 df.iloc[selected_row[0]] = new_row
             pf.save_runfile(df, data['runfile'])
     output_values[1] = df.to_dict('records')
-    print('output_values', output_values[1])
     return output_values
 
 
@@ -403,7 +399,6 @@ def update_options(n1, n2, active_item, stored_data):
 def update_obsnum_options(selected_source, stored_data):
     if not pf.check_user_exists() or not selected_source:
         return no_update
-    print('source', stored_data['source'])
     obsnums = stored_data['source'][selected_source]
     options = [{'label': obsnum, 'value': str(obsnum)} for obsnum in obsnums]
     return options
