@@ -88,9 +88,9 @@ def find_files(folder_path, prefix):
     return sorted(files)
 
 
-def mk_runs(pid):
+def mk_runs():
     # make make_runs.py path
-    mk_runs_path = os.path.join(os.environ.get('WORK_LMT'), 'lmtoy_run', f'lmtoy_{pid}')
+    mk_runs_path = os.path.join(os.environ.get('WORK_LMT'), 'lmtoy_run', f'lmtoy_{current_user.username}')
     print('new work_lmt', os.environ.get('WORK_LMT'))
     mk_runs_file = os.path.join(mk_runs_path, 'mk_runs.py')
     print(f"begin to run {mk_runs_file} in {mk_runs_path}")
@@ -112,7 +112,7 @@ def get_source(default_work_lmt, pid):
         json_data = load_source_data(json_file)
         sources = json_data
     else:
-        output = mk_runs(pid)
+        output = mk_runs()
         pattern = r"(\w+)\[\d+/\d+\] : ([\d,]+)"
         matches = re.findall(pattern, output)
         sources = {name: list(map(int, obsnums.split(','))) for name, obsnums in matches}
@@ -169,14 +169,15 @@ def get_session_list(default_session, pid_path):
 
 
 def handle_save_session(pid_path, name):
+    print('name', name)
     if not name:
-        return False, "Please input a name!"
-
-    new_session_path = os.path.join(pid_path, name)
+        return True, "Please input a session number!"
+    new_session_name = f'Session-{name}'
+    new_session_path = os.path.join(pid_path, new_session_name)
     # Check if the session directory already exists
     if os.path.exists(new_session_path):
         # If the directory not exist, create it
-        return False, f'{name} already exists'
+        return True, f'{new_session_name} already exists'
 
     os.environ['WORK_LMT'] = new_session_path
     os.environ['PID'] = current_user.username
@@ -188,10 +189,7 @@ def handle_save_session(pid_path, name):
         'lmtoy_run $PID'
     ]
     process_cmd(commands)
-    # os.mkdir(new_session_path)
-    # for file in original_path:
-    #     shutil.copy(file, new_session_path)
-    return True, f'{name} created successfully!'
+    return False, f'{new_session_name} created successfully!'
 
 
 def clone_runfile(runfile, name):

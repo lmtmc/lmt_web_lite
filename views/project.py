@@ -1,3 +1,4 @@
+# todo save the filtered data to a new table
 import os
 import time
 import json
@@ -86,8 +87,7 @@ def update_session_display(n1, n2, n3, n4, n5, n6, n7, active_session, name):
         if triggered_id == Session.NEW_BTN.value:
             modal_open, message = pf.handle_new_session()
         elif triggered_id == Session.SAVE_BTN.value:
-            new_session_name = f'Session-{name}'
-            modal_open, message = pf.handle_save_session(default_pid_path, new_session_name)
+            modal_open, message = pf.handle_save_session(default_pid_path, name)
         elif triggered_id == Session.CONFIRM_DEL.value:
             message = pf.handle_delete_session(default_pid_path, active_session)
         if triggered_id in update_btn:
@@ -187,7 +187,6 @@ def default_session(active_session, selected_runfile, selected_rows):
     else:
         session_del = SHOW_STYLE
         if selected_runfile and selected_runfile[1]:
-
             runfile_del, runfile_clone = [SHOW_STYLE] * 2
         if selected_rows:
             new_row_btn, edit_row_btn, del_row_btn = [SHOW_STYLE] * 3
@@ -271,7 +270,8 @@ def new_job(n1, n2, n3, n4, n5, selected_row, data, df_data, *state_values):
 @app.callback(
     [
         Output(Parameter.SAVE_ROW_BTN.value, 'style'),
-        Output(Parameter.UPDATE_BTN.value, 'style')
+        Output(Parameter.UPDATE_BTN.value, 'style'),
+        Output(Parameter.APPLYALL_BTN.value, 'style'),
     ],
     [
         Input(Table.NEW_ROW_BTN.value, 'n_clicks'),
@@ -279,11 +279,11 @@ def new_job(n1, n2, n3, n4, n5, selected_row, data, df_data, *state_values):
     ], )
 def update_new_btn(n1, n2):
     if ctx.triggered_id == Table.NEW_ROW_BTN.value:
-        return SHOW_STYLE, HIDE_STYLE
+        return SHOW_STYLE, HIDE_STYLE, SHOW_STYLE
     if ctx.triggered_id == Table.EDIT_ROW_BTN.value:
-        return HIDE_STYLE, SHOW_STYLE
+        return HIDE_STYLE, SHOW_STYLE, SHOW_STYLE
     else:
-        return no_update, no_update
+        return no_update, no_update, no_update
 
 
 # if click delete button show the confirmation
@@ -379,7 +379,7 @@ def update_options(n1, n2, active_item, stored_data):
         source_options = [{'label': source, 'value': source} for source in sources]
 
     else:
-        sources = pf.get_source()
+        sources = pf.get_source(default_work_lmt, current_user.username)
         print('getting sources', sources)
 
         source_options = [{'label': source, 'value': source} for source in sources]

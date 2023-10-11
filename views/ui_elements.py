@@ -91,6 +91,7 @@ table_column[3] = 'beam'
 
 
 class Parameter(Enum):
+    APPLYALL_BTN = 'apply-all'
     UPDATE_BTN = 'update-row'
     SAVE_ROW_BTN = 'save-row'
     MODAL = 'draggable-modal'
@@ -329,6 +330,7 @@ runfile_modal = pf.create_modal('Edit parameter',
 
                                 edit_parameter_layout,
                                 [
+                                    dbc.Checklist("Apply to All", id=Parameter.APPLYALL_BTN.value, className="ml-auto"),
                                     html.Button("Update", id=Parameter.UPDATE_BTN.value, className="ml-auto"),
                                     html.Button("Save new row", id=Parameter.SAVE_ROW_BTN.value, className="ml-auto"),
                                 ],
