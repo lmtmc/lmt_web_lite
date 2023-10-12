@@ -3,7 +3,7 @@ from my_server import app
 from flask_login import logout_user, current_user
 from flask import session
 import dash_bootstrap_components as dbc
-from views import login, account, joblist_unity, project, ui_elements as ui
+from views import login, account, joblist_unity, project, help, ui_elements as ui
 import argparse
 
 app.layout = html.Div(
@@ -32,6 +32,8 @@ def display_page(pathname):
         return auth_routes[pathname]
     elif pathname == '/joblist_unity':
         return joblist_unity.layout
+    elif pathname == '/help':
+        return help.layout
     elif pathname == '/logout':
         if current_user.is_authenticated:
             logout_user()
