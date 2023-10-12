@@ -1,4 +1,5 @@
 # todo save the filtered data to a new table
+# todo apply to all to each parameter
 import os
 import time
 import json
@@ -309,12 +310,13 @@ def display_confirmation(n_clicks):
     ],
     [
         State(Storage.DATA_STORE.value, 'data'),
+        State(Runfile.TABLE.value, 'derived_virtual_data'),
         State(Runfile.NAME_INPUT.value, 'value'),
     ],
 
     prevent_initial_call=True
 )
-def copy_runfile(n1, n2, data_store, new_name):
+def copy_runfile(n1, n2, data_store, virtual_data, new_name):
     modal_open = False
     status = False
     message = ''
@@ -324,7 +326,9 @@ def copy_runfile(n1, n2, data_store, new_name):
     if triggered_id == Runfile.SAVE_CLONE_RUNFILE_BTN.value:
         runfile_to_clone = data_store.get('runfile', '')
         new_runfile_name = f"{current_user.username}.{new_name}"
-        message, status = pf.clone_runfile(runfile_to_clone, new_runfile_name)
+        new_runfile_path = os.path.join(os.path.dirname(runfile_to_clone), new_runfile_name)
+        pf.save_runfile(pd.DataFrame(virtual_data), new_runfile_path)
+        message = f'Runfile {new_runfile_name} saved successfully!'
     return modal_open, message, status
 
 
