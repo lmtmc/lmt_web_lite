@@ -1,10 +1,17 @@
+import os
+
 from dash import dcc, html, Input, Output, State
 from my_server import app
 from flask_login import logout_user, current_user
 from flask import session
 import dash_bootstrap_components as dbc
 from views import login, account, joblist_unity, project, help, ui_elements as ui
+from functions import project_function as pf
+from config import config
+import os
 import argparse
+
+default_work_lmt = pf.get_work_lmt_path(config)
 
 app.layout = html.Div(
     [
@@ -38,6 +45,7 @@ def display_page(pathname):
         if current_user.is_authenticated:
             logout_user()
             session.clear()
+            os.environ['WORK_LMT'] = default_work_lmt
         return login.layout
     elif not current_user.is_authenticated:
         return dcc.Location(pathname='/login', id='url_redirect')

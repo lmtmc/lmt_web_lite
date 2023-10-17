@@ -1,9 +1,9 @@
-# todo save the filtered data to a new table
 # todo apply to all to each parameter
+# todo if no runfile selected then hide the parameter table
+
 import os
 import time
 import json
-import sys
 
 from dash import dcc, html, Input, Output, State, ALL, MATCH, dash_table, ctx, no_update, ClientsideFunction
 from dash.exceptions import PreventUpdate
@@ -142,8 +142,8 @@ def display_selected_runfile(selected_values, del_runfile, n1, n2, selRow, exist
     highlight = no_update
     runfile_title = ''
     selected_runfile = pf.get_selected_runfile(ctx, data_store)
-    if selected_runfile is None:
-        selected_runfile = data_store['runfile']
+    # if selected_runfile is None:
+    #     selected_runfile = data_store['runfile']
     # If a different runfile is selected, reinitialize variables
     if selected_runfile:
         df, runfile_title, highlight = pf.initialize_common_variables(selected_runfile, selRow, init_session)
@@ -187,7 +187,8 @@ def default_session(active_session, selected_runfile, selected_rows):
         session_new = SHOW_STYLE
     else:
         session_del = SHOW_STYLE
-        if selected_runfile and selected_runfile[1]:
+        if selected_runfile:
+            # if selected_runfile[1]:
             runfile_del, runfile_clone = [SHOW_STYLE] * 2
         if selected_rows:
             new_row_btn, edit_row_btn, del_row_btn = [SHOW_STYLE] * 3

@@ -11,7 +11,7 @@ import json
 import ast
 import re
 import time
-
+from lmtoy import runs
 
 # Function to get pid options from the given path
 def get_pid_option(path):
@@ -350,10 +350,17 @@ def dry_run(runfile):
     df = df_runfile(runfile)
     message = 'Submitted!'
     color = 'success'
-    if 'admit' in df.columns:
-        if not all(x in ['0', '1'] for x in df['admit']):
-            message = 'Please input 0 or 1 for in the admit field!'
-            color = 'danger'
+    # if 'admit' in df.columns:
+    #     if not all(x in ['0', '1'] for x in df['admit']):
+    #         message = 'Please input 0 or 1 for in the admit field!'
+    #         color = 'danger'
+    message = f'runs.verify(\'bench1.run\')'
+    # if message is None:
+    #     message = 'Submitted!'
+    #     color = 'success'
+    # else:
+    #     message = message
+    #     color = 'danger'
     return message, color
 
 
