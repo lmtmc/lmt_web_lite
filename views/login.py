@@ -11,7 +11,8 @@ from views.ui_elements import Storage
 import time
 
 default_work_lmt = pf.get_work_lmt_path(config)
-print('default_work_lmt', default_work_lmt)
+os.environ['WORK_LMT'] = default_work_lmt
+print('default WORK_LMT', default_work_lmt)
 pid_options = pf.get_pid_option(os.path.join(default_work_lmt, 'lmtoy_run'))
 print('pid_options', pid_options)
 

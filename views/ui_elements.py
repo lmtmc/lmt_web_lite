@@ -129,8 +129,10 @@ runfile_table = dash_table.DataTable(
         'maxWidth': 125,
     },
     style_table={
-        'min-height': '420px',
-        'overflowX': 'auto'
+        'height': '420px',
+        'overflowX': 'auto',
+        'overflowY': 'auto',
+        'padding': '20px',
     },
     style_header={
         'fontWeight': 'bold',
@@ -164,10 +166,10 @@ session_layout = dbc.Card(
             ], style={'overflow': 'auto', 'max-height': session_height}),
 
         dbc.CardFooter(dbc.Row([
-            dbc.Col(html.Button([html.I(className="fas fa-trash me-2"), 'Delete'],
+            dbc.Col(html.Button([html.I(className="fas fa-trash me-2"), 'Delete Session'],
                                 id=Session.DEL_BTN.value,
                                 className='ms-auto'), width='auto'),
-            dbc.Col(html.Button([html.I(className="fa-solid fa-clone me-2"), 'Clone'],
+            dbc.Col(html.Button([html.I(className="fa-solid fa-clone me-2"), 'Clone Session'],
                                 id=Session.NEW_BTN.value,
                                 className='ms-auto'), width='auto')
         ], align='center', justify='end'
@@ -219,28 +221,32 @@ edit_parameter_layout = [
     html.Div([
         dbc.Label('Beam', className='large-label'),
         dbc.Row([
-            dbc.Col([dbc.Label('Bank'), dbc.RadioItems(id=column_list[2], options=bank_options, inline=True)], ),
+            dbc.Col([dbc.Label('Bank'), dbc.RadioItems(id=column_list[2], options=bank_options, inline=True)],
+                    width={"size": 3}),
             dbc.Col([
                 dbc.Row([
-                    dbc.Col(dbc.Label('Exclude Beams'), width={"size": 'auto', "offset": 0}),
-                    dbc.Col(dbc.Button('Select All', id='all-beam', size='sm', color='info'),
-                            style={'display': 'flex', 'justify-content': 'flex-end'})
-                ]),
-                dbc.Row([
-                    dbc.Col(dbc.Checklist(id=column_list[3], options=beam_options,
-                                          inline=True), width=12)
-                ]),
+                    dbc.Col(dbc.Label('Exclude Beams', id='label',
+                                      # className='d-flex justify-content-center align-items-center'
+                                      ),
 
-            ]),
+                            ),
+                    dbc.Col(dbc.Button('Check All', id='all-beam', outline=True, color='primary', size='md'),
+                            className='d-flex justify-content-between mb-2',
 
-            # todo rangeslider not working
+                            ),
+                ]),
+                dbc.Row([dbc.Col(dbc.Checklist(id=column_list[3], options=beam_options,
+                                               inline=True)),
+                         ]),
+
+            ], width={"size": 5, }),
             dbc.Col([
                 dbc.Label('Time Range'),
                 dcc.Input(id=column_list[4], type='text', placeholder='min, max'),
 
-            ]),
+            ], width={"size": 3}),
 
-        ], style={'margin-bottom': '20px'}),
+        ], style={'margin-bottom': '20px'}, )
     ]),
 
     html.Div([
@@ -382,7 +388,7 @@ parameter_layout = dbc.Card(
             clone_runfile_modal,
             html.Div(dbc.Alert(id=Runfile.VALIDATION_ALERT.value, is_open=False, dismissable=True, duration=3000)),
             html.Br(),
-        ], style={'overflow': 'auto', 'max-height': parameter_body_height}
+        ], style={'padding': '10px', 'height': parameter_body_height}
         ),
 
         html.Div(dcc.ConfirmDialog(
