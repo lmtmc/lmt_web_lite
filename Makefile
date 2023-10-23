@@ -58,8 +58,8 @@ clean:
 
 ## pjt:       test install env and lmtoy_lite
 pjt:	lmtoy_lite env
-	pip install -r requirements.txt
-	(source env/bin/activate;pip install --upgrade pip; pip install --no-deps -e lmtoy_lite)
+	(source env/bin/activate; pip install -r requirements.txt)
+	(source env/bin/activate; pip install --upgrade pip; pip install --no-deps -e lmtoy_lite)
 
 ## pjt2:      show where lmtoy now lives
 pjt2:
