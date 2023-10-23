@@ -14,7 +14,7 @@ from flask_login import current_user
 import shutil
 
 from my_server import app
-from functions import project_function as pf
+from functions import project_function as pf, my_runs
 from views import ui_elements as ui
 from views.ui_elements import Session, Runfile, Table, Parameter, Storage
 
@@ -341,7 +341,7 @@ def copy_runfile(n1, n2, data_store, virtual_data, new_name):
     return modal_open, message, status
 
 
-# open a alert to submit
+# open an alert to submit
 @app.callback(
     [
         Output(Runfile.VALIDATION_ALERT.value, 'is_open'),
@@ -355,8 +355,12 @@ def copy_runfile(n1, n2, data_store, virtual_data, new_name):
 def submit_runfile(n, data_store):
     if ctx.triggered_id != Runfile.RUN_BTN.value or not data_store.get('runfile'):
         return no_update, no_update, no_update
+    color = 'danger'
+    message = my_runs.verify(data_store['runfile'], debug=False)
+    if message is None:
+        message = 'Runfile is valid!'
+        color = 'success'
 
-    message, color = pf.dry_run(data_store['runfile'])
     return True, message, color
 
 
