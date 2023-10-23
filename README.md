@@ -6,20 +6,12 @@ This web application serves as an interface for managing pipeline jobs and confi
 
 ## Requirements
 
-Ensure LMTOY is installed and accessible on your system. Then configure it to make a valid config.txt:
-
+Change the default_work_lmt to your local work_lmt in views/login.py and views/project.py
 ```
-./configure
-```      
-under rare circumstances you might need to run something like
-```
-./configure --with-work=/home/lmt/work_lmt
+work_lmt=/home/lmt/work_lmt
 ```
       
 
-
-but normally your $WORK_LMT environment variable from LMTOY is used during the configure stage. During run-time again any 
-present $WORK_LMT will be used, but if not, the value in config.txt will be used.
 
 
 ## Setup
@@ -74,7 +66,8 @@ present $WORK_LMT will be used, but if not, the value in config.txt will be used
 ### Usage
 ###### **Login**
 - Use the Project Id (PID) to login. 
-    - Example: 'PID = '2023-S1-US-17' | Password = '1234''
+    - Example: 'PID = '2023-S1-US-17' | Password = '1234'
+    - Example: 'PID = '2023-S1-MX-3' | Password = '1234'
 
 ###### **Job Management**
 - After logging in, you will see a list of your previous jobs.
