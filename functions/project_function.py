@@ -11,7 +11,7 @@ import json
 import ast
 import re
 import time
-from lmtoy import runs
+from functions import my_runs
 
 # Function to get pid options from the given path
 def get_pid_option(path):
@@ -40,21 +40,23 @@ def get_work_lmt_path(config):
     return work_lmt
 
 
-def create_session_directory(WORK_LMT):
-    pid_path = os.path.join(WORK_LMT, current_user.username)
-    if not os.path.exists(pid_path):
-        os.mkdir(pid_path)
-    return pid_path
+# def create_session_directory(WORK_LMT):
+#     pid_path = os.path.join(WORK_LMT, current_user.username)
+#     if not os.path.exists(pid_path):
+#         os.mkdir(pid_path)
+#     return pid_path
 
 
 def check_user_exists():
     return current_user and current_user.is_authenticated
 
 
-# Functions
+# check if path exists
 def ensure_path_exists(path):
     if not path or not os.path.exists(path):
+        print(f"Path {path} does not exist")
         return False
+    print(f"Path {path} exists")
     return True
 
 
@@ -88,37 +90,6 @@ def find_files(folder_path, prefix):
     return sorted(files)
 
 
-def mk_runs():
-    # make make_runs.py path
-    mk_runs_path = os.path.join(os.environ.get('WORK_LMT'), 'lmtoy_run', f'lmtoy_{current_user.username}')
-    print('new work_lmt', os.environ.get('WORK_LMT'))
-    mk_runs_file = os.path.join(mk_runs_path, 'mk_runs.py')
-    print(f"begin to run {mk_runs_file} in {mk_runs_path}")
-    result = subprocess.run(['python', mk_runs_file], capture_output=True, text=True, cwd=mk_runs_path)
-    print(f"running result {result}")
-    # checks if the command ran successfully(return code 0)
-    if result.returncode == 0:
-        output = result.stdout  # converts the stdout string to a regular string
-    else:
-        output = result.stderr  # convert the error message to a string
-    return output
-
-
-def get_source(default_work_lmt, pid):
-    pid_path = os.path.join(default_work_lmt, 'lmtoy_run', f'lmtoy_{pid}')
-    json_file = os.path.join(pid_path, 'source.json')
-    print(f"json_file: {json_file}")
-    if os.path.exists(json_file):
-        json_data = load_source_data(json_file)
-        sources = json_data
-    else:
-        output = mk_runs()
-        pattern = r"(\w+)\[\d+/\d+\] : ([\d,]+)"
-        matches = re.findall(pattern, output)
-        sources = {name: list(map(int, obsnums.split(','))) for name, obsnums in matches}
-    return sources
-
-
 def find_runfiles(folder_path, prefix):
     matching_files = find_files(folder_path, prefix)
     if not matching_files:
@@ -127,10 +98,10 @@ def find_runfiles(folder_path, prefix):
         matching_files = find_files(folder_path, prefix)
         if matching_files:
             print(f"Matching files: {matching_files}")
-        else:
-            mk_runs()
-            time.sleep(1)
-            print("No matching files found even after running 'mk_runs.py'")
+        # else:
+        #     my_runs.mk_runs()
+        #     time.sleep(1)
+        #     print("No matching files found even after running 'mk_runs.py'")
     return matching_files
 
 
@@ -157,6 +128,7 @@ def get_runfile_option(session_path):
 
 def get_session_list(default_session, pid_path):
     session_info = get_session_info(default_session, pid_path)
+    print('session_info', session_info)
     return [
         dbc.AccordionItem(
             [dbc.RadioItems(id={'type': 'runfile-radio', 'index': session['name']},
@@ -168,27 +140,27 @@ def get_session_list(default_session, pid_path):
     ]
 
 
-def handle_save_session(pid_path, name):
-    print('name', name)
-    if not name:
-        return True, "Please input a session number!"
-    new_session_name = f'Session-{name}'
-    new_session_path = os.path.join(pid_path, new_session_name)
-    # Check if the session directory already exists
-    if os.path.exists(new_session_path):
-        # If the directory not exist, create it
-        return True, f'{new_session_name} already exists'
+# def handle_save_session(pid_path, name):
+#     print('name', name)
+#     if not name:
+#         return True, "Please input a session number!"
+#     new_session_name = f'Session-{name}'
+#     new_session_path = os.path.join(pid_path, new_session_name)
+#     # Check if the session directory already exists
+#     if os.path.exists(new_session_path):
+#         # If the directory not exist, create it
+#         return True, f'{new_session_name} already exists'
 
-    os.environ['WORK_LMT'] = new_session_path
-    os.environ['PID'] = current_user.username
-
-    # use lmtoy_run the clone PID to a new session
-    commands = [
-        'mkdir -p $WORK_LMT'
-        'cd $WORK_LMT',
-        'lmtoy_run $PID'
-    ]
-    process_cmd(commands)
+    # os.environ['WORK_LMT'] = new_session_path
+    # os.environ['PID'] = current_user.username
+    #
+    # # use lmtoy_run the clone PID to a new session
+    # commands = [
+    #     'mkdir -p $WORK_LMT'
+    #     'cd $WORK_LMT',
+    #     'lmtoy_run $PID'
+    # ]
+    # process_cmd(commands)
     return False, f'{new_session_name} created successfully!'
 
 
@@ -385,13 +357,13 @@ def get_runfile_title(runfile_path, init_session):
     return f'{session_string}: {runfile_title}'
 
 
-def get_selected_runfile(ctx, data_store):
+def get_selected_runfile(ctx):
     """Determine the selected runfile based on trigger."""
     trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
     if 'runfile-radio' in trigger_id:
         return ctx.triggered[0]['value']
-    elif data_store.get('runfile') and os.path.exists(data_store['runfile']):
-        return data_store['runfile']
+    # elif data_store.get('runfile') and os.path.exists(data_store['runfile']):
+    #     return data_store['runfile']
     return None
 
 

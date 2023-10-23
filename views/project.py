@@ -1,5 +1,6 @@
 # todo apply to all to each parameter
-# todo if no runfile selected then hide the parameter table
+# todo deleted a session and reset the active session to default
+# todo update a runfile and keep the runfile display
 
 import os
 import time
@@ -10,9 +11,9 @@ from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 import pandas as pd
 from flask_login import current_user
+import shutil
 
 from my_server import app
-from config import config
 from functions import project_function as pf
 from views import ui_elements as ui
 from views.ui_elements import Session, Runfile, Table, Parameter, Storage
@@ -24,9 +25,8 @@ HIDE_STYLE = {'display': 'none'}
 SHOW_STYLE = {'display': 'block'}
 
 # root directory of the session's working area
-default_work_lmt = pf.get_work_lmt_path(config)
+default_work_lmt = '/home/lmt/work_lmt'
 default_session_prefix = os.path.join(default_work_lmt, 'lmtoy_run/lmtoy_')
-print('default_work_lmt', default_work_lmt, 'default_session_prefix', default_session_prefix)
 
 # default session name
 init_session = 'session-0'
@@ -77,29 +77,38 @@ def update_session_display(n1, n2, n3, n4, n5, n6, n7, active_session, name):
     triggered_id = ctx.triggered_id
     if not pf.check_user_exists():
         return no_update, no_update, "User is not authenticated"
-    default_pid_path = pf.create_session_directory(default_work_lmt)
+    pid_path = os.path.join(default_work_lmt, current_user.username)
+    if not os.path.exists(pid_path):
+        os.mkdir(pid_path)
 
     modal_open, message = no_update, ''
-    if active_session:
-        if active_session != init_session:
-            PID = current_user.username
-            new_session_path = os.path.join(default_work_lmt, PID, active_session)
-            os.environ['WORK_LMT'] = new_session_path
-        if triggered_id == Session.NEW_BTN.value:
-            modal_open, message = pf.handle_new_session()
-        elif triggered_id == Session.SAVE_BTN.value:
-            modal_open, message = pf.handle_save_session(default_pid_path, name)
-        elif triggered_id == Session.CONFIRM_DEL.value:
-            message = pf.handle_delete_session(default_pid_path, active_session)
-        if triggered_id in update_btn:
-            time.sleep(1)
-    else:
-        print('Please select a session first!')
-    session_list = pf.get_session_list(init_session, default_pid_path)
+    if triggered_id == Session.NEW_BTN.value:
+        modal_open = True
+    if triggered_id == Session.SAVE_BTN.value:
+        default_session_path = default_session_prefix + current_user.username
+        new_session_path = os.path.join(pid_path, f'Session-{name}', 'lmtoy_run', f'lmtoy_{current_user.username}')
+        if os.path.exists(new_session_path):
+            message = f'session-{name} already exists'
+        else:
+            # Now perform the copy operation.
+            shutil.copytree(default_session_path, new_session_path)
+            modal_open = False
+            message = f"Successfully copied to {new_session_path}"
+    elif triggered_id == Session.CONFIRM_DEL.value:
+        session_path = os.path.join(pid_path, active_session)
+        if os.path.exists(session_path):
+            # If it exists, delete the folder and all its contents
+            shutil.rmtree(session_path)
+        else:
+            print(f"The folder {session_path} does not exist.")
+    if triggered_id in update_btn:
+        time.sleep(1)
+
+    session_list = pf.get_session_list(init_session, pid_path)
     return session_list, modal_open, message
 
 
-# if click delete button show the confirmation
+# if click delete session button show the confirmation
 @app.callback(
     Output(Session.CONFIRM_DEL.value, 'displayed'),
     Input(Session.DEL_BTN.value, 'n_clicks'),
@@ -134,18 +143,17 @@ def display_confirmation(n_clicks):
     ],
     prevent_initial_call='initial_duplicate'
 )
-def display_selected_runfile(selected_values, del_runfile, n1, n2, selRow, existing_data,
+def display_selected_runfile(selected_values, del_runfile_btn, n1, n2, selRow, existing_data,
                              existing_columns, data_store):
     if not ctx.triggered:
         raise PreventUpdate
     dff = pd.DataFrame(columns=table_column)
     highlight = no_update
     runfile_title = ''
-    selected_runfile = pf.get_selected_runfile(ctx, data_store)
-    # if selected_runfile is None:
-    #     selected_runfile = data_store['runfile']
-    # If a different runfile is selected, reinitialize variables
+    selected_runfile = pf.get_selected_runfile(ctx)
+    parameter_display = HIDE_STYLE
     if selected_runfile:
+        parameter_display = PARAMETER_SHOW
         df, runfile_title, highlight = pf.initialize_common_variables(selected_runfile, selRow, init_session)
         data_store['runfile'] = selected_runfile
         if selRow:
@@ -154,7 +162,7 @@ def display_selected_runfile(selected_values, del_runfile, n1, n2, selRow, exist
         if ctx.triggered_id == Runfile.CONFIRM_DEL_ALERT.value:
             pf.del_runfile(selected_runfile)
         dff = pd.concat([df, dff])
-    parameter_display = PARAMETER_SHOW  # This seems to be constant, so defined it here
+    # This seems to be constant, so defined it here
     return dff.to_dict('records'), highlight, runfile_title, parameter_display, data_store
 
 
@@ -174,15 +182,17 @@ def display_selected_runfile(selected_values, del_runfile, n1, n2, selRow, exist
     [
         Input(Session.SESSION_LIST.value, 'active_item'),
         Input({'type': 'runfile-radio', 'index': ALL}, 'value'),
-        Input(Runfile.TABLE.value, "selected_rows")
+        Input(Runfile.TABLE.value, "selected_rows"),
     ],
 )
 def default_session(active_session, selected_runfile, selected_rows):
+    print('active_session', active_session)
+    print('ctx.triggered_id', ctx.triggered_id)
     if not active_session:
-        return [SHOW_STYLE] * 7
-
-        # Default all to hide
+        return [HIDE_STYLE] * 7
+    # Default all to hide
     new_row_btn, edit_row_btn, del_row_btn, runfile_del, runfile_clone, session_del, session_new = [HIDE_STYLE] * 7
+
     if active_session == init_session:
         session_new = SHOW_STYLE
     else:
@@ -266,8 +276,6 @@ def new_job(n1, n2, n3, n4, n5, selected_row, data, df_data, *state_values):
     return output_values
 
 
-#
-#
 # if click edit row then show update button in modal, if click new row then show save row button in modal
 @app.callback(
     [
@@ -333,7 +341,6 @@ def copy_runfile(n1, n2, data_store, virtual_data, new_name):
     return modal_open, message, status
 
 
-# if data['runfile'] submit button
 # open a alert to submit
 @app.callback(
     [
@@ -371,25 +378,18 @@ def update_options(n1, n2, active_item, stored_data):
         return no_update
     # Create options for the dropdown
     json_file_name = default_session_prefix + current_user.username + '/' + current_user.username + '_source.json'
-    print('stored_data', stored_data)
     if os.path.exists(json_file_name):
         with open(json_file_name, 'r') as json_file:
             data = json.load(json_file)
             source_options = [{'label': source, 'value': source} for source in data.keys()]
             stored_data['source'] = data
-    #
     # # get default mk_runs.py
     elif stored_data['source']:
         sources = stored_data['source']
         source_options = [{'label': source, 'value': source} for source in sources]
 
     else:
-        sources = pf.get_source(default_work_lmt, current_user.username)
-        print('getting sources', sources)
-
-        source_options = [{'label': source, 'value': source} for source in sources]
-
-        stored_data['source'] = sources
+        print('No source file found')
 
     return source_options, stored_data
 

@@ -1,6 +1,6 @@
 from dash import dcc, html, Input, Output, State, no_update
 from flask_login import logout_user, current_user
-from config import config
+import sys
 import os
 import dash_bootstrap_components as dbc
 from my_server import app, User
@@ -10,10 +10,14 @@ from functions import project_function as pf
 from views.ui_elements import Storage
 import time
 
-default_work_lmt = pf.get_work_lmt_path(config)
-os.environ['WORK_LMT'] = default_work_lmt
-print('default WORK_LMT', default_work_lmt)
-pid_options = pf.get_pid_option(os.path.join(default_work_lmt, 'lmtoy_run'))
+prefix = ''
+default_work_lmt = '/home/lmt/work_lmt'
+pf.ensure_path_exists(default_work_lmt)
+
+lmtoy_run_path = os.path.join(default_work_lmt, 'lmtoy_run')
+pf.ensure_path_exists(default_work_lmt)
+
+pid_options = pf.get_pid_option(lmtoy_run_path)
 print('pid_options', pid_options)
 
 layout = html.Div(
@@ -58,11 +62,9 @@ layout = html.Div(
     prevent_initial_call=True
 )
 def clear_password_on_logout(pathname):
-    if pathname == '/logout' and not current_user.is_authenticated:
-        os.environ['WORK_LMT'] = default_work_lmt
+    if pathname == f'{prefix}/logout' and not current_user.is_authenticated:
         logout_user()
-        data = {'runfile': None, 'pid': None, 'source': {}, 'selected_row': None}
-        os.environ['WORK_LMT'] = default_work_lmt
+        data = {'runfile': None, 'pid': None, 'source': {}, 'selected_row': None, 'work_lmt': default_work_lmt}
         return '', data  # Return an empty string to clear the password field
     return no_update  # No update if the condition is not met
 
@@ -100,12 +102,10 @@ def login_state(n_clicks, pid, password, is_open, data):
         if user and check_password_hash(user.password, password):
             login_user(user)
             time.sleep(1)
-            sources = pf.get_source(default_work_lmt, pid)
-            data['source'] = sources
             data['pid'] = pid
-            return '/account', '', is_open, data
+            return f'{prefix}/project', '', is_open, data
         else:
             print('invalid password')
-            return '/login', 'Invalid password', not is_open, data
+            return f'{prefix}/login', 'Invalid password', not is_open, data
     else:
         return no_update

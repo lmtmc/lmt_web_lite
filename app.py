@@ -1,18 +1,12 @@
-import os
-
-from dash import dcc, html, Input, Output, State
+from dash import dcc, html, Input, Output, State, no_update
 from my_server import app
 from flask_login import logout_user, current_user
 from flask import session
 import dash_bootstrap_components as dbc
-from views import login, account, joblist_unity, project, help, ui_elements as ui
-from functions import project_function as pf
-from config import config
-import os
+from views import login, project, help, ui_elements as ui
 import argparse
-
-default_work_lmt = pf.get_work_lmt_path(config)
-
+# prefix = '/pipeline'
+prefix = ''
 app.layout = html.Div(
     [
         ui.navbar,
@@ -20,7 +14,9 @@ app.layout = html.Div(
         html.Div(id='body-content', className='content'),
         # keep track of the current URL, the app will handle the location change without a full page refresh
         dcc.Location(id='url', refresh=False),
-        html.Div(ui.data_store)
+        html.Div(dcc.Store(id='data-store',
+                           data={'pid': None, 'runfile': None, 'source': {}, 'selected_row': None, 'work_lmt': None},
+                           storage_type='session'), )
     ]
 )
 
@@ -30,43 +26,38 @@ app.layout = html.Div(
               [Input('url', 'pathname')])
 def display_page(pathname):
     auth_routes = {
-        '/account': account.layout,
-        '/project': project.layout,
+        f'{prefix}/project': project.layout,
     }
-    if pathname in ['/', '/login']:
+    if pathname in [prefix, f'{prefix}/login']:
         return login.layout
     elif pathname in auth_routes and current_user.is_authenticated:
         return auth_routes[pathname]
-    elif pathname == '/joblist_unity':
-        return joblist_unity.layout
-    elif pathname == '/help':
+    elif pathname == f'{prefix}/help':
         return help.layout
-    elif pathname == '/logout':
+    elif pathname == f'{prefix}/logout':
         if current_user.is_authenticated:
             logout_user()
             session.clear()
-            os.environ['WORK_LMT'] = default_work_lmt
         return login.layout
     elif not current_user.is_authenticated:
-        return dcc.Location(pathname='/login', id='url_redirect')
+        return dcc.Location(pathname=f'{prefix}/login', id='url_redirect')
     else:
         return '404'
 
 
 # update the navbar
 @app.callback(
-    [Output('user-name', 'children'),
-     Output('logout', 'children'),
-     Output('current-joblist', 'children')],
+    [
+        Output('logout', 'children'),
+    ],
     [Input('body-content', 'children')])
 def nav_bar(input1):
     if current_user.is_authenticated:
 
-        return (dbc.NavLink('Current user: ' + current_user.username, href='/account'),
-                dbc.NavLink('Logout', href='/logout', ),
-                dbc.NavLink('Current running jobs', href='/joblist_unity'))
+        return [dbc.NavLink('Logout', href=f'{prefix}/logout', )]
+
     else:
-        return '', '', ''
+        return no_update
 
 
 # add callback for toggling the collapse on small screens

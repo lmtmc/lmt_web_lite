@@ -4,19 +4,23 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
 import os
 from flask_login import LoginManager, UserMixin
-from config import config
+#from config import config
 import dash_bootstrap_components as dbc
 from datetime import datetime
 
 server = Flask(__name__)
 server.config['SECRET_KEY'] = os.urandom(12)
-server.config['SQLALCHEMY_DATABASE_URI'] = config.get('database', 'con')
-server.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# server.config['SQLALCHEMY_DATABASE_URI'] = config.get('database', 'con')
+server.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 
+server.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# prefix = '/pipeline'
+prefix = ''
 db = SQLAlchemy(server)
 
 # enable running the Dash app on the Flask server
 app = dash.Dash(__name__, server=server,
+                #requests_pathname_prefix=prefix,
                 external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.FONT_AWESOME, dbc.icons.BOOTSTRAP],
                 meta_tags=[
                     {'charset': 'utf-8'},
@@ -26,7 +30,7 @@ app = dash.Dash(__name__, server=server,
 app.config.suppress_callback_exceptions = True
 
 login_manager = LoginManager(server)
-login_manager.login_view = '/login'
+login_manager.login_view = f'{prefix}/login'
 
 
 # Create User class with UserMixin
