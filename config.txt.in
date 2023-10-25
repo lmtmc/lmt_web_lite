@@ -1,0 +1,11 @@
+
+[database]
+con = sqlite:///users.db
+
+[path]
+work_lmt = @WORK_LMT@
+prefix = @PREFIX@
+
+[connect]
+user = lmthelpdesk_umass_edu
+host=unity.rc.umass.edu
