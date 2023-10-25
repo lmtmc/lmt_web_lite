@@ -12,7 +12,7 @@ import dash_bootstrap_components as dbc
 import pandas as pd
 from flask_login import current_user
 import shutil
-
+from config import config
 from my_server import app
 from functions import project_function as pf, logger
 from views import ui_elements as ui
@@ -28,7 +28,8 @@ HIDE_STYLE = {'display': 'none'}
 SHOW_STYLE = {'display': 'block'}
 
 # root directory of the session's working area
-default_work_lmt = '/home/lmt/work_lmt'
+# default_work_lmt = '/home/lmt/work_lmt'
+default_work_lmt = config['path']['work_lmt']
 default_session_prefix = os.path.join(default_work_lmt, 'lmtoy_run/lmtoy_')
 
 # default session name

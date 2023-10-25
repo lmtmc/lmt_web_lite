@@ -8,11 +8,12 @@ from werkzeug.security import check_password_hash
 from functions import project_function as pf, logger
 from views.ui_elements import Storage
 import time
+from config import config
 
 logger = logger.logger
 
-prefix = ''
-default_work_lmt = '/home/lmt/work_lmt'
+prefix = config['path']['prefix']
+default_work_lmt = config['path']['work_lmt']
 pf.ensure_path_exists(default_work_lmt)
 
 lmtoy_run_path = os.path.join(default_work_lmt, 'lmtoy_run')

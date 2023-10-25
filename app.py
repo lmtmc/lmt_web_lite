@@ -6,10 +6,14 @@ import dash_bootstrap_components as dbc
 from views import login, project, help, ui_elements as ui
 import argparse
 from functions import logger
+from config import config
+
 # prefix = '/pipeline'
-prefix = ''
+prefix = config['path']['prefix']
 logger = logger.logger
-default_work_lmt = '/home/lmt/work_lmt'
+
+# default_work_lmt = '/home/lmt/work_lmt'
+default_work_lmt = config['path']['work_lmt']
 
 app.layout = html.Div(
     [
@@ -53,16 +57,20 @@ def display_page(pathname):
 # update the navbar
 @app.callback(
     [
+        Output('user-name', 'children'),
         Output('logout', 'children'),
     ],
     [Input('body-content', 'children')])
 def nav_bar(input1):
     if current_user.is_authenticated:
 
-        return [dbc.NavLink('Logout', href=f'{prefix}/logout', )]
+        return [
+            dbc.NavLink('Current user: ' + current_user.username, href=f'{prefix}/project'),
+            dbc.NavLink('Logout', href=f'{prefix}/logout', )
+        ]
 
     else:
-        return no_update
+        return '', ''
 
 
 # add callback for toggling the collapse on small screens
