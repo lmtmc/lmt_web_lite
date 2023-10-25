@@ -1,3 +1,4 @@
+# todo password clear after login
 from dash import dcc, html, Input, Output, State, no_update
 from flask_login import logout_user, current_user
 import os
@@ -64,9 +65,8 @@ layout = html.Div(
 #     prevent_initial_call=True
 # )
 # def clear_password_on_logout(pathname):
-#     if pathname == f'{prefix}/logout' and not current_user.is_authenticated:
-#         logout_user()
-#         logger.info(f'User {current_user.get_id()} logged out')
+#     if not current_user.is_authenticated:
+#         logger.info(f'Clearing password')
 #         return ''  # Return an empty string to clear the password field
 #     return no_update  # No update if the condition is not met
 
@@ -91,6 +91,7 @@ def disable_login_button(pid, password):
     Output('output-state', 'children'),
     Output('output-state', 'is_open'),
     Output(Storage.DATA_STORE.value, 'data', allow_duplicate=True),
+    Output('pwd-box', 'value'),
     Input('login-button', 'n_clicks'),
     State('pid', 'value'),
     State('pwd-box', 'value'),
@@ -99,16 +100,16 @@ def disable_login_button(pid, password):
     prevent_initial_call='initial_duplicate'
 )
 def login_state(n_clicks, pid, password, is_open, data):
-    if n_clicks:
-        user = User.query.filter_by(username=pid).first()
-        if user and check_password_hash(user.password, password):
-            login_user(user)
-            logger.info(f'Successful login for PID: {pid}')
-            time.sleep(1)
-            data['pid'] = pid
-            return f'{prefix}/project', '', is_open, data
-        else:
-            logger.warning(f'Invalid password for PID: {pid}')
-            return f'{prefix}/login', 'Invalid password', not is_open, data
+    if not n_clicks:
+        return no_update, no_update, no_update, no_update, no_update
+
+    user = User.query.filter_by(username=pid).first()
+    if user and check_password_hash(user.password, password):
+        login_user(user)
+        logger.info(f'Successful login for PID: {pid}')
+        data['pid'] = pid
+
+        return f'{prefix}/project', '', is_open, data, ''
     else:
-        return no_update
+        logger.warning(f'Invalid password for PID: {pid}')
+        return f'{prefix}/login', 'Invalid password', not is_open, data, ''

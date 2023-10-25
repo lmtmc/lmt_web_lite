@@ -385,7 +385,7 @@ parameter_layout = dbc.Card(
             html.Div(runfile_modal, style={'max-height': '200px', 'overflowY': 'auto'}),
             html.Div(id='js-container'),
             clone_runfile_modal,
-            html.Div(dbc.Alert(id=Runfile.VALIDATION_ALERT.value, is_open=False, dismissable=True, duration=3000)),
+            html.Div(dbc.Alert(id=Runfile.VALIDATION_ALERT.value, is_open=False, dismissable=True,)),
             html.Br(),
         ], style={'padding': '10px', 'height': parameter_body_height}
         ),

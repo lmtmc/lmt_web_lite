@@ -1,6 +1,5 @@
-# todo add more debug info
+
 # todo no use of json file
-# todo add back the configuration.txt
 
 import os
 import time
@@ -387,6 +386,7 @@ def submit_runfile(n, data_store):
         return no_update, no_update, no_update
     color = 'danger'
     message = runs.verify(data_store['runfile'], debug=False)
+    logger.info(f'Verifying runfile: {data_store["runfile"]}, message: {message}')
     if message is None:
         message = 'Runfile is valid!'
         color = 'success'
