@@ -114,6 +114,10 @@ url_location = dcc.Location(id='url_session1', refresh=True),
 columns = [{"name": col, "id": col, 'hideable': True, 'resizable': True}
            for col in column_list]
 
+tooltip_header = {
+    col: f'{col}' for col in column_list
+}
+
 runfile_table = dash_table.DataTable(
     id=Runfile.TABLE.value,
     row_selectable='single',
@@ -136,6 +140,9 @@ runfile_table = dash_table.DataTable(
     style_header={
         'fontWeight': 'bold',
     },
+    tooltip_header=tooltip_header,
+    tooltip_delay=0,
+    tooltip_duration=None,
 )
 
 session_modal = pf.create_modal(
@@ -385,7 +392,7 @@ parameter_layout = dbc.Card(
             html.Div(runfile_modal, style={'max-height': '200px', 'overflowY': 'auto'}),
             html.Div(id='js-container'),
             clone_runfile_modal,
-            html.Div(dbc.Alert(id=Runfile.VALIDATION_ALERT.value, is_open=False, dismissable=True,)),
+            html.Div(dbc.Alert(id=Runfile.VALIDATION_ALERT.value, is_open=False, dismissable=True, )),
             html.Br(),
         ], style={'padding': '10px', 'height': parameter_body_height}
         ),
