@@ -1,6 +1,6 @@
-# todo apply to all to each parameter
-# todo deleted a session and reset the active session to default
-# todo update a runfile and keep the runfile display
+# todo add more debug info
+# todo no use of json file
+# todo add back the configuration.txt
 
 import os
 import time
@@ -14,10 +14,13 @@ from flask_login import current_user
 import shutil
 
 from my_server import app
-from functions import project_function as pf, my_runs
+from functions import project_function as pf, logger
 from views import ui_elements as ui
 from views.ui_elements import Session, Runfile, Table, Parameter, Storage
 
+from lmtoy_lite.lmtoy import runs
+
+logger = logger.logger
 # Constants
 PARAMETER_SHOW = {'display': 'block', 'height': '600px'}
 TABLE_STYLE = {'overflow': 'auto'}
@@ -63,8 +66,8 @@ layout = html.Div(
         Input(Session.SAVE_BTN.value, 'n_clicks'),
         Input(Session.CONFIRM_DEL.value, 'submit_n_clicks'),
         Input(Runfile.CONFIRM_DEL_ALERT.value, 'submit_n_clicks'),
-        Input(Parameter.SAVE_ROW_BTN.value, 'n_clicks'),
-        Input(Parameter.UPDATE_BTN.value, 'n_clicks'),
+        #Input(Parameter.SAVE_ROW_BTN.value, 'n_clicks'),
+        #Input(Parameter.UPDATE_BTN.value, 'n_clicks'),
         Input(Runfile.SAVE_CLONE_RUNFILE_BTN.value, 'n_clicks'),
         Input(Session.SESSION_LIST.value, 'active_item'),
 
@@ -73,16 +76,22 @@ layout = html.Div(
         State(Session.NAME_INPUT.value, 'value')
     ],
 )
-def update_session_display(n1, n2, n3, n4, n5, n6, n7, active_session, name):
+def update_session_display(n1, n2, n3, n4, n7, active_session, name):
+    logger.info(f'Updating the session list')
     triggered_id = ctx.triggered_id
+    logger.debug(f'Triggered: {triggered_id}')
+
     if not pf.check_user_exists():
+        logger.error('User is not authenticated')
         return no_update, no_update, "User is not authenticated"
     pid_path = os.path.join(default_work_lmt, current_user.username)
     if not os.path.exists(pid_path):
         os.mkdir(pid_path)
+        logger.error(f'{pid_path} not exist, create a new folder')
 
     modal_open, message = no_update, ''
     if triggered_id == Session.NEW_BTN.value:
+        logger.info(f'Create a new session for user {current_user.username}')
         modal_open = True
     if triggered_id == Session.SAVE_BTN.value:
         default_session_path = default_session_prefix + current_user.username
@@ -94,11 +103,13 @@ def update_session_display(n1, n2, n3, n4, n5, n6, n7, active_session, name):
             shutil.copytree(default_session_path, new_session_path)
             modal_open = False
             message = f"Successfully copied to {new_session_path}"
+        logger.info(message)
     elif triggered_id == Session.CONFIRM_DEL.value:
         session_path = os.path.join(pid_path, active_session)
         if os.path.exists(session_path):
             # If it exists, delete the folder and all its contents
             shutil.rmtree(session_path)
+            logger.info(f'deleted {session_path}')
         else:
             print(f"The folder {session_path} does not exist.")
     if triggered_id in update_btn:
@@ -123,7 +134,7 @@ def display_confirmation(n_clicks):
 @app.callback(
     [
         Output(Runfile.TABLE.value, 'data', allow_duplicate=True),
-        Output(Runfile.TABLE.value, 'style_data_conditional'),
+        #Output(Runfile.TABLE.value, 'style_data_conditional'),
         Output(Runfile.CONTENT_TITLE.value, 'children'),
         Output(Runfile.PARAMETER_LAYOUT.value, 'style'),
         Output(Storage.DATA_STORE.value, 'data', allow_duplicate=True),
@@ -139,31 +150,45 @@ def display_confirmation(n_clicks):
         State(Runfile.TABLE.value, "selected_rows"),
         State(Runfile.TABLE.value, 'data'),
         State(Runfile.TABLE.value, 'columns'),
-        State(Storage.DATA_STORE.value, 'data')
+        State(Storage.DATA_STORE.value, 'data'),
+        State({'type': 'runfile-radio', 'index': ALL}, 'value'),
     ],
     prevent_initial_call='initial_duplicate'
 )
 def display_selected_runfile(selected_values, del_runfile_btn, n1, n2, selRow, existing_data,
-                             existing_columns, data_store):
+                             existing_columns, data_store, current_runfile):
     if not ctx.triggered:
         raise PreventUpdate
+    # Initialize the DataFrame
     dff = pd.DataFrame(columns=table_column)
-    highlight = no_update
     runfile_title = ''
-    selected_runfile = pf.get_selected_runfile(ctx)
+    trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
     parameter_display = HIDE_STYLE
+    selected_runfile = current_runfile
+    logger.info(f'current_runfile is {current_runfile}')
+    logger.info(f'Triggered component to update runfile: {trigger_id}')
+    if trigger_id == Parameter.SAVE_ROW_BTN.value or trigger_id == Parameter.UPDATE_BTN.value:
+        logger.info(f'Updating the runfile table')
+
+    elif 'runfile-radio' in trigger_id:
+        selected_runfile = ctx.triggered[0]['value']
+    logger.info(f'Selected runfile: {selected_runfile}')
     if selected_runfile:
+
         parameter_display = PARAMETER_SHOW
-        df, runfile_title, highlight = pf.initialize_common_variables(selected_runfile, selRow, init_session)
+        # df, runfile_title, highlight = pf.initialize_common_variables(selected_runfile, selRow, init_session)
+        runfile_title = pf.get_runfile_title(selected_runfile, init_session)
+        df = pf.df_runfile(selected_runfile)
         data_store['runfile'] = selected_runfile
         if selRow:
+            logger.info(f'Selected row: {selRow}')
             data_store['selected_row'] = selRow
-
+            highlight = pf.get_highlight(selRow)
         if ctx.triggered_id == Runfile.CONFIRM_DEL_ALERT.value:
             pf.del_runfile(selected_runfile)
         dff = pd.concat([df, dff])
     # This seems to be constant, so defined it here
-    return dff.to_dict('records'), highlight, runfile_title, parameter_display, data_store
+    return dff.to_dict('records'), runfile_title, parameter_display, data_store
 
 
 # Can not edit the default session
@@ -186,8 +211,6 @@ def display_selected_runfile(selected_values, del_runfile_btn, n1, n2, selRow, e
     ],
 )
 def default_session(active_session, selected_runfile, selected_rows):
-    print('active_session', active_session)
-    print('ctx.triggered_id', ctx.triggered_id)
     if not active_session:
         return [HIDE_STYLE] * 7
     # Default all to hide
@@ -227,7 +250,6 @@ all_outputs = fixed_outputs + dynamic_outputs
 all_states = fixed_states + dynamic_states
 
 
-# todo add more parameters to save
 @app.callback(
     all_outputs,
     [
@@ -242,22 +264,26 @@ all_states = fixed_states + dynamic_states
 )
 def new_job(n1, n2, n3, n4, n5, selected_row, data, df_data, *state_values):
     if df_data:
+        logger.info(f'Loading the runfile table to a DataFrame')
         df = pd.DataFrame(df_data)
         df.fillna('', inplace=True)
     else:
+        logger.info(f'Creating a new empty DataFrame')
         df = pd.DataFrame(columns=table_column)
     triggered_id = ctx.triggered_id
+    logger.info(f'Triggered component to update runfile: {triggered_id}')
     output_values = [False] + [''] * (len(table_column) + 1)
 
     if selected_row is not None and len(selected_row) > 0:
         if triggered_id in [Table.NEW_ROW_BTN.value, Table.EDIT_ROW_BTN.value]:
             selected = df.loc[selected_row[0]]  # Assuming single selection
-
+            logger.info(f'Selected row: {selected}')
             # set modal to open and data to remain the same
             output_values[0] = True
             output_values[2:] = pf.table_layout([selected[col] for col in table_column])
 
         elif triggered_id == Table.DEL_ROW_BTN.value:
+            logger.info(f'Deleting row {selected_row[0]}')
             df.drop(df.index[selected_row[0]], inplace=True)
             pf.save_runfile(df, data['runfile'])
         elif triggered_id in [Parameter.SAVE_ROW_BTN.value, Parameter.UPDATE_BTN.value]:
@@ -265,14 +291,17 @@ def new_job(n1, n2, n3, n4, n5, selected_row, data, df_data, *state_values):
             parameters = pf.layout_table(list(state_values))
 
             new_row = {key: value for key, value in zip(table_column, parameters)}
-
+            logger.debug(f'New row: {new_row}')
             if triggered_id == Parameter.SAVE_ROW_BTN.value:
                 # add new row to the end of the table
+                logger.info(f'Adding new row to the end of the table')
                 df = df._append(new_row, ignore_index=True)
             else:
+                logger.info(f'Updating row {selected_row[0]}')
                 df.iloc[selected_row[0]] = new_row
             pf.save_runfile(df, data['runfile'])
     output_values[1] = df.to_dict('records')
+    # logger.debug(f'Updated table values: {output_values}')
     return output_values
 
 
@@ -356,7 +385,7 @@ def submit_runfile(n, data_store):
     if ctx.triggered_id != Runfile.RUN_BTN.value or not data_store.get('runfile'):
         return no_update, no_update, no_update
     color = 'danger'
-    message = my_runs.verify(data_store['runfile'], debug=False)
+    message = runs.verify(data_store['runfile'], debug=False)
     if message is None:
         message = 'Runfile is valid!'
         color = 'success'

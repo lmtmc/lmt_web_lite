@@ -11,7 +11,9 @@ import json
 import ast
 import re
 import time
-from functions import my_runs
+from functions import logger
+
+logger = logger.logger
 
 # Function to get pid options from the given path
 def get_pid_option(path):
@@ -238,18 +240,30 @@ def initialize_common_variables(runfile, selRow, init_session):
 def df_runfile(filename):
     data = []
     if os.path.exists(filename):
-        with open(filename) as file:
-            for line in file:
-                commands = line.strip().split()
-                row = {command.split('=')[0]: command.split('=')[1] for command in commands if '=' in command}
-                data.append(row)
-    df = pd.DataFrame(data)
-    # rename obsnum to obsnum(s)
-    if 'obsnum' in df.columns:
-        df.rename(columns={'obsnum': 'obsnum(s)'}, inplace=True)
-    elif 'obsnums' in df.columns:
-        df.rename(columns={'obsnums': 'obsnum(s)'}, inplace=True)
-    return df
+        logger.info(f'{filename} exists')
+        try:
+            with open(filename) as file:
+                content = file.read()
+                logger.debug(f'Content of {filename}:\n {content}')
+                file.seek(0)
+                for line in file:
+                    commands = line.strip().split()
+                    row = {command.split('=')[0]: command.split('=')[1] for command in commands if '=' in command}
+                    data.append(row)
+
+            df = pd.DataFrame(data)
+            # rename obsnum to obsnum(s)
+            if 'obsnum' in df.columns:
+                df.rename(columns={'obsnum': 'obsnum(s)'}, inplace=True)
+            elif 'obsnums' in df.columns:
+                df.rename(columns={'obsnums': 'obsnum(s)'}, inplace=True)
+            logger.info(f'Final DataFrame with renamed columns: \n {df}')
+            return df
+        except Exception as e:
+            logger.error(e)
+    else:
+        logger.warning(f'{filename} does not exist')
+    return pd.DataFrame()
 
 
 # save revised data to a runfile

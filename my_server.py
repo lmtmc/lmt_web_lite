@@ -4,7 +4,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
 import os
 from flask_login import LoginManager, UserMixin
-#from config import config
+# from config import config
 import dash_bootstrap_components as dbc
 from datetime import datetime
 
@@ -20,7 +20,7 @@ db = SQLAlchemy(server)
 
 # enable running the Dash app on the Flask server
 app = dash.Dash(__name__, server=server,
-                #requests_pathname_prefix=prefix,
+                # requests_pathname_prefix=prefix,
                 external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.FONT_AWESOME, dbc.icons.BOOTSTRAP],
                 meta_tags=[
                     {'charset': 'utf-8'},

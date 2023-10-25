@@ -87,7 +87,7 @@ column_list = [
 ]
 # change the column name from px_list to beam
 table_column = column_list
-table_column[3] = 'beam'
+table_column[3] = 'exclude_beams'
 
 
 class Parameter(Enum):

@@ -5,8 +5,12 @@ from flask import session
 import dash_bootstrap_components as dbc
 from views import login, project, help, ui_elements as ui
 import argparse
+from functions import logger
 # prefix = '/pipeline'
 prefix = ''
+logger = logger.logger
+default_work_lmt = '/home/lmt/work_lmt'
+
 app.layout = html.Div(
     [
         ui.navbar,
@@ -25,19 +29,20 @@ app.layout = html.Div(
 @app.callback(Output('body-content', 'children'),
               [Input('url', 'pathname')])
 def display_page(pathname):
-    auth_routes = {
-        f'{prefix}/project': project.layout,
-    }
+    user_id = current_user.username if current_user.is_authenticated else None
+    logger.info(f'User {user_id} navigating to the page: {pathname}')
     if pathname in [prefix, f'{prefix}/login']:
         return login.layout
-    elif pathname in auth_routes and current_user.is_authenticated:
-        return auth_routes[pathname]
+    elif pathname == f'{prefix}/project' and current_user.is_authenticated:
+        return project.layout
     elif pathname == f'{prefix}/help':
         return help.layout
     elif pathname == f'{prefix}/logout':
         if current_user.is_authenticated:
             logout_user()
             session.clear()
+            data = {'runfile': None, 'pid': None, 'source': {}, 'selected_row': None, 'work_lmt': default_work_lmt}
+            logger.info(f'stored data clear: {data}')
         return login.layout
     elif not current_user.is_authenticated:
         return dcc.Location(pathname=f'{prefix}/login', id='url_redirect')
@@ -80,4 +85,8 @@ args = parser.parse_args()
 
 # export FLASK_ENV=development
 if __name__ == '__main__':
-    app.server.run(port=args.port, debug=True)
+    logger.info(f'Running the app on port {args.port}')
+    try:
+        app.server.run(port=args.port, debug=True)
+    except Exception as e:
+        logger.logger.error(e)
