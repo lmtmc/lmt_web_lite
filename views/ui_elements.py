@@ -137,10 +137,17 @@ runfile_table = dash_table.DataTable(
         'overflowY': 'auto',
         'padding': '20px',
     },
-    style_header={
-        'fontWeight': 'bold',
-    },
+    # style_header={
+    #     'fontWeight': 'bold',
+    # },
     tooltip_header=tooltip_header,
+    style_header={
+        'backgroundColor': 'rgb(30, 30, 30)',  # dark background
+        'color': 'white',  # white text
+        'fontWeight': 'bold',  # make the text bold
+        'border': '1px solid black',  # add a border around the headers
+        'textAlign': 'center'  # center-align text
+    },
     tooltip_delay=0,
     tooltip_duration=None,
 )

@@ -15,6 +15,7 @@ from functions import logger
 
 logger = logger.logger
 
+
 # Function to get pid options from the given path
 def get_pid_option(path):
     result = []
@@ -107,6 +108,28 @@ def find_runfiles(folder_path, prefix):
     return matching_files
 
 
+def get_source(default_work_lmt, pid):
+    pid_path = os.path.join(default_work_lmt, 'lmtoy_run', f'lmtoy_{pid}')
+    json_file = os.path.join(pid_path, 'source.json')
+    if os.path.exists(json_file):
+        json_data = load_source_data(json_file)
+        sources = json_data
+    else:
+        logger.info(f'No source.json file found in {pid_path}, executing mk_runs.py to generate the sources')
+        mk_runs_file = os.path.join(pid_path, 'mk_runs.py')
+        result = subprocess.run(['python', mk_runs_file], capture_output=True, text=True, cwd=pid_path)
+
+        # checks if the command ran successfully(return code 0)
+        if result.returncode == 0:
+            output = result.stdout  # converts the stdout string to a regular string
+        else:
+            output = result.stderr  # convert the error message to a string
+        pattern = r"(\w+)\[\d+/\d+\] : ([\d,]+)"
+        matches = re.findall(pattern, output)
+        sources = {name: list(map(int, obsnums.split(','))) for name, obsnums in matches}
+    return sources
+
+
 # get the session names and their paths in a folder
 def get_session_info(default_session, pid_path):
     default_session_path = os.path.join(os.path.dirname(pid_path), 'lmtoy_run', f'lmtoy_{current_user.username}')
@@ -141,17 +164,16 @@ def get_session_list(default_session, pid_path):
         for session in session_info
     ]
 
-
-# def handle_save_session(pid_path, name):
-#     print('name', name)
-#     if not name:
-#         return True, "Please input a session number!"
-#     new_session_name = f'Session-{name}'
-#     new_session_path = os.path.join(pid_path, new_session_name)
-#     # Check if the session directory already exists
-#     if os.path.exists(new_session_path):
-#         # If the directory not exist, create it
-#         return True, f'{new_session_name} already exists'
+    # def handle_save_session(pid_path, name):
+    #     print('name', name)
+    #     if not name:
+    #         return True, "Please input a session number!"
+    #     new_session_name = f'Session-{name}'
+    #     new_session_path = os.path.join(pid_path, new_session_name)
+    #     # Check if the session directory already exists
+    #     if os.path.exists(new_session_path):
+    #         # If the directory not exist, create it
+    #         return True, f'{new_session_name} already exists'
 
     # os.environ['WORK_LMT'] = new_session_path
     # os.environ['PID'] = current_user.username

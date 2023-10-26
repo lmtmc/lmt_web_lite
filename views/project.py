@@ -411,17 +411,16 @@ def update_options(n1, n2, active_item, stored_data):
     if not pf.check_user_exists():
         return no_update
     # Create options for the dropdown
-    json_file_name = default_session_prefix + current_user.username + '/' + current_user.username + '_source.json'
-    if os.path.exists(json_file_name):
-        with open(json_file_name, 'r') as json_file:
-            data = json.load(json_file)
-            source_options = [{'label': source, 'value': source} for source in data.keys()]
-            stored_data['source'] = data
-    # # get default mk_runs.py
-    elif stored_data['source']:
+    # json_file_name = default_session_prefix + current_user.username + '/' + current_user.username + '_source.json'
+    # if os.path.exists(json_file_name):
+    #     with open(json_file_name, 'r') as json_file:
+    #         data = json.load(json_file)
+    #         source_options = [{'label': source, 'value': source} for source in data.keys()]
+    #         stored_data['source'] = data
+    # # # get default mk_runs.py
+    if stored_data['source']:
         sources = stored_data['source']
         source_options = [{'label': source, 'value': source} for source in sources]
-
     else:
         print('No source file found')
 

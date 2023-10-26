@@ -108,7 +108,8 @@ def login_state(n_clicks, pid, password, is_open, data):
         login_user(user)
         logger.info(f'Successful login for PID: {pid}')
         data['pid'] = pid
-
+        data['source'] = pf.get_source(default_work_lmt, pid)
+        logger.info(f'source for {pid}: {data["source"]}')
         return f'{prefix}/project', '', is_open, data, ''
     else:
         logger.warning(f'Invalid password for PID: {pid}')
