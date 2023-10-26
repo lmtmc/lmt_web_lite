@@ -75,6 +75,7 @@ else
 fi
 work_default=$WORK_LMT
 
+dnl Override with:  --with-prefix=
 
 AC_ARG_WITH(work,
         [  --with-work=WORK_LMT    Root directory of WORK_LMT (or set $WORK_LMT)],
@@ -83,15 +84,15 @@ AC_ARG_WITH(work,
 WORK_LMT=$work_lmt
 AC_SUBST(WORK_LMT)
 
-dnl Check for --with-prefix
-AC_ARG_WITH([prefix],
-        [AS_HELP_STRING([--with-prefix=PREFIX], )],
-        [prefix="$withval"], # if provided, use the given argument
-        [prefix=""])
+AC_ARG_WITH(prefix,
+        [  --with-prefix=PREFIX    Prefix for installation (or set $prefix)],
+           prefix="$withval",
+           prefix="")
+PREFIX=$prefix
 AC_SUBST(PREFIX)
 
 echo "Using WORK_LMT=$WORK_LMT"
-echo "Using prefix=$prefix"
+echo "Using PREFIX=$PREFIX"
 
 # put these in a single AC_OUTPUT command so config.status is not called multiple times.
 AC_CONFIG_FILES([config.txt])
