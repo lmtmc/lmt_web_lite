@@ -20,7 +20,7 @@ db = SQLAlchemy(server)
 
 # enable running the Dash app on the Flask server
 app = dash.Dash(__name__, server=server,
-                requests_pathname_prefix='/'+prefix,
+                requests_pathname_prefix=prefix,
                 external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.FONT_AWESOME, dbc.icons.BOOTSTRAP],
                 meta_tags=[
                     {'charset': 'utf-8'},

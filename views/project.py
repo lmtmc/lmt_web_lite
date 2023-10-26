@@ -1,5 +1,6 @@
 
-# todo no use of json file
+# todo config prefix not working
+# deploy to server
 
 import os
 import time

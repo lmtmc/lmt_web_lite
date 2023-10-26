@@ -35,13 +35,13 @@ app.layout = html.Div(
 def display_page(pathname):
     user_id = current_user.username if current_user.is_authenticated else None
     logger.info(f'User {user_id} navigating to the page: {pathname}')
-    if pathname in [prefix, f'{prefix}/login']:
+    if pathname in [prefix, f'{prefix}login']:
         return login.layout
-    elif pathname == f'{prefix}/project' and current_user.is_authenticated:
+    elif pathname == f'{prefix}project' and current_user.is_authenticated:
         return project.layout
-    elif pathname == f'{prefix}/help':
+    elif pathname == f'{prefix}help':
         return help.layout
-    elif pathname == f'{prefix}/logout':
+    elif pathname == f'{prefix}logout':
         if current_user.is_authenticated:
             logout_user()
             session.clear()
@@ -49,7 +49,7 @@ def display_page(pathname):
             logger.info(f'stored data clear: {data}')
         return login.layout
     elif not current_user.is_authenticated:
-        return dcc.Location(pathname=f'{prefix}/login', id='url_redirect')
+        return dcc.Location(pathname=f'{prefix}login', id='url_redirect')
     else:
         return '404'
 
@@ -65,8 +65,8 @@ def nav_bar(input1):
     if current_user.is_authenticated:
 
         return [
-            dbc.NavLink('Current user: ' + current_user.username, href=f'{prefix}/project'),
-            dbc.NavLink('Logout', href=f'{prefix}/logout', )
+            dbc.NavLink('Current user: ' + current_user.username, href=f'{prefix}project'),
+            dbc.NavLink('Logout', href=f'{prefix}logout', )
         ]
 
     else:

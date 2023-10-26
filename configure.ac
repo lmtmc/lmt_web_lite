@@ -87,7 +87,7 @@ AC_SUBST(WORK_LMT)
 AC_ARG_WITH(prefix,
         [  --with-prefix=PREFIX    Prefix for installation (or set $prefix)],
            prefix="$withval",
-           prefix="")
+           prefix="/")
 PREFIX=$prefix
 AC_SUBST(PREFIX)
 
