@@ -4,42 +4,22 @@
 
 This web application serves as an interface for managing pipeline jobs and configurations. Here are the instructions to get it up and running.
 
-## Requirements
-
-Change the default_work_lmt to your local work_lmt in views/login.py and views/project.py
-```
-work_lmt=/home/lmt/work_lmt
-```
-      
-
-
 
 ## Setup
 
 ### Environment and Dependencies
 
-1. <b>Create a virtual environment:
+1. <b>Create a virtual environment, install the dependencies:
    ```
-   python3 -m venv env
+   make clean pjt
    ```
 2. <b>Activate the virtual environment:
    ```
    source env/bin/activate
    ```
-3. <b>Install the required packages:
-
+3. <b>make the config.txt:
    ```
-   pip install -r requirements.txt
-   ```
-
-   <b>Note:</b> Make sure the versions of FLask-SQLAlchemy
-   and SQLAlchemy are like below.
-
-   ```
-   Flask-SQLAlchemy==2.5.1
-   SQLAlchemy==1.4.36
-   ```
-
+    ./configure --with-work=work_lmt
 4. <b>Optional</b>:<br>
    1.The repo includes a 'users.db'. If you want to create a new users.db or add a user,
    you can revise and run the code in users_mgt.py (needs more work for the database organization)<br>
