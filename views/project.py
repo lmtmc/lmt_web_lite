@@ -1,4 +1,3 @@
-
 # todo config prefix not working
 # deploy to server
 
@@ -22,11 +21,11 @@ from lmtoy_lite.lmtoy import runs
 
 logger = logger.logger
 # Constants
-PARAMETER_SHOW = {'display': 'block', 'height': '600px'}
 TABLE_STYLE = {'overflow': 'auto'}
 HIDE_STYLE = {'display': 'none'}
 SHOW_STYLE = {'display': 'block'}
 
+# root directory of the session's working area
 # root directory of the session's working area
 # default_work_lmt = '/home/lmt/work_lmt'
 default_work_lmt = config['path']['work_lmt']
@@ -67,8 +66,8 @@ layout = html.Div(
         Input(Session.SAVE_BTN.value, 'n_clicks'),
         Input(Session.CONFIRM_DEL.value, 'submit_n_clicks'),
         Input(Runfile.CONFIRM_DEL_ALERT.value, 'submit_n_clicks'),
-        #Input(Parameter.SAVE_ROW_BTN.value, 'n_clicks'),
-        #Input(Parameter.UPDATE_BTN.value, 'n_clicks'),
+        # Input(Parameter.SAVE_ROW_BTN.value, 'n_clicks'),
+        # Input(Parameter.UPDATE_BTN.value, 'n_clicks'),
         Input(Runfile.SAVE_CLONE_RUNFILE_BTN.value, 'n_clicks'),
         Input(Session.SESSION_LIST.value, 'active_item'),
 
@@ -135,7 +134,7 @@ def display_confirmation(n_clicks):
 @app.callback(
     [
         Output(Runfile.TABLE.value, 'data', allow_duplicate=True),
-        #Output(Runfile.TABLE.value, 'style_data_conditional'),
+        # Output(Runfile.TABLE.value, 'style_data_conditional'),
         Output(Runfile.CONTENT_TITLE.value, 'children'),
         Output(Runfile.PARAMETER_LAYOUT.value, 'style'),
         Output(Storage.DATA_STORE.value, 'data', allow_duplicate=True),
@@ -176,7 +175,7 @@ def display_selected_runfile(selected_values, del_runfile_btn, n1, n2, selRow, e
     logger.info(f'Selected runfile: {selected_runfile}')
     if selected_runfile:
 
-        parameter_display = PARAMETER_SHOW
+        parameter_display = SHOW_STYLE
         # df, runfile_title, highlight = pf.initialize_common_variables(selected_runfile, selRow, init_session)
         runfile_title = pf.get_runfile_title(selected_runfile, init_session)
         df = pf.df_runfile(selected_runfile)
@@ -190,6 +189,41 @@ def display_selected_runfile(selected_values, del_runfile_btn, n1, n2, selRow, e
         dff = pd.concat([df, dff])
     # This seems to be constant, so defined it here
     return dff.to_dict('records'), runfile_title, parameter_display, data_store
+
+
+# display selected row values
+@app.callback(
+    Output(Parameter.DETAIL.value, 'children'),
+    Output(Parameter.ACTION.value, 'style'),
+    Input(Runfile.TABLE.value, "selected_rows"),
+    [State(Runfile.TABLE.value, 'data'),
+     ],
+)
+def display_details(selected_row, data,):
+    action_style = HIDE_STYLE
+    if selected_row:
+        details_data = data[selected_row[0]]
+        # Divide the dictionary into 6 equal parts
+        n = len(details_data)
+        part_size = n // 6 + (1 if n % 6 else 0)  # Calculate size of each part, considering remainder
+        dict_parts = [dict(list(details_data.items())[i:i + part_size]) for i in range(0, n, part_size)]
+        action_style = SHOW_STYLE
+        columns = []
+        for part in dict_parts:
+            rows = []
+            for key, value in part.items():
+                row = html.Div([
+                    html.Div(f"{key}:", className='col-6', style={'font-weight': 'bold'}),  # bold the key
+                    html.Div(str(value) if value else "-", className='col-6'),
+                ], className='row mb-2')
+                rows.append(row)
+            column = html.Div(rows, className='col-md-2')  # Adjust for 6 columns
+            columns.append(column)
+
+        return html.Div(columns, className='row'), action_style
+
+    else:
+        return no_update, action_style
 
 
 # Can not edit the default session
@@ -311,7 +345,7 @@ def new_job(n1, n2, n3, n4, n5, selected_row, data, df_data, *state_values):
     [
         Output(Parameter.SAVE_ROW_BTN.value, 'style'),
         Output(Parameter.UPDATE_BTN.value, 'style'),
-        Output(Parameter.APPLYALL_BTN.value, 'style'),
+        # Output(Parameter.APPLYALL_BTN.value, 'style'),
     ],
     [
         Input(Table.NEW_ROW_BTN.value, 'n_clicks'),
@@ -319,11 +353,11 @@ def new_job(n1, n2, n3, n4, n5, selected_row, data, df_data, *state_values):
     ], )
 def update_new_btn(n1, n2):
     if ctx.triggered_id == Table.NEW_ROW_BTN.value:
-        return SHOW_STYLE, HIDE_STYLE, SHOW_STYLE
+        return SHOW_STYLE, HIDE_STYLE
     if ctx.triggered_id == Table.EDIT_ROW_BTN.value:
-        return HIDE_STYLE, SHOW_STYLE, SHOW_STYLE
+        return HIDE_STYLE, SHOW_STYLE
     else:
-        return no_update, no_update, no_update
+        return no_update, no_update
 
 
 # if click delete button show the confirmation

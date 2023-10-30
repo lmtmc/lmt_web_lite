@@ -16,6 +16,7 @@ server.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 server.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 prefix = config['path']['prefix']
+
 db = SQLAlchemy(server)
 
 # enable running the Dash app on the Flask server

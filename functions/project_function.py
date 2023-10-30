@@ -117,7 +117,7 @@ def get_source(default_work_lmt, pid):
     else:
         logger.info(f'No source.json file found in {pid_path}, executing mk_runs.py to generate the sources')
         mk_runs_file = os.path.join(pid_path, 'mk_runs.py')
-        result = subprocess.run(['python', mk_runs_file], capture_output=True, text=True, cwd=pid_path)
+        result = subprocess.run(['python3', mk_runs_file], capture_output=True, text=True, cwd=pid_path)
 
         # checks if the command ran successfully(return code 0)
         if result.returncode == 0:
@@ -126,7 +126,8 @@ def get_source(default_work_lmt, pid):
             output = result.stderr  # convert the error message to a string
         pattern = r"(\w+)\[\d+/\d+\] : ([\d,]+)"
         matches = re.findall(pattern, output)
-        sources = {name: list(map(int, obsnums.split(','))) for name, obsnums in matches}
+        # sources = {name: list(map(int, obsnums.split(','))) for name, obsnums in matches}
+        sources = {name: [int(x) for x in obsnums.split(',')] for name, obsnums in matches}
     return sources
 
 

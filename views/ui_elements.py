@@ -4,6 +4,9 @@ import dash_bootstrap_components as dbc
 from flask_login import current_user
 from functions import project_function as pf
 from enum import Enum
+from config import config
+
+prefix = config['path']['prefix']
 
 
 class Session(Enum):
@@ -95,6 +98,8 @@ class Parameter(Enum):
     UPDATE_BTN = 'update-row'
     SAVE_ROW_BTN = 'save-row'
     MODAL = 'draggable-modal'
+    DETAIL = 'parameter-detail'
+    ACTION = 'parameter-action'
     SOURCE_DROPDOWN = '_s'
     OBSNUM_DROPDOWN = 'obsnum(s)'
 
@@ -124,7 +129,7 @@ runfile_table = dash_table.DataTable(
     data=[],
     filter_action="native",
     columns=columns,
-    page_size=10,
+    page_size=4,
     style_cell={
         'textAlign': 'left',
         'font-size': '15px',
@@ -132,14 +137,11 @@ runfile_table = dash_table.DataTable(
         'maxWidth': 125,
     },
     style_table={
-        'height': '420px',
+        # 'height': '420px',
         'overflowX': 'auto',
         'overflowY': 'auto',
         'padding': '20px',
     },
-    # style_header={
-    #     'fontWeight': 'bold',
-    # },
     tooltip_header=tooltip_header,
     style_header={
         'backgroundColor': 'rgb(30, 30, 30)',  # dark background
@@ -349,7 +351,7 @@ runfile_modal = pf.create_modal('Edit parameter',
 
                                 edit_parameter_layout,
                                 [
-                                    dbc.Checklist("Apply to All", id=Parameter.APPLYALL_BTN.value, className="ml-auto"),
+                                    # dbc.Checklist("Apply to All", id=Parameter.APPLYALL_BTN.value, className="ml-auto"),
                                     html.Button("Update", id=Parameter.UPDATE_BTN.value, className="ml-auto"),
                                     html.Button("Save new row", id=Parameter.SAVE_ROW_BTN.value, className="ml-auto"),
                                 ],
@@ -363,62 +365,91 @@ clone_runfile_modal = pf.create_modal('Input the new runfile name',
                                           html.Button("Clone", id=Runfile.SAVE_CLONE_RUNFILE_BTN.value)
                                       ],
                                       Runfile.CLONE_RUNFILE_MODAL.value)
-parameter_layout = dbc.Card(
-    [
-        dbc.CardHeader(
-            html.Div([
+parameter_layout = html.Div(
+    dbc.Card(
+        [
+            dbc.CardHeader(
                 html.Div([
-                    dbc.Row([
-                        dbc.Col(html.Div(id=Runfile.CONTENT_TITLE.value), width='auto'),
-                        dbc.Col(html.Div([
-                            dbc.Row([
-                                dbc.Col(html.Button([html.I(className="fas fa-edit me-2"), 'edit row'],
-                                                    id=Table.EDIT_ROW_BTN.value,
-                                                    className='me-2'), ),
-                                dbc.Col(html.Button([html.I(className="fas fa-trash me-2"), 'delete row'],
-                                                    id=Table.DEL_ROW_BTN.value,
-                                                    className='me-2')),
-                                dbc.Col(html.Button([html.I(className="fas fa-plus me-2"), 'clone row'],
-                                                    id=Table.NEW_ROW_BTN.value))
-                            ])
-                        ], className='d-flex align-items-center justify-content-between')
-                        ),
-                        dbc.Col(
-                            dbc.Row([
-                                dbc.Col(html.Button([html.I(className="fas fa-trash me-2"), 'Delete Runfile'],
-                                                    id=Runfile.DEL_BTN.value), width='auto'),
-                                dbc.Col(html.Button([html.I(className="fa-solid fa-clone me-2"), 'Clone Runfile'],
-                                                    id=Runfile.CLONE_BTN.value), width='auto'),
-                            ]), width='auto', className='ms-auto')
-                    ], align='center', justify='between')
-                ])
-            ]), style={'height': '50px'}
-        ),
-        dbc.CardBody([
-            runfile_table,
-            html.Div(runfile_modal, style={'max-height': '200px', 'overflowY': 'auto'}),
-            html.Div(id='js-container'),
-            clone_runfile_modal,
-            html.Div(dbc.Alert(id=Runfile.VALIDATION_ALERT.value, is_open=False, dismissable=True, )),
-            html.Br(),
-        ], style={'padding': '10px', 'height': parameter_body_height}
-        ),
+                    html.Div([
+                        dbc.Row([
+                            dbc.Col(html.Div(id=Runfile.CONTENT_TITLE.value), width='auto'),
+                            dbc.Col(
+                                dbc.Row([
+                                    dbc.Col(html.Button([html.I(className="fas fa-trash me-2"), 'Delete Runfile'],
+                                                        id=Runfile.DEL_BTN.value), width='auto'),
+                                    dbc.Col(html.Button([html.I(className="fa-solid fa-clone me-2"), 'Clone Runfile'],
+                                                        id=Runfile.CLONE_BTN.value), width='auto'),
+                                ]), width='auto', className='ms-auto')
+                        ], align='center', justify='between')
+                    ])
+                ]), style={'height': '50px'}
+            ),
+            dbc.CardBody([
+                html.Div(runfile_table, style={
+                    'height': '350px',
+                    'overflowY': 'auto',
+                    'border': '1px solid #ccc',
+                    'padding': '10px',
+                    'margin-top': '20px',
+                    'box-shadow': '0 4px 8px rgba(0, 0, 0, 0.1)'}),
+                html.Div(runfile_modal, style={'max-height': '200px', 'overflowY': 'auto'}),
 
-        html.Div(dcc.ConfirmDialog(
-            id=Runfile.CONFIRM_DEL_ALERT.value,
-            message='Are you sure to delete the runfile?'
-        ),
-            id='confirm-dialog-container',  # Give it an ID for styling
-        ),
+                html.Div([
+                    html.Div(
+                        dbc.DropdownMenu(
+                            label="Actions",
+                            color = 'secondary',
+                            children=[
+                                dbc.DropdownMenuItem([html.I(className="fas fa-edit me-2"), "Edit"],
+                                                     id=Table.EDIT_ROW_BTN.value),
+                                dbc.DropdownMenuItem([html.I(className="fas fa-trash me-2"), "Delete"],
+                                                     id=Table.DEL_ROW_BTN.value),
+                                dbc.DropdownMenuItem([html.I(className="fas fa-plus me-2"), "Clone"],
+                                                     id=Table.NEW_ROW_BTN.value),
+                            ],
+                            direction="end",  # This makes the dropdown expand towards the left.
+                            className='d-flex align-items-center justify-content-end',
 
-        dbc.CardFooter([
-            html.Div([
-                html.Button([html.I(className="fa fa-paper-plane me-2"), 'Submit Job'], id=Runfile.RUN_BTN.value,
-                            n_clicks=0),
-            ], className='d-flex justify-content-end')
-        ])
-    ],
-    id=Runfile.PARAMETER_LAYOUT.value,
+
+                        ), id=Parameter.ACTION.value
+                    ),
+                    html.Div(id=Parameter.DETAIL.value), ], style={
+                    'height': '150px',
+                    'overflowY': 'auto',
+                    'border': '1px solid #ccc',
+                    'padding': '10px',
+                    'margin-top': '20px',
+                    'box-shadow': '0 4px 8px rgba(0, 0, 0, 0.1)'
+                }, ),
+                html.Div(id='js-container'),
+                html.Div(clone_runfile_modal),
+                html.Div(dbc.Alert(id=Runfile.VALIDATION_ALERT.value, is_open=False, dismissable=True, )),
+                html.Br(),
+            ],
+                style={'height': 550}
+            ),
+
+            html.Div(dcc.ConfirmDialog(
+                id=Runfile.CONFIRM_DEL_ALERT.value,
+                message='Are you sure to delete the runfile?'
+            ),
+                id='confirm-dialog-container',  # Give it an ID for styling
+            ),
+
+            dbc.CardFooter([
+                html.Div([
+                    html.Button([html.I(className="fa fa-paper-plane me-2"), 'Verify Runfile'], id=Runfile.RUN_BTN.value,
+                                n_clicks=0),
+                ], className='d-flex justify-content-end')
+            ])
+        ],
+        id=Runfile.PARAMETER_LAYOUT.value,
+    ),
+    style={
+        'border': '1px grey solid',
+        'padding': '0, 20px',  # top right bottom left
+        'height': '650px',
+    },
 )
 
 link_bar = dbc.Row(
@@ -430,7 +461,7 @@ link_bar = dbc.Row(
             dbc.Row(
                 [
                     dbc.Col(html.I(className="bi bi-question-circle-fill"), width="auto"),
-                    dbc.Col(dbc.NavLink("Help", href="/help"), width="auto"),
+                    dbc.Col(dbc.NavLink("Help", href="{prefix}help"), width="auto"),
                 ],
             ),
         )
@@ -442,14 +473,14 @@ navbar = dbc.Navbar(
     [
         html.A(
             dbc.Row(
-                [dbc.Col(html.Img(src='/assets/lmt_img.jpg', height='30px'), ),
+                [dbc.Col(html.Img(src=f'{prefix}assets/lmt_img.jpg', height='30px'), ),
                  dbc.Col(
                      dbc.NavbarBrand('JOB RUNNER', className='ms-2', style={'fontSize': '24px', 'color': 'black'})), ],
                 # ms meaning margin start
                 align='right',
                 className='ms-5'
             ),
-            href='/account', style={'textDecoration': 'none'}
+            href=f'{prefix}assets/lmt_img.jpg', style={'textDecoration': 'none'}
         ),
         dbc.NavbarToggler(id='navbar-toggler', n_clicks=0),
         dbc.Collapse(
