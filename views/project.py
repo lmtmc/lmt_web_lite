@@ -1,6 +1,8 @@
-# todo config prefix not working
-# deploy to server
-
+# todo read pix_list as exclude_beam in dataTable and has the options from 0-15
+# todo restart and dataverse 0,1,2
+# todo update detailed info
+# todo display verification
+# fix the height, pix_list arrangement
 import os
 import time
 import json
@@ -138,6 +140,7 @@ def display_confirmation(n_clicks):
         Output(Runfile.CONTENT_TITLE.value, 'children'),
         Output(Runfile.PARAMETER_LAYOUT.value, 'style'),
         Output(Storage.DATA_STORE.value, 'data', allow_duplicate=True),
+        # Output(Parameter.ACTION.value, 'style'),
     ],
     [
         Input({'type': 'runfile-radio', 'index': ALL}, 'value'),
@@ -163,16 +166,22 @@ def display_selected_runfile(selected_values, del_runfile_btn, n1, n2, selRow, e
     dff = pd.DataFrame(columns=table_column)
     runfile_title = ''
     trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    selected_runfile = ''
     parameter_display = HIDE_STYLE
-    selected_runfile = current_runfile
-    logger.info(f'current_runfile is {current_runfile}')
+    # detail_value = ''
+    # action_style = HIDE_STYLE
+    print('current_runfile', current_runfile)
+    current_runfile = [value for value in current_runfile if value is not None]
+    if current_runfile:
+        selected_runfile = current_runfile
+        logger.info(f'current_runfile is {current_runfile}')
     logger.info(f'Triggered component to update runfile: {trigger_id}')
     if trigger_id == Parameter.SAVE_ROW_BTN.value or trigger_id == Parameter.UPDATE_BTN.value:
         logger.info(f'Updating the runfile table')
 
     elif 'runfile-radio' in trigger_id:
         selected_runfile = ctx.triggered[0]['value']
-    logger.info(f'Selected runfile: {selected_runfile}')
+        logger.info(f'Selected runfile: {selected_runfile}')
     if selected_runfile:
 
         parameter_display = SHOW_STYLE
@@ -180,50 +189,18 @@ def display_selected_runfile(selected_values, del_runfile_btn, n1, n2, selRow, e
         runfile_title = pf.get_runfile_title(selected_runfile, init_session)
         df = pf.df_runfile(selected_runfile)
         data_store['runfile'] = selected_runfile
+        dff = pd.concat([df, dff])
         if selRow:
             logger.info(f'Selected row: {selRow}')
             data_store['selected_row'] = selRow
+            # detail_value = pf.display_row_details(dff.iloc[selRow[0]])
+            # action_style = SHOW_STYLE
             highlight = pf.get_highlight(selRow)
+
         if ctx.triggered_id == Runfile.CONFIRM_DEL_ALERT.value:
             pf.del_runfile(selected_runfile)
-        dff = pd.concat([df, dff])
     # This seems to be constant, so defined it here
     return dff.to_dict('records'), runfile_title, parameter_display, data_store
-
-
-# display selected row values
-@app.callback(
-    Output(Parameter.DETAIL.value, 'children'),
-    Output(Parameter.ACTION.value, 'style'),
-    Input(Runfile.TABLE.value, "selected_rows"),
-    [State(Runfile.TABLE.value, 'data'),
-     ],
-)
-def display_details(selected_row, data,):
-    action_style = HIDE_STYLE
-    if selected_row:
-        details_data = data[selected_row[0]]
-        # Divide the dictionary into 6 equal parts
-        n = len(details_data)
-        part_size = n // 6 + (1 if n % 6 else 0)  # Calculate size of each part, considering remainder
-        dict_parts = [dict(list(details_data.items())[i:i + part_size]) for i in range(0, n, part_size)]
-        action_style = SHOW_STYLE
-        columns = []
-        for part in dict_parts:
-            rows = []
-            for key, value in part.items():
-                row = html.Div([
-                    html.Div(f"{key}:", className='col-6', style={'font-weight': 'bold'}),  # bold the key
-                    html.Div(str(value) if value else "-", className='col-6'),
-                ], className='row mb-2')
-                rows.append(row)
-            column = html.Div(rows, className='col-md-2')  # Adjust for 6 columns
-            columns.append(column)
-
-        return html.Div(columns, className='row'), action_style
-
-    else:
-        return no_update, action_style
 
 
 # Can not edit the default session
@@ -231,13 +208,11 @@ def display_details(selected_row, data,):
 # show edit row button after selecting a row
 @app.callback(
     [
-        Output(Table.NEW_ROW_BTN.value, 'style'),
-        Output(Table.EDIT_ROW_BTN.value, 'style'),
-        Output(Table.DEL_ROW_BTN.value, 'style'),
         Output(Runfile.DEL_BTN.value, 'style'),
         Output(Runfile.CLONE_BTN.value, 'style'),
         Output(Session.DEL_BTN.value, 'style'),
         Output(Session.NEW_BTN.value, 'style'),
+        Output(Parameter.DETAIL.value, 'style'),
     ],
     [
         Input(Session.SESSION_LIST.value, 'active_item'),
@@ -246,11 +221,12 @@ def display_details(selected_row, data,):
     ],
 )
 def default_session(active_session, selected_runfile, selected_rows):
+    logger.info('active_session: {}, init_session: {}'.format(active_session, init_session))
+    selected_runfile = [value for value in selected_runfile if value is not None]
     if not active_session:
-        return [HIDE_STYLE] * 7
+        return [HIDE_STYLE] * 5
     # Default all to hide
-    new_row_btn, edit_row_btn, del_row_btn, runfile_del, runfile_clone, session_del, session_new = [HIDE_STYLE] * 7
-
+    runfile_del, runfile_clone, session_del, session_new, detail_parameter = 5 * [HIDE_STYLE]
     if active_session == init_session:
         session_new = SHOW_STYLE
     else:
@@ -259,18 +235,18 @@ def default_session(active_session, selected_runfile, selected_rows):
             # if selected_runfile[1]:
             runfile_del, runfile_clone = [SHOW_STYLE] * 2
         if selected_rows:
-            new_row_btn, edit_row_btn, del_row_btn = [SHOW_STYLE] * 3
+            detail_parameter = SHOW_STYLE
 
-    return new_row_btn, edit_row_btn, del_row_btn, runfile_del, runfile_clone, session_del, session_new
+    return runfile_del, runfile_clone, session_del, session_new, detail_parameter
 
 
 # Define fixed Output objects
 fixed_outputs = [
-    Output(Parameter.MODAL.value, 'is_open'),
+    # Output(Parameter.MODAL.value, 'is_open'),
     Output(Runfile.TABLE.value, 'data'),
 ]
 fixed_states = [
-    State(Runfile.TABLE.value, "selected_rows"),
+
     State(Storage.DATA_STORE.value, 'data'),
     State(Runfile.TABLE.value, 'data'),
 
@@ -285,19 +261,19 @@ all_outputs = fixed_outputs + dynamic_outputs
 all_states = fixed_states + dynamic_states
 
 
+# the first element of output is the data of the table, the rest are the parameters
 @app.callback(
     all_outputs,
     [
-        Input(Table.NEW_ROW_BTN.value, 'n_clicks'),
-        Input(Table.EDIT_ROW_BTN.value, 'n_clicks'),
         Input(Table.DEL_ROW_BTN.value, 'n_clicks'),
         Input(Parameter.SAVE_ROW_BTN.value, 'n_clicks'),
         Input(Parameter.UPDATE_BTN.value, 'n_clicks'),
+        Input(Runfile.TABLE.value, "selected_rows"),
     ],
     all_states,
     prevent_initial_call=True,
 )
-def new_job(n1, n2, n3, n4, n5, selected_row, data, df_data, *state_values):
+def new_job(n1, n2, n3, selected_row, data, df_data, *state_values):
     if df_data:
         logger.info(f'Loading the runfile table to a DataFrame')
         df = pd.DataFrame(df_data)
@@ -307,24 +283,20 @@ def new_job(n1, n2, n3, n4, n5, selected_row, data, df_data, *state_values):
         df = pd.DataFrame(columns=table_column)
     triggered_id = ctx.triggered_id
     logger.info(f'Triggered component to update runfile: {triggered_id}')
-    output_values = [False] + [''] * (len(table_column) + 1)
+    output_values = [''] * (len(table_column) + 1)
+    print('selected_row', selected_row)
+    if selected_row:
+        selected_data = df.loc[selected_row[0]]
 
-    if selected_row is not None and len(selected_row) > 0:
-        if triggered_id in [Table.NEW_ROW_BTN.value, Table.EDIT_ROW_BTN.value]:
-            selected = df.loc[selected_row[0]]  # Assuming single selection
-            logger.info(f'Selected row: {selected}')
-            # set modal to open and data to remain the same
-            output_values[0] = True
-            output_values[2:] = pf.table_layout([selected[col] for col in table_column])
+        output_values[1:] = pf.table_layout([selected_data[col] for col in table_column])
 
-        elif triggered_id == Table.DEL_ROW_BTN.value:
+        if triggered_id == Table.DEL_ROW_BTN.value:
             logger.info(f'Deleting row {selected_row[0]}')
             df.drop(df.index[selected_row[0]], inplace=True)
             pf.save_runfile(df, data['runfile'])
         elif triggered_id in [Parameter.SAVE_ROW_BTN.value, Parameter.UPDATE_BTN.value]:
             # if there are more obsnums then join them using ' '
             parameters = pf.layout_table(list(state_values))
-
             new_row = {key: value for key, value in zip(table_column, parameters)}
             logger.debug(f'New row: {new_row}')
             if triggered_id == Parameter.SAVE_ROW_BTN.value:
@@ -335,29 +307,9 @@ def new_job(n1, n2, n3, n4, n5, selected_row, data, df_data, *state_values):
                 logger.info(f'Updating row {selected_row[0]}')
                 df.iloc[selected_row[0]] = new_row
             pf.save_runfile(df, data['runfile'])
-    output_values[1] = df.to_dict('records')
+    output_values[0] = df.to_dict('records')
     # logger.debug(f'Updated table values: {output_values}')
     return output_values
-
-
-# if click edit row then show update button in modal, if click new row then show save row button in modal
-@app.callback(
-    [
-        Output(Parameter.SAVE_ROW_BTN.value, 'style'),
-        Output(Parameter.UPDATE_BTN.value, 'style'),
-        # Output(Parameter.APPLYALL_BTN.value, 'style'),
-    ],
-    [
-        Input(Table.NEW_ROW_BTN.value, 'n_clicks'),
-        Input(Table.EDIT_ROW_BTN.value, 'n_clicks')
-    ], )
-def update_new_btn(n1, n2):
-    if ctx.triggered_id == Table.NEW_ROW_BTN.value:
-        return SHOW_STYLE, HIDE_STYLE
-    if ctx.triggered_id == Table.EDIT_ROW_BTN.value:
-        return HIDE_STYLE, SHOW_STYLE
-    else:
-        return no_update, no_update
 
 
 # if click delete button show the confirmation
@@ -436,23 +388,15 @@ def submit_runfile(n, data_store):
         Output(Storage.DATA_STORE.value, 'data'),
     ],
     [
-        Input(Table.NEW_ROW_BTN.value, 'n_clicks'),
-        Input(Table.EDIT_ROW_BTN.value, 'n_clicks'),
+        # Input(Table.NEW_ROW_BTN.value, 'n_clicks'),
+        # Input(Table.EDIT_ROW_BTN.value, 'n_clicks'),
         Input(Session.SESSION_LIST.value, 'active_item'),
     ],
     State(Storage.DATA_STORE.value, 'data'),
 )
-def update_options(n1, n2, active_item, stored_data):
+def update_options(active_item, stored_data):
     if not pf.check_user_exists():
         return no_update
-    # Create options for the dropdown
-    # json_file_name = default_session_prefix + current_user.username + '/' + current_user.username + '_source.json'
-    # if os.path.exists(json_file_name):
-    #     with open(json_file_name, 'r') as json_file:
-    #         data = json.load(json_file)
-    #         source_options = [{'label': source, 'value': source} for source in data.keys()]
-    #         stored_data['source'] = data
-    # # # get default mk_runs.py
     if stored_data['source']:
         sources = stored_data['source']
         source_options = [{'label': source, 'value': source} for source in sources]

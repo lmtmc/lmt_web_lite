@@ -117,7 +117,8 @@ def get_source(default_work_lmt, pid):
     else:
         logger.info(f'No source.json file found in {pid_path}, executing mk_runs.py to generate the sources')
         mk_runs_file = os.path.join(pid_path, 'mk_runs.py')
-        result = subprocess.run(['python3', mk_runs_file], capture_output=True, text=True, cwd=pid_path)
+        result = subprocess.run(['/home/lmt/lmt_web_lite/env/bin/python3', mk_runs_file], capture_output=True,
+                                text=True, cwd=pid_path)
 
         # checks if the command ran successfully(return code 0)
         if result.returncode == 0:
@@ -267,7 +268,7 @@ def df_runfile(filename):
         try:
             with open(filename) as file:
                 content = file.read()
-                logger.debug(f'Content of {filename}:\n {content}')
+                # logger.debug(f'Content of {filename}:\n {content}')
                 file.seek(0)
                 for line in file:
                     commands = line.strip().split()
@@ -280,7 +281,10 @@ def df_runfile(filename):
                 df.rename(columns={'obsnum': 'obsnum(s)'}, inplace=True)
             elif 'obsnums' in df.columns:
                 df.rename(columns={'obsnums': 'obsnum(s)'}, inplace=True)
-            logger.info(f'Final DataFrame with renamed columns: \n {df}')
+            #logger.info(f'Final DataFrame with renamed columns: \n {df}')
+            # rename pix_list to exclude_beams
+            if 'pix_list' in df.columns:
+                df.rename(columns={'pix_list': 'exclude_beams'}, inplace=True)
             return df
         except Exception as e:
             logger.error(e)
@@ -298,6 +302,14 @@ def save_runfile(df, runfile_path):
         line = 'SLpipeline.sh'
         for column, value in row.items():
             if value is not None and str(value).strip() != '':
+                if column == 'obsnum(s)':
+                    print('print value', value)
+                    if ',' in value:
+                        column = 'obsnums'
+                    else:
+                        column = 'obsnum'
+                if column == 'exclude_beams':
+                    column = 'pix_list'
                 line += f" {column}{separator}{value}"
         lines.append(line)
     with open(runfile_path, 'w') as f:
@@ -305,6 +317,7 @@ def save_runfile(df, runfile_path):
 
 
 def table_layout(table_data):
+
     output = table_data
     output[1] = table_data[1].split(',')
     # 1,2,3 to ['1', '2', '3']
@@ -413,3 +426,43 @@ def get_highlight(selRow):
 
 def get_column_value(df, selected_row_idx, column_name):
     return df.loc[selected_row_idx, column_name] if column_name in df.columns else None
+
+
+def display_row_details(details_data):
+    # Divide the dictionary into 6 equal parts
+    n = len(details_data)
+    part_size = n // 6 + (1 if n % 6 else 0)  # Calculate size of each part, considering remainder
+    dict_parts = [dict(list(details_data.items())[i:i + part_size]) for i in range(0, n, part_size)]
+    columns = []
+    for part in dict_parts:
+        rows = []
+        for key, value in part.items():
+            row = html.Div([
+                html.Div(f"{key}:", className='col-6', style={'font-weight': 'bold'}),  # bold the key
+                html.Div(str(value) if value else "-", className='col-6'),
+            ], className='row mb-2')
+            rows.append(row)
+        column = html.Div(rows, className='col-md-2')  # Adjust for 6 columns
+        columns.append(column)
+
+    return html.Div(columns, className='row')
+
+#
+# def edit_row_details(details_data):
+    # Divide the dictionary into 6 equal parts
+    # n = len(details_data)
+    # part_size = n // 6 + (1 if n % 6 else 0)  # Calculate size of each part, considering remainder
+    # dict_parts = [dict(list(details_data.items())[i:i + part_size]) for i in range(0, n, part_size)]
+    # columns = []
+    # for part in dict_parts:
+    #     rows = []
+    #     for key, value in part.items():
+    #         row = html.Div([
+    #             html.Div(f"{key}:", className='col-6', style={'font-weight': 'bold'}),  # bold the key
+    #             html.Div(str(value) if value else "-", className='col-6'),
+    #         ], className='row mb-2')
+    #         rows.append(row)
+    #     column = html.Div(rows, className='col-md-2')  # Adjust for 6 columns
+    #     columns.append(column)
+
+    # return html.Div(edit_parameter.)
