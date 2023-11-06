@@ -46,14 +46,17 @@ layout = html.Div(
     [
 
         html.Div(ui.url_location),
-        dbc.Row(
-            [
-                dbc.Col(ui.session_layout, width=2),
-                dbc.Col(ui.parameter_layout, width=10),
-                dcc.Location(id='project_url', refresh=False)
-
-            ]
-        )])
+        # dbc.Row(
+        #     [
+        #         dbc.Col(ui.session_layout, width=2),
+        #         dbc.Col(ui.parameter_layout, width=10),
+        #
+        #     ]
+        # )
+        ui.session_layout,
+        html.Br(),
+        ui.parameter_layout,
+    ])
 
 
 # display the sessions

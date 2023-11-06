@@ -160,8 +160,8 @@ def get_session_list(default_session, pid_path):
         dbc.AccordionItem(
             [dbc.RadioItems(id={'type': 'runfile-radio', 'index': session['name']},
                             options=get_runfile_option(session['path']),
-                            className='my-radio-items')],
-            title=session['name'], className='mb-2', item_id=session['name']
+                            className='my-radio-items', inline=True)],
+            title=session['name'], className='mb-2', item_id=session['name'],
         )
         for session in session_info
     ]
@@ -281,7 +281,7 @@ def df_runfile(filename):
                 df.rename(columns={'obsnum': 'obsnum(s)'}, inplace=True)
             elif 'obsnums' in df.columns:
                 df.rename(columns={'obsnums': 'obsnum(s)'}, inplace=True)
-            #logger.info(f'Final DataFrame with renamed columns: \n {df}')
+            # logger.info(f'Final DataFrame with renamed columns: \n {df}')
             # rename pix_list to exclude_beams
             if 'pix_list' in df.columns:
                 df.rename(columns={'pix_list': 'exclude_beams'}, inplace=True)
@@ -317,7 +317,6 @@ def save_runfile(df, runfile_path):
 
 
 def table_layout(table_data):
-
     output = table_data
     output[1] = table_data[1].split(',')
     # 1,2,3 to ['1', '2', '3']
@@ -449,20 +448,20 @@ def display_row_details(details_data):
 
 #
 # def edit_row_details(details_data):
-    # Divide the dictionary into 6 equal parts
-    # n = len(details_data)
-    # part_size = n // 6 + (1 if n % 6 else 0)  # Calculate size of each part, considering remainder
-    # dict_parts = [dict(list(details_data.items())[i:i + part_size]) for i in range(0, n, part_size)]
-    # columns = []
-    # for part in dict_parts:
-    #     rows = []
-    #     for key, value in part.items():
-    #         row = html.Div([
-    #             html.Div(f"{key}:", className='col-6', style={'font-weight': 'bold'}),  # bold the key
-    #             html.Div(str(value) if value else "-", className='col-6'),
-    #         ], className='row mb-2')
-    #         rows.append(row)
-    #     column = html.Div(rows, className='col-md-2')  # Adjust for 6 columns
-    #     columns.append(column)
+# Divide the dictionary into 6 equal parts
+# n = len(details_data)
+# part_size = n // 6 + (1 if n % 6 else 0)  # Calculate size of each part, considering remainder
+# dict_parts = [dict(list(details_data.items())[i:i + part_size]) for i in range(0, n, part_size)]
+# columns = []
+# for part in dict_parts:
+#     rows = []
+#     for key, value in part.items():
+#         row = html.Div([
+#             html.Div(f"{key}:", className='col-6', style={'font-weight': 'bold'}),  # bold the key
+#             html.Div(str(value) if value else "-", className='col-6'),
+#         ], className='row mb-2')
+#         rows.append(row)
+#     column = html.Div(rows, className='col-md-2')  # Adjust for 6 columns
+#     columns.append(column)
 
-    # return html.Div(edit_parameter.)
+# return html.Div(edit_parameter.)

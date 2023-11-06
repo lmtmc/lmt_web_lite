@@ -123,7 +123,10 @@ detail_card_style = {'height': card_height, 'padding': '10px', 'overflowY': 'aut
 url_location = dcc.Location(id='url_session1', refresh=True),
 
 # Generate column data dynamically
-columns = [{"name": col, "id": col, 'hideable': True, 'resizable': True}
+columns = [{"name": col, "id": col,
+            # toggle table columns
+            # 'hideable': True,
+            'resizable': True}
            for col in column_list]
 
 tooltip_header = {
@@ -146,7 +149,7 @@ runfile_table = dash_table.DataTable(
     style_table={
         'overflowX': 'auto',
         'overflowY': 'auto',
-        'padding': '20px',
+        'padding': '10px',
     },
     tooltip_header=tooltip_header,
     style_header={
@@ -195,7 +198,7 @@ session_layout = dbc.Card(
                                 className='ms-auto'), width='auto')
         ], align='center', justify='end'
         ), ),
-    ], style={'height': session_height},
+    ], style={'max-height': '40vh', 'overflow': 'auto'},
 
 )
 # parameter layout
@@ -241,7 +244,7 @@ input_fields_2 = [
     for field in column_list[9:11]]
 
 edit_parameter_layout = html.Div([dbc.Row([
-    dbc.Col(dbc.Card([dbc.AccordionItem(title='Source and obsnum'),
+    dbc.Col(dbc.Card([dbc.Label('Source and obsnum', className='large-label'),
                       dbc.Row([dbc.Col(dbc.Label('Source', className="sm-label"), width=4),
                                dbc.Col(dcc.Dropdown(id=column_list[0], multi=False, ), width=8),
                                dbc.Alert(id='source-alert', color='danger', duration=2000)], align='center',
@@ -374,87 +377,80 @@ clone_runfile_modal = pf.create_modal('Input the new runfile name',
                                           html.Button("Clone", id=Runfile.SAVE_CLONE_RUNFILE_BTN.value)
                                       ],
                                       Runfile.CLONE_RUNFILE_MODAL.value)
-parameter_layout = html.Div(
-    dbc.Card(
-        [
-            dbc.CardHeader(
+parameter_layout = dbc.Card(
+    [
+        dbc.CardHeader(
+            html.Div([
                 html.Div([
-                    html.Div([
-                        dbc.Row([
-                            dbc.Col(html.Div(id=Runfile.CONTENT_TITLE.value), width='auto'),
-                            dbc.Col(
-                                dbc.Row([
-                                    dbc.Col(html.Button([html.I(className="fa fa-paper-plane me-2"), 'Verify Runfile'],
-                                                        id=Runfile.RUN_BTN.value,
-                                                        n_clicks=0)),
-                                    dbc.Col(html.Button([html.I(className="fas fa-trash me-2"), 'Delete Runfile'],
-                                                        id=Runfile.DEL_BTN.value), width='auto'),
-                                    dbc.Col(html.Button([html.I(className="fa-solid fa-clone me-2"), 'Clone Runfile'],
-                                                        id=Runfile.CLONE_BTN.value), width='auto'),
-                                ]), width='auto', className='ms-auto')
-                        ], align='center', justify='between')
-                    ])
-                ]), style={'height': '50px'}
-            ),
-            dbc.CardBody([
-                html.Div(runfile_table, style={
-                    'height': table_height,
-                    'overflowY': 'auto',
-                    'border': '1px solid #ccc',
-                    'padding': '10px',
-                    'margin-top': '10px',
-                    'box-shadow': '0 4px 8px rgba(0, 0, 0, 0.1)'}),
-                # html.Div(runfile_modal, style={'max-height': '200px', 'overflowY': 'auto'}),
+                    dbc.Row([
+                        dbc.Col(html.Div(id=Runfile.CONTENT_TITLE.value), width='auto'),
+                        dbc.Col(
+                            dbc.Row([
+                                dbc.Col(html.Button([html.I(className="fa fa-paper-plane me-2"), 'Verify Runfile'],
+                                                    id=Runfile.RUN_BTN.value,
+                                                    n_clicks=0)),
+                                dbc.Col(html.Button([html.I(className="fas fa-trash me-2"), 'Delete Runfile'],
+                                                    id=Runfile.DEL_BTN.value), width='auto'),
+                                dbc.Col(html.Button([html.I(className="fa-solid fa-clone me-2"), 'Clone Runfile'],
+                                                    id=Runfile.CLONE_BTN.value), width='auto'),
+                            ]), width='auto', className='ms-auto')
+                    ], align='center', justify='between')
+                ])
+            ]), style={'height': '50px'}
+        ),
+        dbc.CardBody([
+            html.Div(runfile_table, style={
+                'height': table_height,
+                'overflowY': 'auto',
+                'border': '1px solid #ccc',
+                'padding': '10px',
+                'margin-top': '10px',
+                'box-shadow': '0 4px 8px rgba(0, 0, 0, 0.1)'}),
+            # html.Div(runfile_modal, style={'max-height': '200px', 'overflowY': 'auto'}),
 
-                html.Div([
-                    # html.Div(
-                    #     dbc.DropdownMenu(
-                    #         label="Actions",
-                    #         color='secondary',
-                    #         children=[
-                    #             dbc.DropdownMenuItem([html.I(className="fas fa-edit me-2"), "Edit"],
-                    #                                  id=Table.EDIT_ROW_BTN.value),
-                    #             dbc.DropdownMenuItem([html.I(className="fas fa-trash me-2"), "Delete"],
-                    #                                  id=Table.DEL_ROW_BTN.value),
-                    #             dbc.DropdownMenuItem([html.I(className="fas fa-plus me-2"), "Clone"],
-                    #                                  id=Table.NEW_ROW_BTN.value),
-                    #         ],
-                    #         direction="end",  # This makes the dropdown expand towards the left.
-                    #         className='d-flex align-items-center justify-content-end',
-                    #
-                    #     ), id=Parameter.ACTION.value
-                    # ),
-                    html.Div(edit_parameter_layout, id=Parameter.DETAIL.value), ], style={
-                    'height': detail_height,
-                    'overflowY': 'auto',
-                    'border': '1px solid #ccc',
-                    'padding': '10px',
-                    'margin-top': '20px',
-                    'box-shadow': '0 4px 8px rgba(0, 0, 0, 0.1)'
-                }, ),
-                html.Div(id='js-container'),
-                html.Div(clone_runfile_modal),
-                html.Div(dbc.Alert(id=Runfile.VALIDATION_ALERT.value, is_open=False, dismissable=True, )),
-                html.Br(),
-            ],
-                style={'height': parameter_body_height}
-            ),
-
-            html.Div(dcc.ConfirmDialog(
-                id=Runfile.CONFIRM_DEL_ALERT.value,
-                message='Are you sure to delete the runfile?'
-            ),
-                id='confirm-dialog-container',  # Give it an ID for styling
-            ),
-
+            html.Div([
+                # html.Div(
+                #     dbc.DropdownMenu(
+                #         label="Actions",
+                #         color='secondary',
+                #         children=[
+                #             dbc.DropdownMenuItem([html.I(className="fas fa-edit me-2"), "Edit"],
+                #                                  id=Table.EDIT_ROW_BTN.value),
+                #             dbc.DropdownMenuItem([html.I(className="fas fa-trash me-2"), "Delete"],
+                #                                  id=Table.DEL_ROW_BTN.value),
+                #             dbc.DropdownMenuItem([html.I(className="fas fa-plus me-2"), "Clone"],
+                #                                  id=Table.NEW_ROW_BTN.value),
+                #         ],
+                #         direction="end",  # This makes the dropdown expand towards the left.
+                #         className='d-flex align-items-center justify-content-end',
+                #
+                #     ), id=Parameter.ACTION.value
+                # ),
+                html.Div(edit_parameter_layout, id=Parameter.DETAIL.value), ], style={
+                'height': detail_height,
+                'overflowY': 'auto',
+                'border': '1px solid #ccc',
+                'padding': '10px',
+                'margin-top': '20px',
+                'box-shadow': '0 4px 8px rgba(0, 0, 0, 0.1)'
+            }, ),
+            html.Div(id='js-container'),
+            html.Div(clone_runfile_modal),
+            html.Div(dbc.Alert(id=Runfile.VALIDATION_ALERT.value, is_open=False, dismissable=True, )),
+            html.Br(),
         ],
-        id=Runfile.PARAMETER_LAYOUT.value,
-    ),
-    style={
-        'border': '1px grey solid',
-        'padding': '0, 20px',  # top right bottom left
-        'height': session_height,
-    },
+            style={'height': parameter_body_height}
+        ),
+
+        html.Div(dcc.ConfirmDialog(
+            id=Runfile.CONFIRM_DEL_ALERT.value,
+            message='Are you sure to delete the runfile?'
+        ),
+            id='confirm-dialog-container',  # Give it an ID for styling
+        ),
+
+    ],
+    id=Runfile.PARAMETER_LAYOUT.value,
 )
 
 link_bar = dbc.Row(
