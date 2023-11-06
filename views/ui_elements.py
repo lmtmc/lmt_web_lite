@@ -137,7 +137,7 @@ runfile_table = dash_table.DataTable(
     id=Runfile.TABLE.value,
     row_selectable='single',
     data=[],
-    filter_action="native",
+    # filter_action="native",
     columns=columns,
     page_size=5,
     style_cell={
@@ -255,7 +255,6 @@ def make_tooltip(content, target):
     return html.Div(dbc.Tooltip(content, target=target, className='large-tooltip', placement='bottom'))
 
 
-print(tooltip_target[0], tooltip_target[1], tooltip_target[2], tooltip_target[3], tooltip_target[4])
 edit_parameter_layout = html.Div([dbc.Row([
     dbc.Col(dbc.Card([dbc.Label('Source and obsnum', className='large-label'),
                       dbc.Row([dbc.Col(dbc.Label('Source', className="sm-label", id=tooltip_target[0]), width=4),
@@ -395,7 +394,7 @@ clone_runfile_modal = pf.create_modal('Input the new runfile name',
                                           html.Button("Clone", id=Runfile.SAVE_CLONE_RUNFILE_BTN.value)
                                       ],
                                       Runfile.CLONE_RUNFILE_MODAL.value)
-parameter_layout = dbc.Card(
+parameter_layout = html.Div(dbc.Card(
     [
         dbc.CardHeader(
             html.Div([
@@ -417,9 +416,8 @@ parameter_layout = dbc.Card(
             ]), style={'height': '50px'}
         ),
         dbc.CardBody([
-            html.Div(runfile_table, ),
+            html.Div(runfile_table, style={'height': table_height}),
             html.Div(edit_parameter_layout, id=Parameter.DETAIL.value),
-            html.Div(id='js-container'),
             html.Div(clone_runfile_modal),
             html.Div(dbc.Alert(id=Runfile.VALIDATION_ALERT.value, is_open=False, dismissable=True, )),
             html.Br(),
@@ -434,8 +432,7 @@ parameter_layout = dbc.Card(
         ),
 
     ],
-    id=Runfile.PARAMETER_LAYOUT.value,
-)
+    id=Runfile.PARAMETER_LAYOUT.value, style={'display': 'none'},))
 
 link_bar = dbc.Row(
     [

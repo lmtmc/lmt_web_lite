@@ -303,7 +303,6 @@ def save_runfile(df, runfile_path):
         for column, value in row.items():
             if value is not None and str(value).strip() != '':
                 if column == 'obsnum(s)':
-                    print('print value', value)
                     if ',' in value:
                         column = 'obsnums'
                     else:
@@ -367,22 +366,9 @@ def create_modal(header_label, body_elements, footer_elements, modal_id):
     )
 
 
-def dry_run(runfile):
-    df = df_runfile(runfile)
-    message = 'Submitted!'
-    color = 'success'
-    # if 'admit' in df.columns:
-    #     if not all(x in ['0', '1'] for x in df['admit']):
-    #         message = 'Please input 0 or 1 for in the admit field!'
-    #         color = 'danger'
-    message = f'runs.verify(\'bench1.run\')'
-    # if message is None:
-    #     message = 'Submitted!'
-    #     color = 'success'
-    # else:
-    #     message = message
-    #     color = 'danger'
-    return message, color
+def verify_row(new_row):
+    print('new_row', new_row)
+
 
 
 def first_file_path(folder_path):

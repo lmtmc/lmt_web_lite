@@ -46,19 +46,14 @@ layout = html.Div(
     [
 
         html.Div(ui.url_location),
-        # dbc.Row(
-        #     [
-        #         dbc.Col(ui.session_layout, width=2),
-        #         dbc.Col(ui.parameter_layout, width=10),
-        #
-        #     ]
-        # )
         ui.session_layout,
         html.Br(),
         ui.parameter_layout,
     ])
 
 
+#
+#
 # display the sessions
 @app.callback(
     [
@@ -139,11 +134,9 @@ def display_confirmation(n_clicks):
 @app.callback(
     [
         Output(Runfile.TABLE.value, 'data', allow_duplicate=True),
-        # Output(Runfile.TABLE.value, 'style_data_conditional'),
         Output(Runfile.CONTENT_TITLE.value, 'children'),
         Output(Runfile.PARAMETER_LAYOUT.value, 'style'),
-        Output(Storage.DATA_STORE.value, 'data', allow_duplicate=True),
-        # Output(Parameter.ACTION.value, 'style'),
+        # Output(Storage.DATA_STORE.value, 'data', allow_duplicate=True),
     ],
     [
         Input({'type': 'runfile-radio', 'index': ALL}, 'value'),
@@ -154,56 +147,38 @@ def display_confirmation(n_clicks):
     ],
     [
         State(Runfile.TABLE.value, "selected_rows"),
-        State(Runfile.TABLE.value, 'data'),
-        State(Runfile.TABLE.value, 'columns'),
-        State(Storage.DATA_STORE.value, 'data'),
-        State({'type': 'runfile-radio', 'index': ALL}, 'value'),
+        # State(Storage.DATA_STORE.value, 'data'),
     ],
     prevent_initial_call='initial_duplicate'
 )
-def display_selected_runfile(selected_values, del_runfile_btn, n1, n2, selRow, existing_data,
-                             existing_columns, data_store, current_runfile):
+def display_selected_runfile(selected_runfile, del_runfile_btn, n1, n2, selRow):
     if not ctx.triggered:
         raise PreventUpdate
     # Initialize the DataFrame
     dff = pd.DataFrame(columns=table_column)
     runfile_title = ''
     trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
-    selected_runfile = ''
     parameter_display = HIDE_STYLE
-    # detail_value = ''
-    # action_style = HIDE_STYLE
-    print('current_runfile', current_runfile)
-    current_runfile = [value for value in current_runfile if value is not None]
+    print('selected_runfile', selected_runfile)
+    current_runfile = [value for value in selected_runfile if value is not None]
     if current_runfile:
-        selected_runfile = current_runfile
+        current_runfile = current_runfile[0]
+        parameter_display = SHOW_STYLE
+        print('check selected_runfile', current_runfile)
+        runfile_title = pf.get_runfile_title(current_runfile, init_session)
+        df = pf.df_runfile(current_runfile)
+        print('df here', df)
+        # data_store['runfile'] = current_runfile
+        dff = pd.concat([df, dff])
+        # if selRow:
+        #     logger.info(f'Selected row: {selRow}')
+        #     data_store['selected_row'] = selRow
+        if ctx.triggered_id == Runfile.CONFIRM_DEL_ALERT.value:
+            pf.del_runfile(current_runfile)
         logger.info(f'current_runfile is {current_runfile}')
     logger.info(f'Triggered component to update runfile: {trigger_id}')
-    if trigger_id == Parameter.SAVE_ROW_BTN.value or trigger_id == Parameter.UPDATE_BTN.value:
-        logger.info(f'Updating the runfile table')
 
-    elif 'runfile-radio' in trigger_id:
-        selected_runfile = ctx.triggered[0]['value']
-        logger.info(f'Selected runfile: {selected_runfile}')
-    if selected_runfile:
-
-        parameter_display = SHOW_STYLE
-        # df, runfile_title, highlight = pf.initialize_common_variables(selected_runfile, selRow, init_session)
-        runfile_title = pf.get_runfile_title(selected_runfile, init_session)
-        df = pf.df_runfile(selected_runfile)
-        data_store['runfile'] = selected_runfile
-        dff = pd.concat([df, dff])
-        if selRow:
-            logger.info(f'Selected row: {selRow}')
-            data_store['selected_row'] = selRow
-            # detail_value = pf.display_row_details(dff.iloc[selRow[0]])
-            # action_style = SHOW_STYLE
-            highlight = pf.get_highlight(selRow)
-
-        if ctx.triggered_id == Runfile.CONFIRM_DEL_ALERT.value:
-            pf.del_runfile(selected_runfile)
-    # This seems to be constant, so defined it here
-    return dff.to_dict('records'), runfile_title, parameter_display, data_store
+    return dff.to_dict('records'), runfile_title, parameter_display
 
 
 # Can not edit the default session
@@ -223,6 +198,7 @@ def display_selected_runfile(selected_values, del_runfile_btn, n1, n2, selRow, e
         Input({'type': 'runfile-radio', 'index': ALL}, 'value'),
         Input(Runfile.TABLE.value, "selected_rows"),
     ],
+    prevent_initial_call=True
 )
 def default_session(active_session, selected_runfile, selected_rows):
     logger.info('active_session: {}, init_session: {}'.format(active_session, init_session))
@@ -239,7 +215,6 @@ def default_session(active_session, selected_runfile, selected_rows):
     else:
         session_del = SHOW_STYLE
         if selected_runfile:
-            # if selected_runfile[1]:
             runfile_del, runfile_clone = [SHOW_STYLE] * 2
         if selected_rows:
             detail_parameter = SHOW_STYLE
@@ -250,12 +225,10 @@ def default_session(active_session, selected_runfile, selected_rows):
 
 # Define fixed Output objects
 fixed_outputs = [
-    # Output(Parameter.MODAL.value, 'is_open'),
     Output(Runfile.TABLE.value, 'data'),
 ]
 fixed_states = [
 
-    State(Storage.DATA_STORE.value, 'data'),
     State(Runfile.TABLE.value, 'data'),
 
 ]
@@ -269,39 +242,56 @@ all_outputs = fixed_outputs + dynamic_outputs
 all_states = fixed_states + dynamic_states
 
 
-# the first element of output is the data of the table, the rest are the parameters
+# display selected row
 @app.callback(
-    all_outputs,
+    dynamic_outputs,
+    [
+        Input(Runfile.TABLE.value, "selected_rows"),
+        Input(Runfile.TABLE.value, 'data')
+    ],
+    prevent_initial_call=True, )
+def display_selected_row(selected_row, data):
+    if not ctx.triggered:
+        raise PreventUpdate
+    output_values = [''] * (len(table_column))
+    print('selected_row', selected_row)
+    if data:
+        df = pd.DataFrame(data)
+        df.fillna('', inplace=True)
+    else:
+        logger.info(f'Creating a new empty DataFrame')
+        df = pd.DataFrame(columns=table_column)
+    if selected_row:
+        selected_data = df.loc[selected_row[0]]
+        output_values = pf.table_layout([selected_data[col] for col in table_column])
+    return output_values
+
+
+# save the parameter to the runfile and dataTable
+
+@app.callback(
+    Output(Runfile.TABLE.value, 'data'),
     [
         Input(Table.DEL_ROW_BTN.value, 'n_clicks'),
         Input(Parameter.SAVE_ROW_BTN.value, 'n_clicks'),
         Input(Parameter.UPDATE_BTN.value, 'n_clicks'),
         Input(Runfile.TABLE.value, "selected_rows"),
+        Input({'type': 'runfile-radio', 'index': ALL}, 'value'),
     ],
     all_states,
     prevent_initial_call=True,
 )
-def new_job(n1, n2, n3, selected_row, data, df_data, *state_values):
-    if df_data:
-        logger.info(f'Loading the runfile table to a DataFrame')
-        df = pd.DataFrame(df_data)
-        df.fillna('', inplace=True)
-    else:
-        logger.info(f'Creating a new empty DataFrame')
-        df = pd.DataFrame(columns=table_column)
+def new_job(n1, n2, n3, selected_row, selected_runfile, df_table, *state_values):
     triggered_id = ctx.triggered_id
     logger.info(f'Triggered component to update runfile: {triggered_id}')
-    output_values = [''] * (len(table_column) + 1)
-    print('selected_row', selected_row)
+    output_value = ''
+    df = pd.DataFrame(df_table)
     if selected_row:
-        selected_data = df.loc[selected_row[0]]
-
-        output_values[1:] = pf.table_layout([selected_data[col] for col in table_column])
-
+        selected_runfile = [value for value in selected_runfile if value is not None][0]
         if triggered_id == Table.DEL_ROW_BTN.value:
             logger.info(f'Deleting row {selected_row[0]}')
             df.drop(df.index[selected_row[0]], inplace=True)
-            pf.save_runfile(df, data['runfile'])
+            pf.save_runfile(df, selected_runfile)
         elif triggered_id in [Parameter.SAVE_ROW_BTN.value, Parameter.UPDATE_BTN.value]:
             # if there are more obsnums then join them using ' '
             parameters = pf.layout_table(list(state_values))
@@ -314,12 +304,13 @@ def new_job(n1, n2, n3, selected_row, data, df_data, *state_values):
             else:
                 logger.info(f'Updating row {selected_row[0]}')
                 df.iloc[selected_row[0]] = new_row
-            pf.save_runfile(df, data['runfile'])
-    output_values[0] = df.to_dict('records')
+            pf.save_runfile(df, selected_runfile)
+    output_value = df.to_dict('records')
     # logger.debug(f'Updated table values: {output_values}')
-    return output_values
+    return output_value
 
 
+#
 # if click delete button show the confirmation
 @app.callback(
     Output(Runfile.CONFIRM_DEL_ALERT.value, 'displayed'),
@@ -363,30 +354,6 @@ def copy_runfile(n1, n2, data_store, virtual_data, new_name):
         pf.save_runfile(pd.DataFrame(virtual_data), new_runfile_path)
         message = f'Runfile {new_runfile_name} saved successfully!'
     return modal_open, message, status
-
-
-# open an alert to submit
-@app.callback(
-    [
-        Output(Runfile.VALIDATION_ALERT.value, 'is_open'),
-        Output(Runfile.VALIDATION_ALERT.value, 'children'),
-        Output(Runfile.VALIDATION_ALERT.value, 'color'),
-    ],
-    Input(Runfile.RUN_BTN.value, 'n_clicks'),
-    State(Storage.DATA_STORE.value, 'data'),
-    prevent_initial_call=True
-)
-def submit_runfile(n, data_store):
-    if ctx.triggered_id != Runfile.RUN_BTN.value or not data_store.get('runfile'):
-        return no_update, no_update, no_update
-    color = 'danger'
-    message = runs.verify(data_store['runfile'], debug=False)
-    logger.info(f'Verifying runfile: {data_store["runfile"]}, message: {message}')
-    if message is None:
-        message = 'Runfile is valid!'
-        color = 'success'
-
-    return True, message, color
 
 
 # if login get the options for source and obsnums
@@ -473,15 +440,3 @@ def select_all_beam(n_clicks, current_values, options):
             option['label']['props']['className'] = None
 
     return current_values, options
-
-
-# make modal draggable
-app.clientside_callback(
-    # ClientsideFunction(namespace='clientside', function_name='make_draggable'),
-    '''
-    function(is_open) {
-    return dash_clientside.clientside.make_draggable(is_open);}
-    ''',
-    Output("js-container", "children"),
-    [Input("draggable-modal", "is_open")],
-)
