@@ -139,7 +139,7 @@ runfile_table = dash_table.DataTable(
     data=[],
     filter_action="native",
     columns=columns,
-    page_size=4,
+    page_size=5,
     style_cell={
         'textAlign': 'left',
         'font-size': '15px',
@@ -149,7 +149,7 @@ runfile_table = dash_table.DataTable(
     style_table={
         'overflowX': 'auto',
         'overflowY': 'auto',
-        'padding': '10px',
+        # 'padding': '10px',
     },
     tooltip_header=tooltip_header,
     style_header={
@@ -243,33 +243,50 @@ input_fields_2 = [
     create_input_field(field, input_id=field, input_type=None, min_val=None, max_val=None, )
     for field in column_list[9:11]]
 
+tooltip_target = ['source_label', 'obsumns_label', 'bank_label', 'exclude_beams_label', 'time_range_label']
+tooltip_content = ["Select a source",
+                   "a single observation number, typically 6 digits, e.g. 123456",
+                   "select a bank from a WARES based instrument; -1 means all banks, 0 is the first bank",
+                   "exclude beams",
+                   "Select time range", ]
+
+
+def make_tooltip(content, target):
+    return html.Div(dbc.Tooltip(content, target=target, className='large-tooltip', placement='bottom'))
+
+
+print(tooltip_target[0], tooltip_target[1], tooltip_target[2], tooltip_target[3], tooltip_target[4])
 edit_parameter_layout = html.Div([dbc.Row([
     dbc.Col(dbc.Card([dbc.Label('Source and obsnum', className='large-label'),
-                      dbc.Row([dbc.Col(dbc.Label('Source', className="sm-label", id='source-label'), width=4),
-                               dbc.Tooltip("Select a source!", target="source-label", className='large-tooltip', placement='bottom'),
+                      dbc.Row([dbc.Col(dbc.Label('Source', className="sm-label", id=tooltip_target[0]), width=4),
+                               make_tooltip(tooltip_content[0], tooltip_target[0]),
                                dbc.Col(dcc.Dropdown(id=column_list[0], multi=False, ), width=8),
                                dbc.Alert(id='source-alert', color='danger', duration=2000)], align='center',
                               className='mb-3'),
-                      dbc.Row([dbc.Col(dbc.Label('Obsnum', className="sm-label"), width=4),
+                      dbc.Row([dbc.Col(dbc.Label('Obsnum', className="sm-label", id=tooltip_target[1]), width=4),
+                               make_tooltip(tooltip_content[1], tooltip_target[1]),
                                dbc.Col(dcc.Dropdown(id=column_list[1], clearable=False, multi=True), width=8)],
                               align='center'),
                       ], style=detail_card_style), width=2, ),
 
     dbc.Col(dbc.Card([
         dbc.Label('Beam', className='large-label'),
-        dbc.Row([dbc.Col(dbc.Label('Bank', className='sm-label'), width=4),
+        dbc.Row([dbc.Col(dbc.Label('Bank', className='sm-label', id=tooltip_target[2]), width=4),
+                 make_tooltip(tooltip_content[2], tooltip_target[2]),
                  dbc.Col(dcc.Dropdown(id=column_list[2], options=bank_options, ), width=8)], align='center',
                 className='mb-3'),
 
         dbc.Row(
-            [dbc.Col(dbc.Label('Exclude Beams', id='label', className='sm-label')),
+            [dbc.Col(dbc.Label('Exclude Beams', className='sm-label', id=tooltip_target[3])),
+             make_tooltip(tooltip_content[3], tooltip_target[3]),
              dbc.Col(dbc.Button('Check All', id='all-beam', color='secondary',
                                 style={'padding': '0', 'font-size': '8px', 'height': '20px', })),
              ], align='center', ),
         dbc.Row(dbc.Checklist(id=column_list[3], options=beam_options, inline=True), className='mb-3'),
 
         dbc.Row([
-            dbc.Col(dbc.Label('Time Range', className='sm-label'), width=4),
+            dbc.Col(dbc.Label('Time Range', className='sm-label', id=tooltip_target[4]), width=4),
+            make_tooltip(tooltip_content[4], tooltip_target[4]),
             dbc.Col(dbc.Input(id=column_list[4],
                               placeholder='min, max'
                               ), width=4
@@ -361,11 +378,11 @@ edit_parameter_layout = html.Div([dbc.Row([
     ], style=detail_card_style),
     )
 ], className='mb-3'),
-    dbc.Row([
+    html.Div(dbc.Row([
         dbc.Col(html.Button("Save", id=Parameter.UPDATE_BTN.value), width="auto", className="ml-auto"),
         dbc.Col(html.Button("Add a new row", id=Parameter.SAVE_ROW_BTN.value), width="auto", className="ml-auto"),
         dbc.Col(html.Button("Delete row", id=Table.DEL_ROW_BTN.value), width="auto", className="ml-auto"),
-    ], className='d-flex justify-content-end mb-2')
+    ], className='d-flex justify-content-end mb-2'), id=Parameter.ACTION.value),
 
 ])
 
@@ -400,47 +417,13 @@ parameter_layout = dbc.Card(
             ]), style={'height': '50px'}
         ),
         dbc.CardBody([
-            html.Div(runfile_table, style={
-                'height': table_height,
-                'overflowY': 'auto',
-                'border': '1px solid #ccc',
-                'padding': '10px',
-                'margin-top': '10px',
-                'box-shadow': '0 4px 8px rgba(0, 0, 0, 0.1)'}),
-            # html.Div(runfile_modal, style={'max-height': '200px', 'overflowY': 'auto'}),
-
-            html.Div([
-                # html.Div(
-                #     dbc.DropdownMenu(
-                #         label="Actions",
-                #         color='secondary',
-                #         children=[
-                #             dbc.DropdownMenuItem([html.I(className="fas fa-edit me-2"), "Edit"],
-                #                                  id=Table.EDIT_ROW_BTN.value),
-                #             dbc.DropdownMenuItem([html.I(className="fas fa-trash me-2"), "Delete"],
-                #                                  id=Table.DEL_ROW_BTN.value),
-                #             dbc.DropdownMenuItem([html.I(className="fas fa-plus me-2"), "Clone"],
-                #                                  id=Table.NEW_ROW_BTN.value),
-                #         ],
-                #         direction="end",  # This makes the dropdown expand towards the left.
-                #         className='d-flex align-items-center justify-content-end',
-                #
-                #     ), id=Parameter.ACTION.value
-                # ),
-                html.Div(edit_parameter_layout, id=Parameter.DETAIL.value), ], style={
-                'height': detail_height,
-                'overflowY': 'auto',
-                'border': '1px solid #ccc',
-                'padding': '10px',
-                'margin-top': '20px',
-                'box-shadow': '0 4px 8px rgba(0, 0, 0, 0.1)'
-            }, ),
+            html.Div(runfile_table, ),
+            html.Div(edit_parameter_layout, id=Parameter.DETAIL.value),
             html.Div(id='js-container'),
             html.Div(clone_runfile_modal),
             html.Div(dbc.Alert(id=Runfile.VALIDATION_ALERT.value, is_open=False, dismissable=True, )),
             html.Br(),
         ],
-            style={'height': parameter_body_height}
         ),
 
         html.Div(dcc.ConfirmDialog(

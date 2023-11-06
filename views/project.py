@@ -216,6 +216,7 @@ def display_selected_runfile(selected_values, del_runfile_btn, n1, n2, selRow, e
         Output(Session.DEL_BTN.value, 'style'),
         Output(Session.NEW_BTN.value, 'style'),
         Output(Parameter.DETAIL.value, 'style'),
+        Output(Parameter.ACTION.value, 'style'),
     ],
     [
         Input(Session.SESSION_LIST.value, 'active_item'),
@@ -227,11 +228,14 @@ def default_session(active_session, selected_runfile, selected_rows):
     logger.info('active_session: {}, init_session: {}'.format(active_session, init_session))
     selected_runfile = [value for value in selected_runfile if value is not None]
     if not active_session:
-        return [HIDE_STYLE] * 5
+        return [HIDE_STYLE] * 6
     # Default all to hide
-    runfile_del, runfile_clone, session_del, session_new, detail_parameter = 5 * [HIDE_STYLE]
+    runfile_del, runfile_clone, session_del, session_new, detail_parameter, parameter_action = 6 * [HIDE_STYLE]
     if active_session == init_session:
         session_new = SHOW_STYLE
+        if selected_rows:
+            detail_parameter = SHOW_STYLE
+            parameter_action = HIDE_STYLE
     else:
         session_del = SHOW_STYLE
         if selected_runfile:
@@ -239,8 +243,9 @@ def default_session(active_session, selected_runfile, selected_rows):
             runfile_del, runfile_clone = [SHOW_STYLE] * 2
         if selected_rows:
             detail_parameter = SHOW_STYLE
+            parameter_action = SHOW_STYLE
 
-    return runfile_del, runfile_clone, session_del, session_new, detail_parameter
+    return runfile_del, runfile_clone, session_del, session_new, detail_parameter, parameter_action
 
 
 # Define fixed Output objects
