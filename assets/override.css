@@ -383,3 +383,15 @@ display : block !important;
 .border-right {
     border-right: 1px solid #dee2e6; /* standard border color for light theme in Bootstrap */
 }
+
+/* Increase font size and padding for large tooltip */
+.large-tooltip .tooltip-inner {
+    font-size: 1.25rem; /* Larger font size */
+    padding: 10px 15px; /* Larger padding */
+    background-color: rgba(150, 150, 150, 0.9)
+}
+
+/* Optionally, increase the size of the arrow as well */
+.large-tooltip .arrow::before {
+    border-width: 10px; /* Makes the arrow larger */
+}

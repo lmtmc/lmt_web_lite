@@ -245,7 +245,8 @@ input_fields_2 = [
 
 edit_parameter_layout = html.Div([dbc.Row([
     dbc.Col(dbc.Card([dbc.Label('Source and obsnum', className='large-label'),
-                      dbc.Row([dbc.Col(dbc.Label('Source', className="sm-label"), width=4),
+                      dbc.Row([dbc.Col(dbc.Label('Source', className="sm-label", id='source-label'), width=4),
+                               dbc.Tooltip("Select a source!", target="source-label", className='large-tooltip', placement='bottom'),
                                dbc.Col(dcc.Dropdown(id=column_list[0], multi=False, ), width=8),
                                dbc.Alert(id='source-alert', color='danger', duration=2000)], align='center',
                               className='mb-3'),
