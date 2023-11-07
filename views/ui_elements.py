@@ -175,6 +175,15 @@ session_modal = pf.create_modal(
 )
 session_layout = dbc.Card(
     [
+        dbc.CardHeader(dbc.Row([
+            dbc.Col(html.Button([html.I(className="fas fa-trash me-2"), 'Delete Session'],
+                                id=Session.DEL_BTN.value,
+                                className='ms-auto', ), width='auto'),
+            dbc.Col(html.Button([html.I(className="fa-solid fa-clone me-2"), 'Clone Session'],
+                                id=Session.NEW_BTN.value,
+                                className='ms-auto'), width='auto')
+        ], align='center', justify='end'
+        ), ),
         dbc.CardBody(
             [
                 html.Div(dbc.Accordion(id=Session.SESSION_LIST.value,
@@ -189,15 +198,6 @@ session_layout = dbc.Card(
                 ), style={'position': 'relative', "top": "100px"}),
             ], style={'overflow': 'auto', 'max-height': session_height}),
 
-        dbc.CardFooter(dbc.Row([
-            dbc.Col(html.Button([html.I(className="fas fa-trash me-2"), 'Delete Session'],
-                                id=Session.DEL_BTN.value,
-                                className='ms-auto', ), width='auto'),
-            dbc.Col(html.Button([html.I(className="fa-solid fa-clone me-2"), 'Clone Session'],
-                                id=Session.NEW_BTN.value,
-                                className='ms-auto'), width='auto')
-        ], align='center', justify='end'
-        ), ),
     ], style={'max-height': '40vh', 'overflow': 'auto'},
 
 )
@@ -284,12 +284,9 @@ edit_parameter_layout = html.Div([dbc.Row([
         dbc.Row(dbc.Checklist(id=column_list[3], options=beam_options, inline=True), className='mb-3'),
 
         dbc.Row([
-            dbc.Col(dbc.Label('Time Range', className='sm-label', id=tooltip_target[4]), width=4),
+            dbc.Col(dbc.Label('Time Range', className='sm-label', id=tooltip_target[4]), width=6),
+            dbc.Col(dbc.Input(id=column_list[4], placeholder='min, max'), width=6),
             make_tooltip(tooltip_content[4], tooltip_target[4]),
-            dbc.Col(dbc.Input(id=column_list[4],
-                              placeholder='min, max'
-                              ), width=4
-                    ),
 
         ],
             align='center'
@@ -411,12 +408,12 @@ parameter_layout = html.Div(dbc.Card(
                                 dbc.Col(html.Button([html.I(className="fa-solid fa-clone me-2"), 'Clone Runfile'],
                                                     id=Runfile.CLONE_BTN.value), width='auto'),
                             ]), width='auto', className='ms-auto')
-                    ], align='center', justify='between')
+                    ], align='center', justify='end')
                 ])
             ]), style={'height': '50px'}
         ),
         dbc.CardBody([
-            html.Div(runfile_table, style={'height': table_height}),
+            html.Div(runfile_table, className='mb-3'),
             html.Div(edit_parameter_layout, id=Parameter.DETAIL.value),
             html.Div(clone_runfile_modal),
             html.Div(dbc.Alert(id=Runfile.VALIDATION_ALERT.value, is_open=False, dismissable=True, )),
@@ -432,7 +429,7 @@ parameter_layout = html.Div(dbc.Card(
         ),
 
     ],
-    id=Runfile.PARAMETER_LAYOUT.value, style={'display': 'none'},))
+    id=Runfile.PARAMETER_LAYOUT.value, style={'display': 'none'}, ))
 
 link_bar = dbc.Row(
     [

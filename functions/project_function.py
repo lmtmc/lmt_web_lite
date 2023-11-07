@@ -160,8 +160,9 @@ def get_session_list(default_session, pid_path):
         dbc.AccordionItem(
             [dbc.RadioItems(id={'type': 'runfile-radio', 'index': session['name']},
                             options=get_runfile_option(session['path']),
-                            className='my-radio-items', inline=True)],
-            title=session['name'], className='mb-2', item_id=session['name'],
+                            # className='my-radio-items',
+                            inline=True)],
+            title=session['name'], className='my-session mb-2', item_id=session['name'],
         )
         for session in session_info
     ]
@@ -368,7 +369,6 @@ def create_modal(header_label, body_elements, footer_elements, modal_id):
 
 def verify_row(new_row):
     print('new_row', new_row)
-
 
 
 def first_file_path(folder_path):

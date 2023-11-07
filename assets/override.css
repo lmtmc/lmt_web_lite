@@ -375,6 +375,16 @@ display : block !important;
     background-color: yellow;  /* or any other styling changes you want */
 }
 
+.my-session {
+    font-size: 1.5rem; /* Example size, adjust as needed */
+}
+
+.my-session {
+    display: flex;
+    /*align-items: center; !* Centers the label with the radio button *!*/
+    /*justify-content: center; !* Center align horizontally, if needed *!*/
+}
+
 .custom-input {
     width: 200px;  /* Adjust the width as needed */
     height: 100px;  /* Adjust the height as needed */

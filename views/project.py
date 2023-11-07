@@ -2,6 +2,7 @@
 # todo restart and dataverse 0,1,2
 # todo update detailed info
 # todo display verification
+# todo change a value in parameter layout, the value in table of all runfiles will change
 # fix the height, pix_list arrangement
 import os
 import time
@@ -247,23 +248,23 @@ all_states = fixed_states + dynamic_states
     dynamic_outputs,
     [
         Input(Runfile.TABLE.value, "selected_rows"),
-        Input(Runfile.TABLE.value, 'data')
+        Input(Runfile.TABLE.value, 'data'),
+
     ],
     prevent_initial_call=True, )
 def display_selected_row(selected_row, data):
     if not ctx.triggered:
         raise PreventUpdate
+    print('triggered_id here', ctx.triggered_id)
     output_values = [''] * (len(table_column))
-    print('selected_row', selected_row)
     if data:
         df = pd.DataFrame(data)
         df.fillna('', inplace=True)
-    else:
-        logger.info(f'Creating a new empty DataFrame')
-        df = pd.DataFrame(columns=table_column)
-    if selected_row:
-        selected_data = df.loc[selected_row[0]]
-        output_values = pf.table_layout([selected_data[col] for col in table_column])
+        if selected_row:
+            print('selected_row', selected_row, 'df len', len(df))
+            if selected_row[0] < len(df):
+                selected_data = df.loc[selected_row[0]]
+                output_values = pf.table_layout([selected_data[col] for col in table_column])
     return output_values
 
 
@@ -282,35 +283,56 @@ def display_selected_row(selected_row, data):
     prevent_initial_call=True,
 )
 def new_job(n1, n2, n3, selected_row, selected_runfile, df_table, *state_values):
-    triggered_id = ctx.triggered_id
+    triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
     logger.info(f'Triggered component to update runfile: {triggered_id}')
     output_value = ''
     df = pd.DataFrame(df_table)
-    if selected_row:
-        selected_runfile = [value for value in selected_runfile if value is not None][0]
-        if triggered_id == Table.DEL_ROW_BTN.value:
-            logger.info(f'Deleting row {selected_row[0]}')
-            df.drop(df.index[selected_row[0]], inplace=True)
-            pf.save_runfile(df, selected_runfile)
-        elif triggered_id in [Parameter.SAVE_ROW_BTN.value, Parameter.UPDATE_BTN.value]:
-            # if there are more obsnums then join them using ' '
-            parameters = pf.layout_table(list(state_values))
-            new_row = {key: value for key, value in zip(table_column, parameters)}
-            logger.debug(f'New row: {new_row}')
-            if triggered_id == Parameter.SAVE_ROW_BTN.value:
-                # add new row to the end of the table
-                logger.info(f'Adding new row to the end of the table')
-                df = df._append(new_row, ignore_index=True)
-            else:
-                logger.info(f'Updating row {selected_row[0]}')
-                df.iloc[selected_row[0]] = new_row
-            pf.save_runfile(df, selected_runfile)
+    print('slected row here', selected_row, 'selected_runfile here', selected_runfile)
+    selected_runfile = [value for value in selected_runfile if value is not None]
+    if selected_runfile:
+        selected_runfile = selected_runfile[0]
+        if selected_row:
+            if triggered_id == Table.DEL_ROW_BTN.value:
+                logger.info(f'Deleting row {selected_row[0]}')
+                df.drop(df.index[selected_row[0]], inplace=True)
+                pf.save_runfile(df, selected_runfile)
+            elif triggered_id in [Parameter.SAVE_ROW_BTN.value, Parameter.UPDATE_BTN.value]:
+                # if there are more obsnums then join them using ' '
+                parameters = pf.layout_table(list(state_values))
+                new_row = {key: value for key, value in zip(table_column, parameters)}
+                logger.debug(f'New row: {new_row}')
+                if triggered_id == Parameter.SAVE_ROW_BTN.value:
+                    # add new row to the end of the table
+                    logger.info(f'Adding new row to the end of the table')
+                    df = df._append(new_row, ignore_index=True)
+                else:
+                    logger.info(f'Updating row {selected_row[0]}')
+                    df.iloc[selected_row[0]] = new_row
+                pf.save_runfile(df, selected_runfile)
     output_value = df.to_dict('records')
     # logger.debug(f'Updated table values: {output_values}')
     return output_value
 
 
 #
+# @app.callback(
+#     Output(Runfile.TABLE.value, 'selected_rows'),
+#     Output(Runfile.TABLE.value, 'data',allow_duplicate=True),
+#     Input({'type': 'runfile-radio', 'index': ALL}, 'value'),
+#     State(Runfile.TABLE.value, 'data'),
+#     prevent_initial_call=True)
+# def clear_selected_row(selected_runfile, data):
+#     if not ctx.triggered:
+#         raise PreventUpdate
+#     else:
+#         triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
+#         print('print triggered_id', triggered_id)
+#         if triggered_id.startswith('{"type": "runfile-radio","index'):
+#             return [], data
+#         else:
+#             return no_update, data
+
+
 # if click delete button show the confirmation
 @app.callback(
     Output(Runfile.CONFIRM_DEL_ALERT.value, 'displayed'),
