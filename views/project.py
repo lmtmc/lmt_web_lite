@@ -314,25 +314,6 @@ def new_job(n1, n2, n3, selected_row, selected_runfile, df_table, *state_values)
     return output_value
 
 
-#
-# @app.callback(
-#     Output(Runfile.TABLE.value, 'selected_rows'),
-#     Output(Runfile.TABLE.value, 'data',allow_duplicate=True),
-#     Input({'type': 'runfile-radio', 'index': ALL}, 'value'),
-#     State(Runfile.TABLE.value, 'data'),
-#     prevent_initial_call=True)
-# def clear_selected_row(selected_runfile, data):
-#     if not ctx.triggered:
-#         raise PreventUpdate
-#     else:
-#         triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
-#         print('print triggered_id', triggered_id)
-#         if triggered_id.startswith('{"type": "runfile-radio","index'):
-#             return [], data
-#         else:
-#             return no_update, data
-
-
 # if click delete button show the confirmation
 @app.callback(
     Output(Runfile.CONFIRM_DEL_ALERT.value, 'displayed'),
@@ -462,3 +443,27 @@ def select_all_beam(n_clicks, current_values, options):
             option['label']['props']['className'] = None
 
     return current_values, options
+
+
+# verify the selected_runfile
+@app.callback(
+    Output(Runfile.VALIDATION_ALERT.value, 'is_open'),
+    Output(Runfile.VALIDATION_ALERT.value, 'children'),
+    Input(Runfile.RUN_BTN.value, 'n_clicks'),
+    State({'type': 'runfile-radio', 'index': ALL}, 'value'),
+)
+def verify_runfile(n_clicks, selected_runfile):
+    if not ctx.triggered:
+        raise PreventUpdate
+    selected_runfile = [value for value in selected_runfile if value is not None]
+    if selected_runfile:
+        selected_runfile = selected_runfile[0]
+        logger.info(f'Verifying runfile: {selected_runfile}')
+        message = runs.verify(selected_runfile, debug=False)
+        if message:
+            show_message = 'Runfile verification failed: ' + message
+        else:
+            show_message = 'Runfile verification passed!'
+        return True, show_message
+    else:
+        return False, ''

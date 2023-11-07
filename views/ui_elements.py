@@ -398,6 +398,7 @@ parameter_layout = html.Div(dbc.Card(
                 html.Div([
                     dbc.Row([
                         dbc.Col(html.Div(id=Runfile.CONTENT_TITLE.value), width='auto'),
+
                         dbc.Col(
                             dbc.Row([
                                 dbc.Col(html.Button([html.I(className="fa fa-paper-plane me-2"), 'Verify Runfile'],
@@ -415,8 +416,9 @@ parameter_layout = html.Div(dbc.Card(
         dbc.CardBody([
             html.Div(runfile_table, className='mb-3'),
             html.Div(edit_parameter_layout, id=Parameter.DETAIL.value),
-            html.Div(clone_runfile_modal),
             html.Div(dbc.Alert(id=Runfile.VALIDATION_ALERT.value, is_open=False, dismissable=True, )),
+            html.Div(clone_runfile_modal),
+
             html.Br(),
         ],
         ),
