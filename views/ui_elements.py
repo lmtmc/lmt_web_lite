@@ -126,7 +126,7 @@ url_location = dcc.Location(id='url_session1', refresh=True),
 # Generate column data dynamically
 columns = [{"name": col, "id": col,
             # toggle table columns
-            # 'hideable': True,
+            'hideable': True,
             'resizable': True}
            for col in column_list]
 
