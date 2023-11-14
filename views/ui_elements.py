@@ -137,7 +137,7 @@ runfile_table = dash_table.DataTable(
     id=Runfile.TABLE.value,
     row_selectable='single',
     data=[],
-    # filter_action="native",
+    filter_action="native",
     columns=columns,
     page_size=5,
     style_cell={
@@ -181,7 +181,8 @@ session_layout = dbc.Card(
                                 className='ms-auto', ), width='auto'),
             dbc.Col(html.Button([html.I(className="fa-solid fa-clone me-2"), 'Clone Session'],
                                 id=Session.NEW_BTN.value,
-                                className='ms-auto'), width='auto')
+                                className='ms-auto',
+                                ), width='auto')
         ], align='center', justify='end'
         ), ),
         dbc.CardBody(

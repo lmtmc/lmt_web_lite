@@ -1,9 +1,4 @@
-# todo read pix_list as exclude_beam in dataTable and has the options from 0-15
-# todo restart and dataverse 0,1,2
-# todo update detailed info
-# todo display verification
-# todo change a value in parameter layout, the value in table of all runfiles will change
-# fix the height, pix_list arrangement
+
 import os
 import time
 import json
@@ -160,20 +155,13 @@ def display_selected_runfile(selected_runfile, del_runfile_btn, n1, n2, selRow):
     runfile_title = ''
     trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
     parameter_display = HIDE_STYLE
-    print('selected_runfile', selected_runfile)
     current_runfile = [value for value in selected_runfile if value is not None]
     if current_runfile:
         current_runfile = current_runfile[0]
         parameter_display = SHOW_STYLE
-        print('check selected_runfile', current_runfile)
         runfile_title = pf.get_runfile_title(current_runfile, init_session)
         df = pf.df_runfile(current_runfile)
-        print('df here', df)
-        # data_store['runfile'] = current_runfile
         dff = pd.concat([df, dff])
-        # if selRow:
-        #     logger.info(f'Selected row: {selRow}')
-        #     data_store['selected_row'] = selRow
         if ctx.triggered_id == Runfile.CONFIRM_DEL_ALERT.value:
             pf.del_runfile(current_runfile)
         logger.info(f'current_runfile is {current_runfile}')
@@ -255,13 +243,11 @@ all_states = fixed_states + dynamic_states
 def display_selected_row(selected_row, data):
     if not ctx.triggered:
         raise PreventUpdate
-    print('triggered_id here', ctx.triggered_id)
     output_values = [''] * (len(table_column))
     if data:
         df = pd.DataFrame(data)
         df.fillna('', inplace=True)
         if selected_row:
-            print('selected_row', selected_row, 'df len', len(df))
             if selected_row[0] < len(df):
                 selected_data = df.loc[selected_row[0]]
                 output_values = pf.table_layout([selected_data[col] for col in table_column])
@@ -287,7 +273,6 @@ def new_job(n1, n2, n3, selected_row, selected_runfile, df_table, *state_values)
     logger.info(f'Triggered component to update runfile: {triggered_id}')
     output_value = ''
     df = pd.DataFrame(df_table)
-    print('slected row here', selected_row, 'selected_runfile here', selected_runfile)
     selected_runfile = [value for value in selected_runfile if value is not None]
     if selected_runfile:
         selected_runfile = selected_runfile[0]
@@ -366,8 +351,6 @@ def copy_runfile(n1, n2, data_store, virtual_data, new_name):
         Output(Storage.DATA_STORE.value, 'data'),
     ],
     [
-        # Input(Table.NEW_ROW_BTN.value, 'n_clicks'),
-        # Input(Table.EDIT_ROW_BTN.value, 'n_clicks'),
         Input(Session.SESSION_LIST.value, 'active_item'),
     ],
     State(Storage.DATA_STORE.value, 'data'),

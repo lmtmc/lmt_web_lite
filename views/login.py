@@ -23,39 +23,23 @@ pf.ensure_path_exists(default_work_lmt)
 pid_options = pf.get_pid_option(lmtoy_run_path)
 logger.info(f'pid_options: {pid_options}')
 
-layout = html.Div(
-    children=[
-        html.Div(
-            className="container-width",
-            children=[
-                dcc.Location(id='url_login', refresh=True),
-                html.Div([
-                    dbc.Row([
-                        dbc.Col([
-                            html.Div('''Select a PID:''', id='h1'),
-                            dcc.Dropdown(id='pid', options=pid_options)]),
+layout = dbc.Container([
+    dcc.Location(id='url_login', refresh=True),
+    html.Img(src='assets/lmt_img.jpg', style={'width': '100%', 'height': 'auto'}, className='mb-4'),
+    html.Div([
+        html.H1('Login using PID', className='text-center text-primary, mb-4'),
+        dbc.Label('Select a PID:', id='h1-label', className='mb-4'),
+        dcc.Dropdown(id='pid', options=pid_options, className='mb-4'),
+        dbc.Label('Password:', id='pwd-label', className='mb-4'),
+        dbc.Input(id='pwd-box', n_submit=0, type='password', className='mb-4'),
+        html.Div(dbc.Button('Login', type='submit', id='login-button',
+                            style={'pointer-events': 'none', 'opacity': '0.5', 'width': '100%'}, className='mb-4'
+                            ), className = "d-grid gap-2"),
+        html.Div(dbc.Alert(id='output-state', is_open=False, className='alert-warning', duration=3000))
+    ],
+    )],
 
-                        dbc.Col([
-                            html.Div('''Password:''', id='h1'),
-                            dcc.Input(id='pwd-box', n_submit=0, type='password'), ]
-                        ),
-                    ]),
-                    html.Br(),
-                    html.Button(
-                        children='Login',
-                        n_clicks=0,
-                        type='submit',
-                        id='login-button',
-                        style={'pointer-events': 'none', 'opacity': '0.5'}
-                    ),
-                    html.Br(),
-                    html.Div(dbc.Alert(id='output-state', is_open=False, className='alert-warning', duration=3000))
-                ]
-                ),
-            ]
-        )
-    ]
-)
+    style={'width': '500px', 'margin': 'auto'})
 
 
 # @app.callback(
