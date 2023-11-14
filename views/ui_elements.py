@@ -24,6 +24,7 @@ class Session(Enum):
 class Runfile(Enum):
     TABLE = 'runfile-table'
     CONTENT_TITLE = 'runfile-content-title'
+    CONTENT = 'runfile-content'
     DEL_BTN = 'del-runfile'
     CLONE_BTN = 'clone-runfile'
     SAVE_BTN = 'runfile-save'
@@ -111,7 +112,7 @@ class Storage(Enum):
 
 # session_height = '800px'
 # parameter_body_height = '700px'
-session_height = '85vh'
+session_height = '25vh'
 parameter_body_height = '75vh'
 table_height = '35vh'
 detail_height = '35vh'
@@ -133,6 +134,9 @@ tooltip_header = {
     col: f'{col}' for col in column_list
 }
 
+runfile_content = html.Pre(id=Runfile.CONTENT.value, style={'overflowX': 'auto', 'overflowY': 'auto', 'padding': '10px',
+                                                            'white-space': 'pre-wrap'})
+
 runfile_table = dash_table.DataTable(
     id=Runfile.TABLE.value,
     row_selectable='single',
@@ -153,10 +157,10 @@ runfile_table = dash_table.DataTable(
     },
     tooltip_header=tooltip_header,
     style_header={
-        'backgroundColor': 'rgb(30, 30, 30)',  # dark background
+        'backgroundColor': 'grey',  # dark background
         'color': 'white',  # white text
         'fontWeight': 'bold',  # make the text bold
-        'border': '1px solid black',  # add a border around the headers
+        #'border': '1px solid black',  # add a border around the headers
         'textAlign': 'center'  # center-align text
     },
     tooltip_delay=0,
@@ -173,33 +177,31 @@ session_modal = pf.create_modal(
     html.Button("Save", id=Session.SAVE_BTN.value, className="ml-auto"),
     'new-session-modal'
 )
-session_layout = dbc.Card(
-    [
-        dbc.CardHeader(dbc.Row([
-            dbc.Col(html.Button([html.I(className="fas fa-trash me-2"), 'Delete Session'],
-                                id=Session.DEL_BTN.value,
-                                className='ms-auto', ), width='auto'),
-            dbc.Col(html.Button([html.I(className="fa-solid fa-clone me-2"), 'Clone Session'],
-                                id=Session.NEW_BTN.value,
-                                className='ms-auto',
-                                ), width='auto')
-        ], align='center', justify='end'
-        ), ),
-        dbc.CardBody(
-            [
-                html.Div(dbc.Accordion(id=Session.SESSION_LIST.value,
-                                       flush=True,
-                                       persistence=True,
-                                       persistence_type="session",
-                                       active_item='session-0', style={'overflow': 'auto'})),
-                session_modal,
-                html.Div(dcc.ConfirmDialog(
-                    id=Session.CONFIRM_DEL.value,
-                    message='Are you sure you want to delete the session?'
-                ), style={'position': 'relative', "top": "100px"}),
-            ], style={'overflow': 'auto', 'max-height': session_height}),
+session_layout = html.Div([
+    html.Div(dbc.Accordion(id=Session.SESSION_LIST.value,
+                           # flush=True,
+                           persistence=True,
+                           persistence_type="session",
+                           active_item='session-0',
+                           style={'overflow': 'auto'}
+                           ), style={'max-height': session_height, 'overflowY': 'auto', 'padding': '20px', }),
+    session_modal,
+    html.Div(dcc.ConfirmDialog(
+        id=Session.CONFIRM_DEL.value,
+        message='Are you sure you want to delete the session?'
+    ), ),
+    dbc.Row([
+        dbc.Col(html.Button([html.I(className="fas fa-trash me-2"), 'Delete Session'],
+                            id=Session.DEL_BTN.value,
+                            ), width='auto'),
+        dbc.Col(html.Button([html.I(className="fa-solid fa-clone me-2"), 'Clone Session'],
+                            id=Session.NEW_BTN.value,
 
-    ], style={'max-height': '40vh', 'overflow': 'auto'},
+                            ), width='auto'),
+    ], className='flex justify-content-end'),
+], style={
+    'margin': '0',
+    'border': '1px solid #CCCCCC', 'padding': '10px', 'margin-bottom': '10px'}
 
 )
 # parameter layout
@@ -400,27 +402,36 @@ parameter_layout = html.Div(dbc.Card(
                     dbc.Row([
                         dbc.Col(html.Div(id=Runfile.CONTENT_TITLE.value), width='auto'),
 
-                        dbc.Col(
-                            dbc.Row([
-                                dbc.Col(html.Button([html.I(className="fa fa-paper-plane me-2"), 'Verify Runfile'],
-                                                    id=Runfile.RUN_BTN.value,
-                                                    n_clicks=0)),
-                                dbc.Col(html.Button([html.I(className="fas fa-trash me-2"), 'Delete Runfile'],
-                                                    id=Runfile.DEL_BTN.value), width='auto'),
-                                dbc.Col(html.Button([html.I(className="fa-solid fa-clone me-2"), 'Clone Runfile'],
-                                                    id=Runfile.CLONE_BTN.value), width='auto'),
-                            ]), width='auto', className='ms-auto')
-                    ], align='center', justify='end')
-                ])
-            ]), style={'height': '50px'}
+                        # dbc.Col(
+                        #     dbc.Row([
+                        #         dbc.Col(html.Button([html.I(className="fa fa-paper-plane me-2"), 'Verify Runfile'],
+                        #                             id=Runfile.RUN_BTN.value,
+                        #                             n_clicks=0)),
+                        #         dbc.Col(html.Button([html.I(className="fas fa-trash me-2"), 'Delete Runfile'],
+                        #                             id=Runfile.DEL_BTN.value), width='auto'),
+                        #         dbc.Col(html.Button([html.I(className="fa-solid fa-clone me-2"), 'Clone Runfile'],
+                        #                             id=Runfile.CLONE_BTN.value), width='auto'),
+                        #     ]), width='auto', className='flex justify-content-end'),
+                        dbc.Col(dbc.DropdownMenu(
+                            label="Runfile Options",
+                            children=[
+                                dbc.DropdownMenuItem("Verify", id=Runfile.RUN_BTN.value),
+                                dbc.DropdownMenuItem("Delete", id=Runfile.DEL_BTN.value),
+                                dbc.DropdownMenuItem("Clone", id=Runfile.CLONE_BTN.value),
+                            ], color='secondary', className='d-flex justify-content-end'
+                        )),
+                    ], align='center', ),
+                ], ),
+            ]),
         ),
         dbc.CardBody([
+            html.Div(dbc.Alert(id=Runfile.VALIDATION_ALERT.value, is_open=False, dismissable=True, )),
+            html.Div(runfile_content, className='mb-5',
+                     style={'border': '1px solid #CCCCCC', 'max-height': session_height, 'overflowY': 'auto',
+                            'padding': '10px', }),
             html.Div(runfile_table, className='mb-3'),
             html.Div(edit_parameter_layout, id=Parameter.DETAIL.value),
-            html.Div(dbc.Alert(id=Runfile.VALIDATION_ALERT.value, is_open=False, dismissable=True, )),
             html.Div(clone_runfile_modal),
-
-            html.Br(),
         ],
         ),
 

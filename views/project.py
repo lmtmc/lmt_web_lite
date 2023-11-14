@@ -42,7 +42,7 @@ layout = html.Div(
     [
 
         html.Div(ui.url_location),
-        ui.session_layout,
+        html.Div(ui.session_layout),
         html.Br(),
         ui.parameter_layout,
     ])
@@ -132,6 +132,7 @@ def display_confirmation(n_clicks):
         Output(Runfile.TABLE.value, 'data', allow_duplicate=True),
         Output(Runfile.CONTENT_TITLE.value, 'children'),
         Output(Runfile.PARAMETER_LAYOUT.value, 'style'),
+        Output(Runfile.CONTENT.value, 'children'),
         # Output(Storage.DATA_STORE.value, 'data', allow_duplicate=True),
     ],
     [
@@ -153,6 +154,7 @@ def display_selected_runfile(selected_runfile, del_runfile_btn, n1, n2, selRow):
     # Initialize the DataFrame
     dff = pd.DataFrame(columns=table_column)
     runfile_title = ''
+    runfile_content = ''
     trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
     parameter_display = HIDE_STYLE
     current_runfile = [value for value in selected_runfile if value is not None]
@@ -160,14 +162,15 @@ def display_selected_runfile(selected_runfile, del_runfile_btn, n1, n2, selRow):
         current_runfile = current_runfile[0]
         parameter_display = SHOW_STYLE
         runfile_title = pf.get_runfile_title(current_runfile, init_session)
-        df = pf.df_runfile(current_runfile)
+        runfile_content = pf.df_runfile(current_runfile)[1]
+        df = pf.df_runfile(current_runfile)[0]
         dff = pd.concat([df, dff])
         if ctx.triggered_id == Runfile.CONFIRM_DEL_ALERT.value:
             pf.del_runfile(current_runfile)
         logger.info(f'current_runfile is {current_runfile}')
     logger.info(f'Triggered component to update runfile: {trigger_id}')
 
-    return dff.to_dict('records'), runfile_title, parameter_display
+    return dff.to_dict('records'), runfile_title, parameter_display, runfile_content
 
 
 # Can not edit the default session

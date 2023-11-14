@@ -155,14 +155,14 @@ def get_runfile_option(session_path):
 
 def get_session_list(default_session, pid_path):
     session_info = get_session_info(default_session, pid_path)
-    print('session_info', session_info)
     return [
         dbc.AccordionItem(
             [dbc.RadioItems(id={'type': 'runfile-radio', 'index': session['name']},
                             options=get_runfile_option(session['path']),
                             # className='my-radio-items',
-                            inline=True)],
-            title=session['name'], className='my-session mb-2', item_id=session['name'],
+                            inline=True
+                            )],
+            title=session['name'], className='mb-2', item_id=session['name'],
         )
         for session in session_info
     ]
@@ -256,7 +256,7 @@ def add_runfile(runfile_path, name):
 
 
 def initialize_common_variables(runfile, selRow, init_session):
-    df = df_runfile(runfile)
+    df = df_runfile(runfile)[0]
     runfile_title = get_runfile_title(runfile, init_session)
     highlight = get_highlight(selRow)
     return df, runfile_title, highlight
@@ -269,7 +269,7 @@ def df_runfile(filename):
         try:
             with open(filename) as file:
                 content = file.read()
-                # logger.debug(f'Content of {filename}:\n {content}')
+                logger.debug(f'Content of {filename}:\n {content}')
                 file.seek(0)
                 for line in file:
                     commands = line.strip().split()
@@ -278,20 +278,21 @@ def df_runfile(filename):
 
             df = pd.DataFrame(data)
             # rename obsnum to obsnum(s)
-            if 'obsnum' in df.columns:
-                df.rename(columns={'obsnum': 'obsnum(s)'}, inplace=True)
-            elif 'obsnums' in df.columns:
-                df.rename(columns={'obsnums': 'obsnum(s)'}, inplace=True)
-            # logger.info(f'Final DataFrame with renamed columns: \n {df}')
-            # rename pix_list to exclude_beams
-            if 'pix_list' in df.columns:
-                df.rename(columns={'pix_list': 'exclude_beams'}, inplace=True)
-            return df
+            # if 'obsnum' in df.columns:
+            #     df.rename(columns={'obsnum': 'obsnum(s)'}, inplace=True)
+            # elif 'obsnums' in df.columns:
+            #     df.rename(columns={'obsnums': 'obsnum(s)'}, inplace=True)
+            # # logger.info(f'Final DataFrame with renamed columns: \n {df}')
+            # # rename pix_list to exclude_beams
+            # if 'pix_list' in df.columns:
+            #     df.rename(columns={'pix_list': 'exclude_beams'}, inplace=True)
+            df = df.rename(columns={'obsnum': 'obsnum(s)', 'obsnums': 'obsnum(s)', 'pix_list': 'exclude_beams'})
+            return df, content
         except Exception as e:
             logger.error(e)
     else:
         logger.warning(f'{filename} does not exist')
-    return pd.DataFrame()
+    return pd.DataFrame(), content
 
 
 # save revised data to a runfile
