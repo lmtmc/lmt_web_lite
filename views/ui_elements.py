@@ -379,8 +379,9 @@ edit_parameter_layout = html.Div(
                             dbc.Col(dbc.Row(input_fields_1)),
                         ], align='center'),
                         dbc.Row([
-                            dbc.Col(dbc.Label('Baseline Order', className='sm-label'), width=4),
-                            dbc.Col(dcc.Input(id=column_list[8], style={'height': '30px', 'width': '75px'}), )
+                            dbc.Col(dbc.Label('Baseline Order', className='sm-label', id=tooltip_target[2]), width=4),
+                            dbc.Col(dcc.Input(id=column_list[8], style={'height': '30px', 'width': '75px'}), ),
+                            pf.make_tooltip(tooltip_content[2], tooltip_target[2])
                         ], align='center', className='mb-3'),
 
                         dbc.Row([
