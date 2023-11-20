@@ -343,15 +343,6 @@ h1, h2, h3, h4, h5, h6 {
 display : block !important;
 }
 
-#draggable-modal {
-    position: fixed;
-    z-index: 1050;
-    left: 30%;
-    width: 60%;
-    height: 400px;
-    outline: 0;
-}
-
 .vertical-align-center {
     display: flex;
     align-items: center;
@@ -396,12 +387,26 @@ display : block !important;
 
 /* Increase font size and padding for large tooltip */
 .large-tooltip .tooltip-inner {
-    font-size: 1.25rem; /* Larger font size */
-    padding: 10px 15px; /* Larger padding */
-    background-color: rgba(150, 150, 150, 0.9)
+    font-size: 1.5rem; /* Larger font size */
+    padding: 5px 5px; /* Larger padding */
+    background-color: black;
 }
 
 /* Optionally, increase the size of the arrow as well */
 .large-tooltip .arrow::before {
     border-width: 10px; /* Makes the arrow larger */
 }
+
+.title-link {
+    color: #0D67BF;
+    font-size: 24px;
+    font-weight: bold;}
+
+/*#draggable-modal {*/
+/*    position: relative;*/
+/*    !*z-index: 1050;*!*/
+
+/*    width : 100%;*/
+/*    height: 100%;*/
+/*    !*outline: 0;*!*/
+/*}*/

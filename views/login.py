@@ -25,16 +25,17 @@ logger.info(f'pid_options: {pid_options}')
 
 layout = dbc.Container([
     dcc.Location(id='url_login', refresh=True),
-    html.Img(src='assets/lmt_img.jpg', style={'width': '100%', 'height': 'auto'}, className='mb-4'),
+    html.Img(src='assets/lmt_img.jpg', style={'width': '100%', 'height': 'auto', 'margin-top': '100px'},
+             className='mb-4'),
     html.Div([
         html.H1('Login using PID', className='text-center text-primary, mb-4'),
         dbc.Label('Select a PID:', id='h1-label', className='mb-4'),
         dcc.Dropdown(id='pid', options=pid_options, className='mb-4'),
         dbc.Label('Password:', id='pwd-label', className='mb-4'),
-        dbc.Input(id='pwd-box', n_submit=0, type='password', className='mb-4'),
+        dbc.Input(id='pwd-box', n_submit=0, type='password', className='mb-5'),
         html.Div(dbc.Button('Login', type='submit', id='login-button',
                             style={'pointer-events': 'none', 'opacity': '0.5', 'width': '100%'}, className='mb-4'
-                            ), className = "d-grid gap-2"),
+                            ), className="d-grid gap-2"),
         html.Div(dbc.Alert(id='output-state', is_open=False, className='alert-warning', duration=3000))
     ],
     )],

@@ -108,6 +108,10 @@ def find_runfiles(folder_path, prefix):
     return matching_files
 
 
+def make_tooltip(content, target):
+    return html.Div(dbc.Tooltip(content, target=target, className='large-tooltip', placement='bottom'))
+
+
 def get_source(default_work_lmt, pid):
     pid_path = os.path.join(default_work_lmt, 'lmtoy_run', f'lmtoy_{pid}')
     json_file = os.path.join(pid_path, 'source.json')
@@ -269,7 +273,7 @@ def df_runfile(filename):
         try:
             with open(filename) as file:
                 content = file.read()
-                logger.debug(f'Content of {filename}:\n {content}')
+                #logger.debug(f'Content of {filename}:\n {content}')
                 file.seek(0)
                 for line in file:
                     commands = line.strip().split()
@@ -326,13 +330,6 @@ def table_layout(table_data):
     if output[4]:
         output[4] = ast.literal_eval(output[4])
 
-    for i in range(20, 25):
-
-        if table_data[i] == '' or table_data[i] == '0':
-            output[i] = 0
-        else:
-            output[i] = 1
-
     return output
 
 
@@ -342,19 +339,15 @@ def layout_table(layout_data):
 
     if output[3]:
         filtered_beam = filter(bool, layout_data[3])
+        print(layout_data[3], filtered_beam)
         sorted_beam = sorted(filtered_beam, key=int)
+
         output[3] = ",".join(sorted_beam)
     else:
         output[3] = ''
     if output[4]:
         output[4] = f'[{layout_data[4]}]'
 
-    for i in range(20, 25):
-
-        if not layout_data[i]:
-            output[i] = 0
-        else:
-            output[i] = 1
     return output
 
 

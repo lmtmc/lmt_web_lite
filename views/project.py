@@ -1,4 +1,4 @@
-
+# delete runfile or sessions make display of the table and parameter layout to none
 import os
 import time
 import json
@@ -42,14 +42,37 @@ layout = html.Div(
     [
 
         html.Div(ui.url_location),
-        html.Div(ui.session_layout),
-        html.Br(),
-        ui.parameter_layout,
+        html.Div(dbc.Container(ui.session_layout)),
+        html.Div(dbc.Container(ui.runfile_layout)),
+        ui.parameter_layout
     ])
 
 
-#
-#
+# Hide the Delete Session and Edit, delete, clone runfile for the default session
+@app.callback(
+    [
+        Output(Runfile.DEL_BTN.value, 'style'),
+        Output(Runfile.EDIT_BTN.value, 'style'),
+        Output(Runfile.CLONE_BTN.value, 'style'),
+        Output(Session.DEL_BTN.value, 'style'),
+        Output(Session.NEW_BTN.value, 'style'),
+    ],
+    [
+        Input(Session.SESSION_LIST.value, 'active_item'),
+    ],
+
+)
+def default_session(active_session):
+    logger.info('active_session: {}, init_session: {}'.format(active_session, init_session))
+    # Default all to hide
+    runfile_del, runfile_edit, runfile_clone, session_del, session_new = 5 * [SHOW_STYLE]
+    if active_session is None:
+        session_del, session_new = 2 * [HIDE_STYLE]
+    elif active_session == init_session:
+        session_del, runfile_edit, runfile_del, runfile_clone = [HIDE_STYLE] * 4
+    return runfile_del, runfile_edit, runfile_clone, session_del, session_new
+
+
 # display the sessions
 @app.callback(
     [
@@ -62,8 +85,6 @@ layout = html.Div(
         Input(Session.SAVE_BTN.value, 'n_clicks'),
         Input(Session.CONFIRM_DEL.value, 'submit_n_clicks'),
         Input(Runfile.CONFIRM_DEL_ALERT.value, 'submit_n_clicks'),
-        # Input(Parameter.SAVE_ROW_BTN.value, 'n_clicks'),
-        # Input(Parameter.UPDATE_BTN.value, 'n_clicks'),
         Input(Runfile.SAVE_CLONE_RUNFILE_BTN.value, 'n_clicks'),
         Input(Session.SESSION_LIST.value, 'active_item'),
 
@@ -72,7 +93,8 @@ layout = html.Div(
         State(Session.NAME_INPUT.value, 'value')
     ],
 )
-def update_session_display(n1, n2, n3, n4, n7, active_session, name):
+def update_session_display(*args):
+    n1, n2, n3, n4, n5, active_session, name = args
     logger.info(f'Updating the session list')
     triggered_id = ctx.triggered_id
     logger.debug(f'Triggered: {triggered_id}')
@@ -80,10 +102,9 @@ def update_session_display(n1, n2, n3, n4, n7, active_session, name):
     if not pf.check_user_exists():
         logger.error('User is not authenticated')
         return no_update, no_update, "User is not authenticated"
+
     pid_path = os.path.join(default_work_lmt, current_user.username)
-    if not os.path.exists(pid_path):
-        os.mkdir(pid_path)
-        logger.error(f'{pid_path} not exist, create a new folder')
+    os.makedirs(pid_path, exist_ok=True)
 
     modal_open, message = no_update, ''
     if triggered_id == Session.NEW_BTN.value:
@@ -109,7 +130,7 @@ def update_session_display(n1, n2, n3, n4, n7, active_session, name):
         else:
             print(f"The folder {session_path} does not exist.")
     if triggered_id in update_btn:
-        time.sleep(1)
+        time.sleep(0.5)
 
     session_list = pf.get_session_list(init_session, pid_path)
     return session_list, modal_open, message
@@ -129,95 +150,65 @@ def display_confirmation(n_clicks):
 # display selected runfile
 @app.callback(
     [
-        Output(Runfile.TABLE.value, 'data', allow_duplicate=True),
         Output(Runfile.CONTENT_TITLE.value, 'children'),
-        Output(Runfile.PARAMETER_LAYOUT.value, 'style'),
+        Output(Runfile.CONTENT_DISPLAY.value, 'style'),
         Output(Runfile.CONTENT.value, 'children'),
-        # Output(Storage.DATA_STORE.value, 'data', allow_duplicate=True),
     ],
     [
         Input({'type': 'runfile-radio', 'index': ALL}, 'value'),
         Input(Runfile.CONFIRM_DEL_ALERT.value, 'submit_n_clicks'),
         Input(Parameter.SAVE_ROW_BTN.value, 'n_clicks'),
         Input(Parameter.UPDATE_BTN.value, 'n_clicks'),
-
+        Input(Table.DEL_ROW_BTN.value, 'n_clicks'),
     ],
-    [
-        State(Runfile.TABLE.value, "selected_rows"),
-        # State(Storage.DATA_STORE.value, 'data'),
-    ],
-    prevent_initial_call='initial_duplicate'
 )
-def display_selected_runfile(selected_runfile, del_runfile_btn, n1, n2, selRow):
+def display_runfile_content(selected_runfile, del_runfile_btn, n1, n2, n3):
     if not ctx.triggered:
         raise PreventUpdate
-    # Initialize the DataFrame
-    dff = pd.DataFrame(columns=table_column)
-    runfile_title = ''
-    runfile_content = ''
-    trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
-    parameter_display = HIDE_STYLE
-    current_runfile = [value for value in selected_runfile if value is not None]
-    if current_runfile:
-        current_runfile = current_runfile[0]
-        parameter_display = SHOW_STYLE
-        runfile_title = pf.get_runfile_title(current_runfile, init_session)
+    current_runfile = next((value for value in selected_runfile if value), None)
+    if not current_runfile:
+        return '', HIDE_STYLE, ''
+
+    runfile_title = pf.get_runfile_title(current_runfile, init_session)
+    runfile_content = pf.df_runfile(current_runfile)[1]
+
+    if ctx.triggered_id == Runfile.CONFIRM_DEL_ALERT.value:
+        pf.del_runfile(current_runfile)
+    if ctx.triggered_id in [Parameter.SAVE_ROW_BTN.value, Parameter.UPDATE_BTN.value, Table.DEL_ROW_BTN.value]:
+        time.sleep(0.5)
         runfile_content = pf.df_runfile(current_runfile)[1]
+    logger.info(f'current_runfile is {current_runfile}')
+    return runfile_title, SHOW_STYLE, runfile_content
+
+
+# If edit was clicked, show the modal
+@app.callback(
+
+    Output(Parameter.MODAL.value, 'is_open'),
+    Output(Runfile.TABLE.value, 'data', allow_duplicate=True),
+
+    [
+        Input(Runfile.EDIT_BTN.value, 'n_clicks'),
+        Input({'type': 'runfile-radio', 'index': ALL}, 'value'),
+    ],
+    prevent_initial_call=True,
+)
+def show_parameter_table(n1, selected_runfile):
+    modal_style = False
+    dff = pd.DataFrame(columns=table_column)
+    if not ctx.triggered:
+        raise PreventUpdate
+    if ctx.triggered_id == Runfile.EDIT_BTN.value:  # If edit was clicked, show the modal
+        modal_style = True
+        current_runfile = next((value for value in selected_runfile if value), None)
         df = pf.df_runfile(current_runfile)[0]
         dff = pd.concat([df, dff])
-        if ctx.triggered_id == Runfile.CONFIRM_DEL_ALERT.value:
-            pf.del_runfile(current_runfile)
-        logger.info(f'current_runfile is {current_runfile}')
-    logger.info(f'Triggered component to update runfile: {trigger_id}')
-
-    return dff.to_dict('records'), runfile_title, parameter_display, runfile_content
-
-
-# Can not edit the default session
-# show runfile delete and clone button after selecting a runfile
-# show edit row button after selecting a row
-@app.callback(
-    [
-        Output(Runfile.DEL_BTN.value, 'style'),
-        Output(Runfile.CLONE_BTN.value, 'style'),
-        Output(Session.DEL_BTN.value, 'style'),
-        Output(Session.NEW_BTN.value, 'style'),
-        Output(Parameter.DETAIL.value, 'style'),
-        Output(Parameter.ACTION.value, 'style'),
-    ],
-    [
-        Input(Session.SESSION_LIST.value, 'active_item'),
-        Input({'type': 'runfile-radio', 'index': ALL}, 'value'),
-        Input(Runfile.TABLE.value, "selected_rows"),
-    ],
-    prevent_initial_call=True
-)
-def default_session(active_session, selected_runfile, selected_rows):
-    logger.info('active_session: {}, init_session: {}'.format(active_session, init_session))
-    selected_runfile = [value for value in selected_runfile if value is not None]
-    if not active_session:
-        return [HIDE_STYLE] * 6
-    # Default all to hide
-    runfile_del, runfile_clone, session_del, session_new, detail_parameter, parameter_action = 6 * [HIDE_STYLE]
-    if active_session == init_session:
-        session_new = SHOW_STYLE
-        if selected_rows:
-            detail_parameter = SHOW_STYLE
-            parameter_action = HIDE_STYLE
-    else:
-        session_del = SHOW_STYLE
-        if selected_runfile:
-            runfile_del, runfile_clone = [SHOW_STYLE] * 2
-        if selected_rows:
-            detail_parameter = SHOW_STYLE
-            parameter_action = SHOW_STYLE
-
-    return runfile_del, runfile_clone, session_del, session_new, detail_parameter, parameter_action
+    return modal_style, dff.to_dict('records')
 
 
 # Define fixed Output objects
 fixed_outputs = [
-    Output(Runfile.TABLE.value, 'data'),
+    Output(Parameter.DETAIL.value, 'style'),
 ]
 fixed_states = [
 
@@ -236,28 +227,29 @@ all_states = fixed_states + dynamic_states
 
 # display selected row
 @app.callback(
-    dynamic_outputs,
+    all_outputs,
     [
         Input(Runfile.TABLE.value, "selected_rows"),
-        Input(Runfile.TABLE.value, 'data'),
-
     ],
+    State(Runfile.TABLE.value, 'data'),
+
     prevent_initial_call=True, )
 def display_selected_row(selected_row, data):
     if not ctx.triggered:
         raise PreventUpdate
+    style = HIDE_STYLE
     output_values = [''] * (len(table_column))
     if data:
         df = pd.DataFrame(data)
         df.fillna('', inplace=True)
-        if selected_row:
-            if selected_row[0] < len(df):
-                selected_data = df.loc[selected_row[0]]
-                output_values = pf.table_layout([selected_data[col] for col in table_column])
-    return output_values
+        if selected_row and selected_row[0] < len(df):
+            style = SHOW_STYLE
+            selected_data = df.loc[selected_row[0]]
+            output_values = pf.table_layout([selected_data[col] for col in table_column])
+    return [style] + output_values
 
 
-# save the parameter to the runfile and dataTable
+# save the parameter to the dataTable
 
 @app.callback(
     Output(Runfile.TABLE.value, 'data'),
@@ -271,14 +263,12 @@ def display_selected_row(selected_row, data):
     all_states,
     prevent_initial_call=True,
 )
-def new_job(n1, n2, n3, selected_row, selected_runfile, df_table, *state_values):
+def save_new_parameters(n1, n2, n3, selected_row, selected_runfile, df_table, *state_values):
     triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
     logger.info(f'Triggered component to update runfile: {triggered_id}')
-    output_value = ''
     df = pd.DataFrame(df_table)
-    selected_runfile = [value for value in selected_runfile if value is not None]
+    selected_runfile = next((value for value in selected_runfile if value), None)
     if selected_runfile:
-        selected_runfile = selected_runfile[0]
         if selected_row:
             if triggered_id == Table.DEL_ROW_BTN.value:
                 logger.info(f'Deleting row {selected_row[0]}')
@@ -298,6 +288,7 @@ def new_job(n1, n2, n3, selected_row, selected_runfile, df_table, *state_values)
                     df.iloc[selected_row[0]] = new_row
                 pf.save_runfile(df, selected_runfile)
     output_value = df.to_dict('records')
+
     # logger.debug(f'Updated table values: {output_values}')
     return output_value
 
@@ -431,6 +422,8 @@ def select_all_beam(n_clicks, current_values, options):
     return current_values, options
 
 
+#
+#
 # verify the selected_runfile
 @app.callback(
     Output(Runfile.VALIDATION_ALERT.value, 'is_open'),
@@ -453,3 +446,37 @@ def verify_runfile(n_clicks, selected_runfile):
         return True, show_message
     else:
         return False, ''
+
+
+# @app.callback(
+#     Output(Parameter.MODAL.value, 'is_open'),
+#     [
+#         Input(Runfile.EDIT_BTN.value, 'n_clicks'),
+#         Input(Parameter.UPDATE_BTN.value, 'n_clicks'),
+#         Input(Parameter.SAVE_ROW_BTN.value, 'n_clicks'),
+#     ],
+#     prevent_initial_call=True
+# )
+# def edit_table(n1, n2, n3):
+#     if not ctx.triggered:
+#         raise PreventUpdate
+#     if ctx.triggered_id == Runfile.EDIT_BTN.value:
+#         return True
+#     elif ctx.triggered_id in [Parameter.UPDATE_BTN.value, Parameter.SAVE_ROW_BTN.value]:
+#         return False
+
+
+app.clientside_callback(
+    """
+    function(n_clicks) {
+        if (n_clicks > 0) {
+            var element = document.getElementById('runfile-end');
+            if (element) {
+                element.scrollIntoView({behavior: 'smooth'});
+            }
+        }
+    }
+    """,
+    Output('dummy-div', 'children'),  # Dummy output
+    Input(Runfile.EDIT_BTN.value, 'n_clicks'),
+)
