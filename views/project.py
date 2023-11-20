@@ -117,7 +117,7 @@ def update_session_display(*args):
             message = f'session-{name} already exists'
         else:
             # Now perform the copy operation.
-            old_session_path = default_session if active_session == init_session \
+            old_session_path = default_session_path if active_session == init_session \
                 else os.path.join(pid_path, active_session, 'lmtoy_run', f'lmtoy_{current_user.username}')
             shutil.copytree(old_session_path, new_session_path)
             modal_open = False
