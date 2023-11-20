@@ -72,7 +72,7 @@ column_list = [
     'stype',  # 13 radio button 1 0 2
     'otf_cal',  # 14 radio button 0 1
     # Section5: Gridding
-    'extend',  # 15 label input Map Extent
+    'extent',  # 15 label input Map Extent
     'resolution',  # 16 label input Resolution
     'cell',  # 17 label input cell
     'otf_select',  # 18 radio button jinc gauss triangle box
@@ -318,12 +318,14 @@ input_fields_2 = [
     create_input_field(field, input_id=field, input_type=None, min_val=None, max_val=None, )
     for field in column_list[9:11]]
 
-tooltip_target = ['source_label', 'obsumns_label', 'bank_label', 'exclude_beams_label', 'time_range_label']
-tooltip_content = ["Select a source",
-                   "a single observation number, typically 6 digits, e.g. 123456",
-                   "select a bank from a WARES based instrument; -1 means all banks, 0 is the first bank",
-                   "exclude beams",
-                   "Select time range", ]
+tooltip_target = ['obsumns_label', 'bank_label', 'b_order_label', 'extent_label']
+tooltip_content = [
+    "obsum: A single observation number, typically 6 digits, e.g. 123456, obsums: a comma separated "
+    "series of obsnums to stack observations",
+    "Select a bank from a WARES based instrument; -1 means all banks, 0 is the first bank",
+    "baseline order of a polynomial baseline subtraction in WARES based instruments",
+    "half the size of the (square) box on the sky for gridding (in arcsec)",
+]
 
 edit_parameter_layout = html.Div(
     [
@@ -331,42 +333,39 @@ edit_parameter_layout = html.Div(
             [
                 dbc.Col(dbc.Card([dbc.Label('Source and obsnum', className='large-label'),
                                   dbc.Row(
-                                      [dbc.Col(dbc.Label('Source', className="sm-label", id=tooltip_target[0]),
+                                      [dbc.Col(dbc.Label('Source', className="sm-label"),
                                                width=4),
-                                       pf.make_tooltip(tooltip_content[0], tooltip_target[0]),
                                        dbc.Col(dcc.Dropdown(id=column_list[0], multi=False, ), width=8),
                                        dbc.Alert(id='source-alert', color='danger', duration=2000)], align='center',
                                       className='mb-3'),
                                   dbc.Row(
-                                      [dbc.Col(dbc.Label('Obsnum', className="sm-label", id=tooltip_target[1]),
+                                      [dbc.Col(dbc.Label('Obsnum', className="sm-label", id=tooltip_target[0]),
                                                width=4),
-                                       pf.make_tooltip(tooltip_content[1], tooltip_target[1]),
                                        dbc.Col(dcc.Dropdown(id=column_list[1], clearable=False, multi=True), width=8)],
                                       align='center'),
+                                  pf.make_tooltip(tooltip_content[0], tooltip_target[0]),
                                   ], style=detail_card_style), width=4, ),
                 dbc.Col(dbc.Card([
                     dbc.Label('Beam', className='large-label'),
-                    dbc.Row([dbc.Col(dbc.Label('Bank', className='sm-label', id=tooltip_target[2]), width=4),
+                    dbc.Row([dbc.Col(dbc.Label('Bank', className='sm-label', id=tooltip_target[1]), width=4),
                              dbc.Col(dcc.Dropdown(id=column_list[2], options=bank_options, ), width=8),
-                             pf.make_tooltip(tooltip_content[2], tooltip_target[2]), ], align='center',
+                             pf.make_tooltip(tooltip_content[1], tooltip_target[1]), ], align='center',
 
                             className='mb-3'),
 
                     dbc.Row(
-                        [dbc.Col(dbc.Label('Exclude Beams', className='sm-label', id=tooltip_target[3]), width='auto'),
+                        [dbc.Col(dbc.Label('Exclude Beams', className='sm-label'), width='auto'),
                          dbc.Col(dbc.Button('Check All', id='all-beam', color='secondary',
                                             style={'padding': '0', 'font-size': '8px', 'height': '20px', }),
                                  width='auto'),
-                         pf.make_tooltip(tooltip_content[3], tooltip_target[3]),
                          ], align='center', className='mb-3'),
 
                     dbc.Row(dbc.Col(dbc.Checklist(id=column_list[3], options=beam_options, inline=True),
                                     width=8), className='mb-3'),
 
                     dbc.Row([
-                        dbc.Col(dbc.Label('Time Range', className='sm-label', id=tooltip_target[4]), width=6),
+                        dbc.Col(dbc.Label('Time Range', className='sm-label'), width=6),
                         dbc.Col(dbc.Input(id=column_list[4], placeholder='min, max'), width=6),
-                        pf.make_tooltip(tooltip_content[4], tooltip_target[4]),
                     ],
                         align='center'
                     ),
@@ -412,9 +411,10 @@ edit_parameter_layout = html.Div(
             dbc.Col(dbc.Card([
                 dbc.Label('Gridding', className='large-label'),
                 dbc.Row([
-                    dbc.Col(create_label_input_pair('Map Extent', dbc.Input(id=column_list[15]))),
+                    dbc.Col(create_label_input_pair('Map Extent', dbc.Input(id=column_list[15])), id=tooltip_target[3]),
                     dbc.Col(create_label_input_pair('Resolution', dbc.Input(id=column_list[16]))),
                     dbc.Col(create_label_input_pair('Cell', dbc.Input(id=column_list[17]))),
+                    pf.make_tooltip(tooltip_content[3], tooltip_target[3])
                 ], className='mb-3'),
                 dbc.Row([
                     dbc.Col(create_label_input_pair('otf_select',

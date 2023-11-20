@@ -273,7 +273,7 @@ def df_runfile(filename):
         try:
             with open(filename) as file:
                 content = file.read()
-                #logger.debug(f'Content of {filename}:\n {content}')
+                # logger.debug(f'Content of {filename}:\n {content}')
                 file.seek(0)
                 for line in file:
                     commands = line.strip().split()
@@ -281,16 +281,11 @@ def df_runfile(filename):
                     data.append(row)
 
             df = pd.DataFrame(data)
-            # rename obsnum to obsnum(s)
-            # if 'obsnum' in df.columns:
-            #     df.rename(columns={'obsnum': 'obsnum(s)'}, inplace=True)
-            # elif 'obsnums' in df.columns:
-            #     df.rename(columns={'obsnums': 'obsnum(s)'}, inplace=True)
-            # # logger.info(f'Final DataFrame with renamed columns: \n {df}')
-            # # rename pix_list to exclude_beams
-            # if 'pix_list' in df.columns:
-            #     df.rename(columns={'pix_list': 'exclude_beams'}, inplace=True)
             df = df.rename(columns={'obsnum': 'obsnum(s)', 'obsnums': 'obsnum(s)', 'pix_list': 'exclude_beams'})
+            if 'exclude_beams' in df.columns:
+                print('df[exclude_beams]', df['exclude_beams'])
+                df['exclude_beams'] = df['exclude_beams'].apply(lambda x: exclude_beams(x))
+                print('df[exclude_beams]', df['exclude_beams'])
             return df, content
         except Exception as e:
             logger.error(e)
@@ -315,11 +310,18 @@ def save_runfile(df, runfile_path):
                         column = 'obsnum'
                 if column == 'exclude_beams':
                     column = 'pix_list'
+                    value = exclude_beams(value)
                 line += f" {column}{separator}{value}"
         lines.append(line)
     with open(runfile_path, 'w') as f:
         f.write('\n'.join(lines))
 
+
+def exclude_beams(pix_list):
+    beams = pix_list.split(',')
+    all_strings = [str(i) for i in range(16)]
+    exclude_beams = [s for s in all_strings if s not in beams]
+    return ','.join(exclude_beams)
 
 def table_layout(table_data):
     output = table_data
