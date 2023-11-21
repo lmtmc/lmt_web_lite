@@ -141,12 +141,14 @@ def update_session_display(*args):
 # if click delete session button show the confirmation
 @app.callback(
     Output(Session.CONFIRM_DEL.value, 'displayed'),
+    Output(Session.CONFIRM_DEL.value, 'message'),
     Input(Session.DEL_BTN.value, 'n_clicks'),
+    Input(Session.SESSION_LIST.value, 'active_item'),
 )
-def display_confirmation(n_clicks):
+def display_confirmation(n_clicks, active_item):
     if ctx.triggered_id == Session.DEL_BTN.value:
-        return True
-    return False
+        return True, f'Are you sure you want to delete {active_item}?'
+    return False, ''
 
 
 # display selected runfile
@@ -298,12 +300,20 @@ def save_new_parameters(n1, n2, n3, selected_row, selected_runfile, df_table, *s
 # if click delete button show the confirmation
 @app.callback(
     Output(Runfile.CONFIRM_DEL_ALERT.value, 'displayed'),
-    Input(Runfile.DEL_BTN.value, 'n_clicks'),
+    Output(Runfile.CONFIRM_DEL_ALERT.value, 'message'),
+    [
+        Input(Runfile.DEL_BTN.value, 'n_clicks'),
+        Input({'type': 'runfile-radio', 'index': ALL}, 'value')
+    ],
     prevent_initial_call=True
 )
-def display_confirmation(n_clicks):
-    return ctx.triggered_id == Runfile.DEL_BTN.value
-
+def display_confirmation(n_clicks, selected_runfile):
+    selected_runfile = [value for value in selected_runfile if value is not None]
+    file_name = selected_runfile[0].split('/')[-1]
+    if ctx.triggered_id == Runfile.DEL_BTN.value:
+        return True, f'Are you sure you want to delete {file_name}?'
+    else:
+        return False, ''
 
 # open a modal if clone-runfile button
 @app.callback(

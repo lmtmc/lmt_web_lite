@@ -208,7 +208,7 @@ session_layout = html.Div(
                                              'margin-bottom': '10px'}),
             session_modal,
             html.Div(
-                dcc.ConfirmDialog(id=Session.CONFIRM_DEL.value, message='Are you sure you want to delete the session?'
+                dcc.ConfirmDialog(id=Session.CONFIRM_DEL.value, message=''
                                   ), ),
             dbc.Row([
                 dbc.Col(html.Button([html.I(className="fas fa-trash me-2"), 'Delete Session'],
@@ -267,7 +267,7 @@ runfile_layout = html.Div(
                     html.Div(clone_runfile_modal),
                     html.Div(dcc.ConfirmDialog(
                         id=Runfile.CONFIRM_DEL_ALERT.value,
-                        message='Are you sure to delete the runfile?'
+                        message=''
                     ),
                         id='confirm-dialog-container',  # Give it an ID for styling
                     ),
