@@ -466,7 +466,7 @@ edit_parameter_layout = html.Div(
 
 parameter_layout = dbc.Modal(
     [
-        dbc.ModalHeader(dbc.ModalTitle('Edit Parameters')),
+        dbc.ModalHeader(html.H1('Edit Parameters')),
         dbc.ModalBody(
             [
                 html.Div(

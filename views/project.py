@@ -315,16 +315,18 @@ def display_confirmation(n_clicks):
     [
         Input(Runfile.CLONE_BTN.value, 'n_clicks'),
         Input(Runfile.SAVE_CLONE_RUNFILE_BTN.value, 'n_clicks'),
+        Input({'type': 'runfile-radio', 'index': ALL}, 'value'),
     ],
     [
-        State(Storage.DATA_STORE.value, 'data'),
-        State(Runfile.TABLE.value, 'derived_virtual_data'),
         State(Runfile.NAME_INPUT.value, 'value'),
     ],
 
     prevent_initial_call=True
 )
-def copy_runfile(n1, n2, data_store, virtual_data, new_name):
+def copy_runfile(n1, n2, selected_runfile, new_name):
+    if not ctx.triggered:
+        raise PreventUpdate
+    current_runfile = next((value for value in selected_runfile if value), None)
     modal_open = False
     status = False
     message = ''
@@ -332,10 +334,8 @@ def copy_runfile(n1, n2, data_store, virtual_data, new_name):
     if triggered_id == Runfile.CLONE_BTN.value:
         modal_open = True
     if triggered_id == Runfile.SAVE_CLONE_RUNFILE_BTN.value:
-        runfile_to_clone = data_store.get('runfile', '')
         new_runfile_name = f"{current_user.username}.{new_name}"
-        new_runfile_path = os.path.join(os.path.dirname(runfile_to_clone), new_runfile_name)
-        pf.save_runfile(pd.DataFrame(virtual_data), new_runfile_path)
+        pf.clone_runfile(current_runfile, new_runfile_name)
         message = f'Runfile {new_runfile_name} saved successfully!'
     return modal_open, message, status
 

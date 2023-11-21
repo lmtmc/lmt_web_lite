@@ -101,10 +101,6 @@ def find_runfiles(folder_path, prefix):
         matching_files = find_files(folder_path, prefix)
         if matching_files:
             print(f"Matching files: {matching_files}")
-        # else:
-        #     my_runs.mk_runs()
-        #     time.sleep(1)
-        #     print("No matching files found even after running 'mk_runs.py'")
     return matching_files
 
 
@@ -170,28 +166,6 @@ def get_session_list(default_session, pid_path):
         )
         for session in session_info
     ]
-
-    # def handle_save_session(pid_path, name):
-    #     print('name', name)
-    #     if not name:
-    #         return True, "Please input a session number!"
-    #     new_session_name = f'Session-{name}'
-    #     new_session_path = os.path.join(pid_path, new_session_name)
-    #     # Check if the session directory already exists
-    #     if os.path.exists(new_session_path):
-    #         # If the directory not exist, create it
-    #         return True, f'{new_session_name} already exists'
-
-    # os.environ['WORK_LMT'] = new_session_path
-    # os.environ['PID'] = current_user.username
-    #
-    # # use lmtoy_run the clone PID to a new session
-    # commands = [
-    #     'mkdir -p $WORK_LMT'
-    #     'cd $WORK_LMT',
-    #     'lmtoy_run $PID'
-    # ]
-    # process_cmd(commands)
     return False, f'{new_session_name} created successfully!'
 
 
@@ -221,11 +195,6 @@ def del_session(folder_path):
 def handle_new_session():
     return True, ''
 
-
-# def handle_save_session(init_session, active_session, pid_path, pid_lmtoy_path, name):
-#     file_path = construct_file_paths(init_session, active_session, pid_path, pid_lmtoy_path, current_user.username)
-#     [session_added, message] = clone_session(pid_path, name, file_path)
-#     return not session_added, message
 
 def handle_delete_session(pid_path, active_session):
     session_path = os.path.join(pid_path, active_session)
@@ -283,9 +252,7 @@ def df_runfile(filename):
             df = pd.DataFrame(data)
             df = df.rename(columns={'obsnum': 'obsnum(s)', 'obsnums': 'obsnum(s)', 'pix_list': 'exclude_beams'})
             if 'exclude_beams' in df.columns:
-                print('df[exclude_beams]', df['exclude_beams'])
                 df['exclude_beams'] = df['exclude_beams'].apply(lambda x: exclude_beams(x))
-                print('df[exclude_beams]', df['exclude_beams'])
             return df, content
         except Exception as e:
             logger.error(e)
@@ -341,7 +308,6 @@ def layout_table(layout_data):
 
     if output[3]:
         filtered_beam = filter(bool, layout_data[3])
-        print(layout_data[3], filtered_beam)
         sorted_beam = sorted(filtered_beam, key=int)
 
         output[3] = ",".join(sorted_beam)

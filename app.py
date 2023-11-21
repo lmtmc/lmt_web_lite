@@ -65,7 +65,7 @@ def nav_bar(input1):
     if current_user.is_authenticated:
 
         return [
-            dbc.NavLink('Current user: ' + current_user.username, href=f'{prefix}project'),
+            dbc.NavLink('Current ProjectId: ' + current_user.username, href=f'{prefix}project'),
             dbc.NavLink('Logout', href=f'{prefix}logout', )
         ]
 
