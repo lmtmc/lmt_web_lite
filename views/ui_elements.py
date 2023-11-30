@@ -45,6 +45,9 @@ class Table(Enum):
     EDIT_ROW_BTN = 'edit-row'
     DEL_ROW_BTN = 'del-row'
     NEW_ROW_BTN = 'new-row'
+    EDIT_TABLE = 'edit-table'
+    CONFIRM_DEL_ROW = 'confirm-del-row'
+    OPTION = 'table-option'
 
 
 # columns_list from runfile
@@ -105,7 +108,7 @@ class Parameter(Enum):
     ACTION = 'parameter-action'
     SOURCE_DROPDOWN = '_s'
     OBSNUM_DROPDOWN = 'obsnum(s)'
-    LAYOUT = 'layout'
+    CANCEL_BTN = 'cancel-btn'
 
 
 class Storage(Enum):
@@ -140,7 +143,7 @@ runfile_content = html.Pre(id=Runfile.CONTENT.value, style={'overflowX': 'auto',
 
 runfile_table = dash_table.DataTable(
     id=Runfile.TABLE.value,
-    row_selectable='single',
+    row_selectable='multi',
     data=[],
     filter_action="native",
     columns=columns,
@@ -167,7 +170,6 @@ runfile_table = dash_table.DataTable(
     },
     tooltip_delay=0,
     tooltip_duration=None,
-
 )
 
 session_modal = pf.create_modal(
@@ -341,7 +343,10 @@ edit_parameter_layout = html.Div(
                                   dbc.Row(
                                       [dbc.Col(dbc.Label('Obsnum', className="sm-label", id=tooltip_target[0]),
                                                width=4),
-                                       dbc.Col(dcc.Dropdown(id=column_list[1], clearable=False, multi=True), width=8)],
+                                       dbc.Col(
+                                           dcc.Dropdown(id=column_list[1], clearable=False, multi=True),
+
+                                           width=8)],
                                       align='center'),
                                   pf.make_tooltip(tooltip_content[0], tooltip_target[0]),
                                   ], style=detail_card_style), width=4, ),
@@ -457,11 +462,9 @@ edit_parameter_layout = html.Div(
         ], className='mb-3'),
         html.Div(
             dbc.Row([
-                dbc.Col(html.Button("Save", id=Parameter.UPDATE_BTN.value), width="auto", className="ml-auto"),
-                dbc.Col(html.Button("Add a new row", id=Parameter.SAVE_ROW_BTN.value), width="auto",
-                        className="ml-auto"),
-                dbc.Col(html.Button("Delete row", id=Table.DEL_ROW_BTN.value), width="auto", className="ml-auto"),
-            ], className='d-flex justify-content-end mb-2'), id=Parameter.ACTION.value),
+                dbc.Col(html.Button("Update", id=Parameter.UPDATE_BTN.value), width="auto", className="ml-auto"),
+                dbc.Col(html.Button("Cancel", id=Parameter.CANCEL_BTN.value),width="auto", className="ml-auto"),
+            ], className='d-flex justify-content-end mb-2')),
     ])
 
 parameter_layout = dbc.Modal(
@@ -471,7 +474,18 @@ parameter_layout = dbc.Modal(
             [
                 html.Div(
                     [
-                        html.A('Parameter Table', className='mb-4 title-link', id='parameter-table-location'),
+                        html.Div([html.A('Parameter Table', className='mb-4 title-link', id='parameter-table-location'),
+                                  html.Div(dbc.DropdownMenu(
+                                      label="Table Options",
+                                      children=[
+                                          dbc.DropdownMenuItem("Edit rows", id=Table.EDIT_TABLE.value, ),
+                                          dbc.DropdownMenuItem("Delete rows", id=Table.DEL_ROW_BTN.value, ),
+                                          dbc.DropdownMenuItem("Clone Rows", id=Table.NEW_ROW_BTN.value),
+                                      ], color='secondary', className='d-flex justify-content-end'
+                                  ), id=Table.OPTION.value, ),
+                                  dcc.ConfirmDialog(id=Table.CONFIRM_DEL_ROW.value, message='',)
+                                  ],
+                                 className='d-flex justify-content-between'),
                         html.Div(runfile_table, style={'margin': '0', 'border': '1px solid #CCCCCC', 'padding': '10px',
                                                        'margin-bottom': '10px', 'overflowX': 'auto',
                                                        'max-height': table_height, }),

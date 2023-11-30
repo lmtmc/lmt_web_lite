@@ -317,7 +317,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .alert-warning {
-  width: 50%;
+  width: 100%;
   background-color: #d9edf7;
   color: #555555;
   border-color: #faebcc;

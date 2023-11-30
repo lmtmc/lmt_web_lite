@@ -1,52 +1,41 @@
 import dash
 from dash import dcc, html
 
-
-# # Function to read markdown from a file
-# def read_markdown_file(path):
-#     with open(path, 'r') as file:
-#         return file.read()
-
-
 markdown_content = '''
+#
 
 ### Help Document 
 
 ###### **Login**
-- Use the Project Id (PID) to login. 
-    - Example: 'PID = '2023-S1-US-17' | Password = '1234''
-
-###### **Job Management**
-- After logging in, you will see a list of your previous jobs.
-- You can also view current jobs on unity.
-
-###### **Create a New Job**
-- Click the "new job" button located on the top right of the account page.
-
+Use the Project Id (PID) to login. 
+- Example: 'PID = '2021-S1-US-3' | Password = '1234''
+- If the password for the PID is not valid, an error message will be displayed.
 ###### **Session Management**
-- Default session (`session-0`) and previous sessions will be displayed.
-    - If `session-0` is selected, you can clone it:
-        1. Click 'CLONE SESSION'.
-        2. Input a number for the new session name.
-    - If other sessions are selected, you can delete them:
-        1. Click 'DELETE SESSION'.
+Default session (`session-0`) and previous sessions will be displayed.
+- If `session-0` is selected, you can clone it:
+    1. Click `CLONE SESSION`.
+    2. Input a number for the new session name.
+- If other session is selected, you can clone or delete it.
 
 ###### **Runfile Management**
-- After selecting a session, available runfiles will be displayed.
-- Choose a runfile to view its content in the table.
-    - The left corner shows the session and runfile name.
-    - The right corner provides options to delete or clone the selected runfile.
-    - The table shows the runfile content.Toggle columns to view less or more columns. Filter rows by typing in the filter cell
-    - Click 'CLONE RUNFILE' to clone the selected runfile.
-
-###### **Row Editing**
-- Select a row to highlight it. Options for editing, deleting, and cloning will appear.
-    - Click 'EDIT ROW' to modify row parameters and click 'Update' to save changes.
-    - Click 'CLONE ROW' to modify the row parameters and click 'Save new row' to add it to the runfile table.
-
-**Note:** The "SUBMIT JOB" button is currently set for a dry-run. Proper validation from the pipeline is pending.
+- After selecting a session, available runfiles in this session will be displayed.
+- Choose a runfile to view its content.
+- The left corner shows the session and runfile name.
+- The right corner provides `RUNFILE OPTIONS` to verify, edit, delete or clone the selected runfile.
+    - Click `VERIFY` to verify the runfile content.
+    - Click `DELETE` to delete the runfile.
+    - Click `EDIT` to edit the runfile.
+    - Click `CLONE` to clone the runfile.
+    
+###### **Table Management**
+- After selecting a runfile and clicking `EDIT`, the runfile content will be displayed in a table.
+- Click `TOGGLE COLUMNS` to view less or more columns. 
+- Filter rows by typing in the filter cell
+- Select a row or multiply rows and the `TABLE OPTIONS` dropdown menu will appear.
+- Click `EDIT ROW`, the edit parameters layout will be displayed. Modify parameters and click `UPDATE` to save the changes.
 
 '''
 
-
-layout = html.Div(dcc.Markdown(markdown_content))
+layout = html.Div(dcc.Markdown(markdown_content),
+                  style={'margin-top': '50px', 'margin-left': '100px', 'margin-right': 'auto',
+                         'text-align': 'left'})

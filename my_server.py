@@ -27,7 +27,9 @@ app = dash.Dash(__name__, server=server,
                     {'charset': 'utf-8'},
                     {'name': 'viewport',
                      'content': 'width=device-width, initial-scale=1, shrink-to-fit=yes'},
-                ])
+                ],
+                prevent_initial_callbacks="initial_duplicate"
+                )
 app.config.suppress_callback_exceptions = True
 
 login_manager = LoginManager(server)

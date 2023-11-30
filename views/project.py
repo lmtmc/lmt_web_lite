@@ -1,4 +1,4 @@
-# delete runfile or sessions make display of the table and parameter layout to none
+
 import os
 import time
 import json
@@ -161,7 +161,7 @@ def display_confirmation(n_clicks, active_item):
     [
         Input({'type': 'runfile-radio', 'index': ALL}, 'value'),
         Input(Runfile.CONFIRM_DEL_ALERT.value, 'submit_n_clicks'),
-        Input(Parameter.SAVE_ROW_BTN.value, 'n_clicks'),
+        Input(Table.NEW_ROW_BTN.value, 'n_clicks'),
         Input(Parameter.UPDATE_BTN.value, 'n_clicks'),
         Input(Table.DEL_ROW_BTN.value, 'n_clicks'),
     ],
@@ -178,7 +178,7 @@ def display_runfile_content(selected_runfile, del_runfile_btn, n1, n2, n3):
 
     if ctx.triggered_id == Runfile.CONFIRM_DEL_ALERT.value:
         pf.del_runfile(current_runfile)
-    if ctx.triggered_id in [Parameter.SAVE_ROW_BTN.value, Parameter.UPDATE_BTN.value, Table.DEL_ROW_BTN.value]:
+    if ctx.triggered_id in [Table.NEW_ROW_BTN.value, Parameter.UPDATE_BTN.value, Table.DEL_ROW_BTN.value]:
         time.sleep(0.5)
         runfile_content = pf.df_runfile(current_runfile)[1]
     logger.info(f'current_runfile is {current_runfile}')
@@ -195,7 +195,6 @@ def display_runfile_content(selected_runfile, del_runfile_btn, n1, n2, n3):
         Input(Runfile.EDIT_BTN.value, 'n_clicks'),
         Input({'type': 'runfile-radio', 'index': ALL}, 'value'),
     ],
-    prevent_initial_call=True,
 )
 def show_parameter_table(n1, selected_runfile):
     modal_style = False
@@ -210,10 +209,6 @@ def show_parameter_table(n1, selected_runfile):
     return modal_style, dff.to_dict('records')
 
 
-# Define fixed Output objects
-fixed_outputs = [
-    Output(Parameter.DETAIL.value, 'style'),
-]
 fixed_states = [
 
     State(Runfile.TABLE.value, 'data'),
@@ -225,32 +220,7 @@ dynamic_outputs = [Output(field, 'value', allow_duplicate=True) for field in fie
 dynamic_states = [State(field, 'value') for field in field_names]
 # Combine fixed and dynamic Output objects
 
-all_outputs = fixed_outputs + dynamic_outputs
 all_states = fixed_states + dynamic_states
-
-
-# display selected row
-@app.callback(
-    all_outputs,
-    [
-        Input(Runfile.TABLE.value, "selected_rows"),
-    ],
-    State(Runfile.TABLE.value, 'data'),
-
-    prevent_initial_call=True, )
-def display_selected_row(selected_row, data):
-    if not ctx.triggered:
-        raise PreventUpdate
-    style = HIDE_STYLE
-    output_values = [''] * (len(table_column))
-    if data:
-        df = pd.DataFrame(data)
-        df.fillna('', inplace=True)
-        if selected_row and selected_row[0] < len(df):
-            style = SHOW_STYLE
-            selected_data = df.loc[selected_row[0]]
-            output_values = pf.table_layout([selected_data[col] for col in table_column])
-    return [style] + output_values
 
 
 # save the parameter to the dataTable
@@ -259,38 +229,40 @@ def display_selected_row(selected_row, data):
     Output(Runfile.TABLE.value, 'data'),
     [
         Input(Table.DEL_ROW_BTN.value, 'n_clicks'),
-        Input(Parameter.SAVE_ROW_BTN.value, 'n_clicks'),
+        Input(Table.NEW_ROW_BTN.value, 'n_clicks'),
         Input(Parameter.UPDATE_BTN.value, 'n_clicks'),
-        Input(Runfile.TABLE.value, "selected_rows"),
         Input({'type': 'runfile-radio', 'index': ALL}, 'value'),
     ],
     all_states,
     prevent_initial_call=True,
 )
-def save_new_parameters(n1, n2, n3, selected_row, selected_runfile, df_table, *state_values):
+def save_new_parameters(n1, n2, n3, selected_runfile, df_table, *state_values):
     triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
     logger.info(f'Triggered component to update runfile: {triggered_id}')
     df = pd.DataFrame(df_table)
     selected_runfile = next((value for value in selected_runfile if value), None)
-    if selected_runfile:
-        if selected_row:
-            if triggered_id == Table.DEL_ROW_BTN.value:
-                logger.info(f'Deleting row {selected_row[0]}')
-                df.drop(df.index[selected_row[0]], inplace=True)
-                pf.save_runfile(df, selected_runfile)
-            elif triggered_id in [Parameter.SAVE_ROW_BTN.value, Parameter.UPDATE_BTN.value]:
-                # if there are more obsnums then join them using ' '
-                parameters = pf.layout_table(list(state_values))
-                new_row = {key: value for key, value in zip(table_column, parameters)}
-                logger.debug(f'New row: {new_row}')
-                if triggered_id == Parameter.SAVE_ROW_BTN.value:
-                    # add new row to the end of the table
-                    logger.info(f'Adding new row to the end of the table')
-                    df = df._append(new_row, ignore_index=True)
-                else:
-                    logger.info(f'Updating row {selected_row[0]}')
-                    df.iloc[selected_row[0]] = new_row
-                pf.save_runfile(df, selected_runfile)
+    if not selected_runfile:
+        return no_update
+
+    if triggered_id == Parameter.UPDATE_BTN.value:
+        # update the table value of slected obsnums using parameter value
+        obsumns = list(state_values[1])
+        # change the value of rows which has the obsnum(s) in the obsumns
+        parameter_values = state_values[2:]
+        for obsumn in obsumns:
+            for i, column in enumerate(table_column[2:]):
+                value = parameter_values[i]
+                if value is not None:
+                    if i == 1:
+                        print('value before sorted', value)
+                        filtered_beam = filter(bool, value)
+                        sorted_beam = sorted(filtered_beam, key=int)
+                        value = ",".join(sorted_beam)
+                        print('value after sorted', value)
+                    elif i == 2:
+                        value = f'[{value} ]'
+                    df.loc[df[table_column[1]] == obsumn, column] = value
+        pf.save_runfile(df, selected_runfile)
     output_value = df.to_dict('records')
 
     # logger.debug(f'Updated table values: {output_values}')
@@ -309,11 +281,16 @@ def save_new_parameters(n1, n2, n3, selected_row, selected_runfile, df_table, *s
 )
 def display_confirmation(n_clicks, selected_runfile):
     selected_runfile = [value for value in selected_runfile if value is not None]
-    file_name = selected_runfile[0].split('/')[-1]
+
     if ctx.triggered_id == Runfile.DEL_BTN.value:
-        return True, f'Are you sure you want to delete {file_name}?'
+        if selected_runfile:
+            file_name = selected_runfile[0].split('/')[-1]
+            return True, f'Are you sure you want to delete {file_name}?'
+        else:
+            return False, ''
     else:
         return False, ''
+
 
 # open a modal if clone-runfile button
 @app.callback(
@@ -349,6 +326,178 @@ def copy_runfile(n1, n2, selected_runfile, new_name):
         message = f'Runfile {new_runfile_name} saved successfully!'
     return modal_open, message, status
 
+
+# when selected_rows is not none, show the edit row button and delete row button
+@app.callback(
+    Output(Table.OPTION.value, 'style'),
+    Input(Runfile.TABLE.value, "selected_rows"),
+    Input(Parameter.DETAIL.value, 'style'),
+)
+def show_edit_row_btn(selected_rows, style):
+    if selected_rows and style == HIDE_STYLE:
+        return SHOW_STYLE
+    else:
+        return HIDE_STYLE
+
+
+# if edit selected row button or new row btn is clicked, show the parameter detail layout
+@app.callback(
+    Output(Parameter.DETAIL.value, 'style'),
+    Input(Table.EDIT_TABLE.value, 'n_clicks'),
+    Input(Parameter.UPDATE_BTN.value, 'n_clicks'),
+    Input(Table.NEW_ROW_BTN.value, 'n_clicks'),
+    Input(Table.CONFIRM_DEL_ROW.value, 'submit_n_clicks'),
+    Input(Runfile.TABLE.value, "selected_rows"),
+    Input(Parameter.CANCEL_BTN.value, 'n_clicks'),
+)
+def show_parameter_detail(n1, n2, n3, n4, selected_rows, n5):
+    print('selected_rows', selected_rows)
+    if not ctx.triggered:
+        raise PreventUpdate
+    if not selected_rows:
+        return HIDE_STYLE
+    elif ctx.triggered_id == Table.EDIT_TABLE.value:
+        return SHOW_STYLE
+    elif (ctx.triggered_id == Parameter.UPDATE_BTN.value or ctx.triggered_id == Table.CONFIRM_DEL_ROW.value
+          or ctx.triggered_id == Parameter.CANCEL_BTN.value):
+        return HIDE_STYLE
+    else:
+        return no_update
+
+
+# if delete row button is clicked, show the confirmation to delete the row
+@app.callback(
+    Output(Table.CONFIRM_DEL_ROW.value, 'displayed'),
+    Output(Table.CONFIRM_DEL_ROW.value, 'message'),
+    Input(Table.DEL_ROW_BTN.value, 'n_clicks'),
+    # State(Runfile.TABLE.value, "selected_rows"),
+    prevent_initial_call=True
+)
+def display_confirmation(n_clicks):
+    if ctx.triggered_id == Table.DEL_ROW_BTN.value:
+        return True, 'Are you sure you want to delete the selected row(s)?'
+    return False, ''
+
+
+# if table.confirm_del_row is clicked delete the selected row
+# if table.new_row_btn is clicked add selected rows to the table
+# @app.callback(
+#     Output(Runfile.TABLE.value, 'data', allow_duplicate=True),
+#     Input(Table.CONFIRM_DEL_ROW.value, 'submit_n_clicks'),
+#     Input(Table.NEW_ROW_BTN.value, 'n_clicks'),
+#     Input({'type': 'runfile-radio', 'index': ALL}, 'value'),
+#     State(Runfile.TABLE.value, 'data'),
+#     State(Runfile.TABLE.value, "selected_rows"),
+#     prevent_initial_call=True
+# )
+# def delete_add_row(n1, n2, selected_runfile, df_table, selected_rows):
+#     if not ctx.triggered:
+#         raise PreventUpdate
+#
+#     selected_runfile = next((value for value in selected_runfile if value), None)
+#     df = pd.DataFrame(df_table)
+#     if selected_rows:
+#         selected_rows = [value for value in selected_rows if value is not None]
+#         if ctx.triggered_id == Table.CONFIRM_DEL_ROW.value:
+#             selected_rows.sort(reverse=True)
+#             for row in selected_rows:
+#                 df.drop(row, inplace=True)
+#             pf.save_runfile(df, selected_runfile)
+#             output_value = df.to_dict('records')
+#             return output_value
+#         elif ctx.triggered_id == Table.NEW_ROW_BTN.value:
+#             for row in selected_rows:
+#                 new_row = df.loc[row]
+#                 df = df._append(new_row, ignore_index=True)
+#             output_value = df.to_dict('records')
+#             return output_value
+#
+#     else:
+#         return no_update
+
+import pandas as pd
+from dash import callback_context as ctx
+from dash.exceptions import PreventUpdate
+
+
+# Assuming other necessary imports and initializations
+
+@app.callback(
+    Output(Runfile.TABLE.value, 'data', allow_duplicate=True),
+    [Input(Table.CONFIRM_DEL_ROW.value, 'submit_n_clicks'),
+     Input(Table.NEW_ROW_BTN.value, 'n_clicks'),
+     Input({'type': 'runfile-radio', 'index': ALL}, 'value')],
+    [State(Runfile.TABLE.value, 'data'),
+     State(Runfile.TABLE.value, "selected_rows")],
+    prevent_initial_call=True
+)
+def delete_add_row(n1, n2, selected_runfile, df_table, selected_rows):
+    if not ctx.triggered:
+        raise PreventUpdate
+
+    selected_runfile = next((value for value in selected_runfile if value), None)
+    df = pd.DataFrame(df_table)
+
+    if selected_rows:
+        selected_rows = [value for value in selected_rows if value is not None]
+
+        if ctx.triggered_id == Table.CONFIRM_DEL_ROW.value:
+            # Delete selected rows
+            selected_rows.sort(reverse=True)
+            for row in selected_rows:
+                if row in df.index:
+                    df.drop(row, inplace=True)
+            pf.save_runfile(df, selected_runfile)
+            return df.to_dict('records')
+
+        elif ctx.triggered_id == Table.NEW_ROW_BTN.value:
+            # Add new rows
+            for row in selected_rows:
+                if row in df.index:
+                    new_row = df.loc[row]
+                    df = df._append(new_row, ignore_index=True)
+            pf.save_runfile(df, selected_runfile)
+            return df.to_dict('records')
+
+    return no_update
+
+
+@app.callback(
+    Output(table_column[1], 'value'),
+    Output(table_column[0], 'value'),
+    Input(Runfile.TABLE.value, "selected_rows"),
+    State(Runfile.TABLE.value, 'data'),
+)
+def update_dropdown_from_table(selected_row, data):
+    if not selected_row or not data:
+        return no_update
+
+    df = pd.DataFrame(data)
+    obsnum_values = [df.loc[row][table_column[1]] for row in selected_row]
+    source_value = df.loc[selected_row[0]][table_column[0]]
+    return obsnum_values, source_value
+
+
+# if value in obsnum is changed, update the table selected_rows
+@app.callback(
+    Output(Runfile.TABLE.value, "selected_rows"),
+    Input(table_column[1], 'value'),
+    State(Runfile.TABLE.value, 'data'),
+    prevent_initial_call=True,
+)
+def update_selected_row(obsnum_values, data):
+    if not ctx.triggered:
+        raise PreventUpdate
+    if data:
+        df = pd.DataFrame(data)
+        selected_rows = []
+        for obsnum in obsnum_values:
+            selected_rows.append(df[df[table_column[1]] == obsnum].index[0])
+        return selected_rows
+    return no_update
+
+
+# if new row button selected, show the detail parameter layout and append the value to the end of table
 
 # if login get the options for source and obsnums
 @app.callback(
@@ -458,24 +607,6 @@ def verify_runfile(n_clicks, selected_runfile):
         return True, show_message
     else:
         return False, ''
-
-
-# @app.callback(
-#     Output(Parameter.MODAL.value, 'is_open'),
-#     [
-#         Input(Runfile.EDIT_BTN.value, 'n_clicks'),
-#         Input(Parameter.UPDATE_BTN.value, 'n_clicks'),
-#         Input(Parameter.SAVE_ROW_BTN.value, 'n_clicks'),
-#     ],
-#     prevent_initial_call=True
-# )
-# def edit_table(n1, n2, n3):
-#     if not ctx.triggered:
-#         raise PreventUpdate
-#     if ctx.triggered_id == Runfile.EDIT_BTN.value:
-#         return True
-#     elif ctx.triggered_id in [Parameter.UPDATE_BTN.value, Parameter.SAVE_ROW_BTN.value]:
-#         return False
 
 
 app.clientside_callback(
