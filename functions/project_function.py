@@ -43,13 +43,6 @@ def get_work_lmt_path(config):
     return work_lmt
 
 
-# def create_session_directory(WORK_LMT):
-#     pid_path = os.path.join(WORK_LMT, current_user.username)
-#     if not os.path.exists(pid_path):
-#         os.mkdir(pid_path)
-#     return pid_path
-
-
 def check_user_exists():
     return current_user and current_user.is_authenticated
 
@@ -173,12 +166,13 @@ def clone_runfile(runfile, name):
     if not name:
         return False, "Please input a name!"
     new_name_path = os.path.join(Path(runfile).parent, name)
+    print(f'new_name_path: {new_name_path}')
     # Check if the session directory already exists
     if os.path.exists(new_name_path):
         # If the directory not exist, create it
-        return True, f'Runfile {name} already exists'
+        return True, f'Runfile {name} already exists', True
     shutil.copy(runfile, new_name_path)
-    return True, f"Runfile {name} created successfully!"
+    return False, f"Runfile {name} created successfully!", False
 
 
 def del_session(folder_path):
@@ -246,7 +240,11 @@ def df_runfile(filename):
                 file.seek(0)
                 for line in file:
                     commands = line.strip().split()
-                    row = {command.split('=')[0]: command.split('=')[1] for command in commands if '=' in command}
+                    row = {}
+                    for command in commands:
+                        if "=" in command and isinstance(command, str):
+                            key, value = command.split('=', 1)
+                            row[key] = value
                     data.append(row)
 
             df = pd.DataFrame(data)
@@ -289,6 +287,7 @@ def exclude_beams(pix_list):
     all_strings = [str(i) for i in range(16)]
     exclude_beams = [s for s in all_strings if s not in beams]
     return ','.join(exclude_beams)
+
 
 def table_layout(table_data):
     output = table_data

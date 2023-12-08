@@ -31,11 +31,14 @@ Default session (`session-0`) and previous sessions will be displayed.
 - After selecting a runfile and clicking `EDIT`, the runfile content will be displayed in a table.
 - Click `TOGGLE COLUMNS` to view less or more columns. 
 - Filter rows by typing in the filter cell
+- If there's no row selected, the `TABLE OPTIONS` dropdown menu will only has a `ADD A NEW ROW` option.
+    - If you click the `ADD A NEW ROW` option, you can input parameters for the new row and click `SAVE` to add the new row.
 - Select a row or multiply rows and the `TABLE OPTIONS` dropdown menu will appear.
-- Click `EDIT ROW`, the edit parameters layout will be displayed. Modify parameters and click `UPDATE` to save the changes.
-
+    - Click `EDIT ROWS`, the edit parameters layout will be displayed. Modify parameters and click `SAVE` to save the changes to the selected rows.
+    - Click `DELETE ROW` to delete the selected row(s).
+    - Click `CLONE ROW` to clone the selected row(s) and append to the end of the table.
 '''
 
 layout = html.Div(dcc.Markdown(markdown_content),
-                  style={'margin-top': '50px', 'margin-left': '100px', 'margin-right': 'auto',
+                  style={'margin-top': '50px', 'margin-left': '100px', 'margin-right': 'auto', 'margin-bottom': '100px',
                          'text-align': 'left'})

@@ -44,10 +44,12 @@ class Table(Enum):
     # Add Datatable related IDs here
     EDIT_ROW_BTN = 'edit-row'
     DEL_ROW_BTN = 'del-row'
-    NEW_ROW_BTN = 'new-row'
+    CLONE_ROW_BTN = 'clone-row'
     EDIT_TABLE = 'edit-table'
     CONFIRM_DEL_ROW = 'confirm-del-row'
     OPTION = 'table-option'
+    ADD_ROW_BTN = 'add-new-row'
+    SELECT_ALL = 'select-all-row'
 
 
 # columns_list from runfile
@@ -121,7 +123,7 @@ parameter_body_height = '75vh'
 table_height = '55vh'
 detail_height = '35vh'
 card_height = '28vh'
-detail_card_style = {'height': card_height, 'padding': '10px', 'overflowY': 'auto'}
+detail_card_style = {'height': card_height, 'padding': '10px', 'overflowY': 'auto', 'margin': '10px'}
 
 # UI Elements
 
@@ -189,8 +191,8 @@ clone_runfile_modal = pf.create_modal('Input the new runfile name',
                                       html.Div([html.Label(current_user.username if current_user else None),
                                                 dcc.Input(id=Runfile.NAME_INPUT.value)]),
                                       [
-                                          dbc.Alert(id=Runfile.SAVE_CLONE_RUNFILE_STATUS.value, dismissable=True,
-                                                    is_open=False),
+                                          html.Div(id=Runfile.SAVE_CLONE_RUNFILE_STATUS.value,
+                                                   style={'display': 'none'}),
                                           html.Button("Clone", id=Runfile.SAVE_CLONE_RUNFILE_BTN.value)
                                       ],
                                       Runfile.CLONE_RUNFILE_MODAL.value)
@@ -236,17 +238,6 @@ runfile_layout = html.Div(
                     html.Div([
                         dbc.Row([
                             dbc.Col(html.Div(id=Runfile.CONTENT_TITLE.value), width='auto'),
-
-                            # dbc.Col(
-                            #     dbc.Row([
-                            #         dbc.Col(html.Button([html.I(className="fa fa-paper-plane me-2"), 'Verify Runfile'],
-                            #                             id=Runfile.RUN_BTN.value,
-                            #                             n_clicks=0)),
-                            #         dbc.Col(html.Button([html.I(className="fas fa-trash me-2"), 'Delete Runfile'],
-                            #                             id=Runfile.DEL_BTN.value), width='auto'),
-                            #         dbc.Col(html.Button([html.I(className="fa-solid fa-clone me-2"), 'Clone Runfile'],
-                            #                             id=Runfile.CLONE_BTN.value), width='auto'),
-                            #     ]), width='auto', className='flex justify-content-end'),
                             dbc.Col(dbc.DropdownMenu(
                                 label="Runfile Options",
                                 children=[
@@ -337,9 +328,10 @@ edit_parameter_layout = html.Div(
                                   dbc.Row(
                                       [dbc.Col(dbc.Label('Source', className="sm-label"),
                                                width=4),
-                                       dbc.Col(dcc.Dropdown(id=column_list[0], multi=False, ), width=8),
+                                       dbc.Col(dcc.Dropdown(id=column_list[0], multi=False), width=8),
                                        dbc.Alert(id='source-alert', color='danger', duration=2000)], align='center',
-                                      className='mb-3'),
+                                      className='mb-3'
+                                  ),
                                   dbc.Row(
                                       [dbc.Col(dbc.Label('Obsnum', className="sm-label", id=tooltip_target[0]),
                                                width=4),
@@ -354,9 +346,9 @@ edit_parameter_layout = html.Div(
                     dbc.Label('Beam', className='large-label'),
                     dbc.Row([dbc.Col(dbc.Label('Bank', className='sm-label', id=tooltip_target[1]), width=4),
                              dbc.Col(dcc.Dropdown(id=column_list[2], options=bank_options, ), width=8),
-                             pf.make_tooltip(tooltip_content[1], tooltip_target[1]), ], align='center',
+                             pf.make_tooltip(tooltip_content[1], tooltip_target[1]), ], align='center', className='mb-3'
 
-                            className='mb-3'),
+                            ),
 
                     dbc.Row(
                         [dbc.Col(dbc.Label('Exclude Beams', className='sm-label'), width='auto'),
@@ -394,7 +386,7 @@ edit_parameter_layout = html.Div(
                             dbc.Col(dbc.Row(input_fields_2)),
                         ], align='center')])
 
-                ], style=detail_card_style), )
+                ], style=detail_card_style), width=4)
             ]),
         dbc.Row([
             dbc.Col(dbc.Card([
@@ -462,8 +454,8 @@ edit_parameter_layout = html.Div(
         ], className='mb-3'),
         html.Div(
             dbc.Row([
-                dbc.Col(html.Button("Update", id=Parameter.UPDATE_BTN.value), width="auto", className="ml-auto"),
-                dbc.Col(html.Button("Cancel", id=Parameter.CANCEL_BTN.value),width="auto", className="ml-auto"),
+                dbc.Col(html.Button("Save", id=Parameter.UPDATE_BTN.value), width="auto", className="ml-auto"),
+                dbc.Col(html.Button("Cancel", id=Parameter.CANCEL_BTN.value), width="auto", className="ml-auto"),
             ], className='d-flex justify-content-end mb-2')),
     ])
 
@@ -480,15 +472,17 @@ parameter_layout = dbc.Modal(
                                       children=[
                                           dbc.DropdownMenuItem("Edit rows", id=Table.EDIT_TABLE.value, ),
                                           dbc.DropdownMenuItem("Delete rows", id=Table.DEL_ROW_BTN.value, ),
-                                          dbc.DropdownMenuItem("Clone Rows", id=Table.NEW_ROW_BTN.value),
+                                          dbc.DropdownMenuItem("Clone Rows", id=Table.CLONE_ROW_BTN.value, ),
+                                          dbc.DropdownMenuItem('Add a new row', id=Table.ADD_ROW_BTN.value),
                                       ], color='secondary', className='d-flex justify-content-end'
                                   ), id=Table.OPTION.value, ),
-                                  dcc.ConfirmDialog(id=Table.CONFIRM_DEL_ROW.value, message='',)
+                                  dcc.ConfirmDialog(id=Table.CONFIRM_DEL_ROW.value, message='', )
                                   ],
                                  className='d-flex justify-content-between'),
-                        html.Div(runfile_table, style={'margin': '0', 'border': '1px solid #CCCCCC', 'padding': '10px',
-                                                       'margin-bottom': '10px', 'overflowX': 'auto',
-                                                       'max-height': table_height, }),
+                        html.Div([runfile_table, html.Button('Select/Deselect all', id=Table.SELECT_ALL.value)],
+                                 style={'margin': '10px', 'border': '1px solid #CCCCCC', 'padding': '10px',
+                                        'margin-bottom': '10px', 'overflowX': 'auto',
+                                        'max-height': table_height, }),
                     ], id=Parameter.TABLE.value, className='mb-3', style={'overflow': 'visible'}, ),
 
                 html.Div(
@@ -503,14 +497,6 @@ parameter_layout = dbc.Modal(
                 'overflowY': 'auto'
             })
     ], id=Parameter.MODAL.value, is_open=False, scrollable=True, size='xl', centered=True,
-    # style={
-    #     'position': 'fixed',
-    #     'width': '100%',
-    #     'height': '100%',
-    #     'max-height': '100%',
-    #     'overflow': 'auto',
-    #
-    # }
 )
 
 link_bar = dbc.Row(
