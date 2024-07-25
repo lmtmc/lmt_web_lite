@@ -47,33 +47,32 @@ Follow these steps to set up your environment and install necessary dependencies
 
 ## Usage
 
-### Login
-
-- Use the Project ID (PID) to log in.
-  - Examples:
-    - PID: `2023-S1-US-17` | Password: `1234`
-    - PID: `2023-S1-MX-3` | Password: `1234`
+### **Login**
+Use the Project Id (PID) to login. 
+- Example: 'PID = '2021-S1-US-3' | Password = '1234''
+- If the password for the PID is not valid, an error message will be displayed.
 
 
-### Create a New Job
+### **Session Management**
+Default session (`session-0`) and previous sessions will be displayed.
+- If `session-0` is selected, you can clone it:
+    1. Click `CLONE SESSION`.
+    2. Input a number for the new session name.
+- If other session is selected, you can clone or delete it.
 
-- Initiate new job creation by clicking the "new job" button on the account page.
-
-### Session Management
-
-- Manage your sessions. The default session (`session-0`) and other sessions are available.
-  - Clone `session-0` by clicking 'CLONE SESSION' and providing a new session number.
-  - Delete non-default sessions by selecting them and clicking 'DELETE SESSION'.
-
-### Runfile Management
-
-- Select a session to view and manage runfiles.
-  - Options for runfile cloning or deletion are available.
-  - View runfile content in a table layout, with flexible viewing options.
-
-### Row Editing
-
-- Engage with content directly by selecting rows for editing, cloning, or deletion.
-  - Save changes or new entries efficiently.
-
-**Note:** The "SUBMIT JOB" feature is in dry-run mode. Integration with the pipeline for validation is pending further development.
+### **Runfile Management**
+- After selecting a session, available runfiles in this session will be displayed.
+- Choose a runfile to view its content.
+- The left corner shows the session and runfile name.
+- The right corner provides `RUNFILE OPTIONS` to verify, edit, delete or clone the selected runfile.
+    - Click `VERIFY` to verify the runfile content.
+    - Click `DELETE` to delete the runfile.
+    - Click `EDIT` to edit the runfile.
+    - Click `CLONE` to clone the runfile.
+    
+### **Table Management**
+- After selecting a runfile and clicking `EDIT`, the runfile content will be displayed in a table.
+- Click `TOGGLE COLUMNS` to view less or more columns. 
+- Filter rows by typing in the filter cell
+- Select a row or multiply rows and the `TABLE OPTIONS` dropdown menu will appear.
+- Click `EDIT ROW`, the edit parameters layout will be displayed. Modify parameters and click `UPDATE` to save the changes.

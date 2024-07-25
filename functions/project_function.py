@@ -10,8 +10,9 @@ import subprocess
 import json
 import ast
 import re
-import time
+import plotly.graph_objects as go
 from functions import logger
+from lmtoy_lite.lmtoy import runs
 
 logger = logger.logger
 
@@ -41,13 +42,6 @@ def get_work_lmt_path(config):
         print('Could not find the value of work_lmt')
         return None
     return work_lmt
-
-
-# def create_session_directory(WORK_LMT):
-#     pid_path = os.path.join(WORK_LMT, current_user.username)
-#     if not os.path.exists(pid_path):
-#         os.mkdir(pid_path)
-#     return pid_path
 
 
 def check_user_exists():
@@ -110,16 +104,16 @@ def make_tooltip(content, target):
 
 def get_source(default_work_lmt, pid):
     pid_path = os.path.join(default_work_lmt, 'lmtoy_run', f'lmtoy_{pid}')
-    json_file = os.path.join(pid_path, 'source.json')
+    json_file = os.path.join(pid_path, f'{pid}_source.json')
     if os.path.exists(json_file):
         json_data = load_source_data(json_file)
         sources = json_data
     else:
         logger.info(f'No source.json file found in {pid_path}, executing mk_runs.py to generate the sources')
         mk_runs_file = os.path.join(pid_path, 'mk_runs.py')
-        result = subprocess.run(['/home/lmt/lmt_web_lite/env/bin/python3', mk_runs_file], capture_output=True,
+        result = subprocess.run(['/home/lmt/LMT_projects/lmt_web_new/lmt_web_lite/env/bin/python3', mk_runs_file], capture_output=True,
                                 text=True, cwd=pid_path)
-
+        print(f"result: {result}")
         # checks if the command ran successfully(return code 0)
         if result.returncode == 0:
             output = result.stdout  # converts the stdout string to a regular string
@@ -129,6 +123,7 @@ def get_source(default_work_lmt, pid):
         matches = re.findall(pattern, output)
         # sources = {name: list(map(int, obsnums.split(','))) for name, obsnums in matches}
         sources = {name: [int(x) for x in obsnums.split(',')] for name, obsnums in matches}
+    print(f'sources: {sources}')
     return sources
 
 
@@ -173,12 +168,13 @@ def clone_runfile(runfile, name):
     if not name:
         return False, "Please input a name!"
     new_name_path = os.path.join(Path(runfile).parent, name)
+    print(f'new_name_path: {new_name_path}')
     # Check if the session directory already exists
     if os.path.exists(new_name_path):
         # If the directory not exist, create it
-        return True, f'Runfile {name} already exists'
+        return True, f'Runfile {name} already exists', True
     shutil.copy(runfile, new_name_path)
-    return True, f"Runfile {name} created successfully!"
+    return False, f"Runfile {name} created successfully!", False
 
 
 def del_session(folder_path):
@@ -228,37 +224,83 @@ def add_runfile(runfile_path, name):
         return False, f'Runfile {name} already exists at {runfile_path}'
 
 
-def initialize_common_variables(runfile, selRow, init_session):
-    df = df_runfile(runfile)[0]
-    runfile_title = get_runfile_title(runfile, init_session)
-    highlight = get_highlight(selRow)
-    return df, runfile_title, highlight
+def update_df_with_state_values(df, selected_rows, state_values, table_column):
+    # Log or print the DataFrame and selected rows for debugging
+    print("Before update:")
+    print(df)
+    print("Selected rows:", selected_rows)
+
+    for i, column in enumerate(table_column[2:]):
+        if state_values[i + 2] is not None and state_values[i + 2] != []:
+            value = state_values[i + 2]
+            if i == 1:  # Special handling for beam values
+                filtered_beam = filter(bool, value)
+                sorted_beam = sorted(filtered_beam, key=int)
+                value = ",".join(sorted_beam)
+            elif i == 2:
+                value = str(value)
+
+            # Ensure that the selected_rows exist in the DataFrame
+            if all(row in df.index for row in selected_rows):
+                df.loc[selected_rows, column] = value
+            else:
+                print(f"Selected rows not found in DataFrame: {selected_rows}")
+
+    print("After update:")
+    print(df)
+    return df
+
+
+def create_new_row(state_values, table_column):
+    new_row = {key: None for key in table_column}
+    for i, column in enumerate(table_column):
+        if state_values[i] is not None:
+            value = state_values[i]
+            # Special handling for specific columns
+            if i == 1:
+                value = '.'.join(value)
+            if i == 3:
+                filtered_beam = filter(bool, value)
+                sorted_beam = sorted(filtered_beam, key=int)
+                value = ",".join(sorted_beam)
+            elif i == 4:
+                value = f'[{value}]'
+            new_row[column] = value
+    return new_row
 
 
 def df_runfile(filename):
     data = []
+    content = ''
     if os.path.exists(filename):
         logger.info(f'{filename} exists')
         try:
             with open(filename) as file:
                 content = file.read()
-                # logger.debug(f'Content of {filename}:\n {content}')
                 file.seek(0)
                 for line in file:
                     commands = line.strip().split()
-                    row = {command.split('=')[0]: command.split('=')[1] for command in commands if '=' in command}
-                    data.append(row)
+                    row = {}
+                    for command in commands:
+                        if isinstance(command, str) and "=" in command:
+                            key, value = command.split('=', 1)
+
+                            row[key] = value
+                    if row:
+                        data.append(row)
 
             df = pd.DataFrame(data)
             df = df.rename(columns={'obsnum': 'obsnum(s)', 'obsnums': 'obsnum(s)', 'pix_list': 'exclude_beams'})
+            df = df.where(pd.notna(df), None)
             if 'exclude_beams' in df.columns:
                 df['exclude_beams'] = df['exclude_beams'].apply(lambda x: exclude_beams(x))
             return df, content
         except Exception as e:
             logger.error(e)
+            return pd.DataFrame(), content
     else:
         logger.warning(f'{filename} does not exist')
-    return pd.DataFrame(), content
+        return pd.DataFrame(), ''
 
 
 # save revised data to a runfile
@@ -285,10 +327,14 @@ def save_runfile(df, runfile_path):
 
 
 def exclude_beams(pix_list):
-    beams = pix_list.split(',')
-    all_strings = [str(i) for i in range(16)]
-    exclude_beams = [s for s in all_strings if s not in beams]
-    return ','.join(exclude_beams)
+    if pix_list:
+        beams = pix_list.split(',')
+        all_strings = [str(i) for i in range(16)]
+        exclude_beams = [s for s in all_strings if s not in beams]
+        return ','.join(exclude_beams)
+    else:
+        return pix_list
+
 
 def table_layout(table_data):
     output = table_data
@@ -354,6 +400,33 @@ def get_runfile_title(runfile_path, init_session):
     return f'{session_string}: {runfile_title}'
 
 
+# check if job is running on unity
+def check_job(runfile):
+    return False
+
+
+def make_summary(runfile):
+    return True
+
+
+def get_runfile_status(current_runfile):
+    if current_runfile:
+        if os.path.exists(current_runfile):
+            message = runs.verify(current_runfile, debug=False)
+            if message:
+                return f'Failed to Verify.' + message
+            elif check_job(current_runfile):
+                return 'Job Running ...'
+            elif make_summary(current_runfile):
+                return 'Job Completed!'
+            else:
+                return 'Verified waiting for submission'
+        else:
+            return 'Missing'
+    else:
+        return 'Not Started'
+
+
 def get_selected_runfile(ctx):
     """Determine the selected runfile based on trigger."""
     trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
@@ -394,6 +467,21 @@ def display_row_details(details_data):
 
     return html.Div(columns, className='row')
 
+
+def make_progress_graph(progress, total):
+    progress_graph = (
+        go.Figure(data=[go.Bar(x=[progress])])
+        .update_xaxes(range=[0, total])
+        .update_yaxes(
+            showticklabels=False,
+        )
+        .update_layout(height=100, margin=dict(t=20, b=40))
+    )
+    return progress_graph
+
+
+def submit_job(runfile):
+    subprocess.run('sbatch_lmtoy.sh ' + runfile, shell=True)
 #
 # def edit_row_details(details_data):
 # Divide the dictionary into 6 equal parts

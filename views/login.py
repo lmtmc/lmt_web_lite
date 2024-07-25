@@ -33,10 +33,11 @@ layout = dbc.Container([
         dcc.Dropdown(id='pid', options=pid_options, className='mb-4'),
         dbc.Label('Password:', id='pwd-label', className='mb-4'),
         dbc.Input(id='pwd-box', n_submit=0, type='password', className='mb-5'),
+        html.Div(dbc.Alert(id='output-state', is_open=False, className='alert-warning', duration=3000)),
         html.Div(dbc.Button('Login', type='submit', id='login-button',
                             style={'pointer-events': 'none', 'opacity': '0.5', 'width': '100%'}, className='mb-4'
                             ), className="d-grid gap-2"),
-        html.Div(dbc.Alert(id='output-state', is_open=False, className='alert-warning', duration=3000))
+
     ],
     )],
 
@@ -95,7 +96,6 @@ def login_state(n_clicks, pid, password, is_open, data):
         data['pid'] = pid
         data['source'] = pf.get_source(default_work_lmt, pid)
         logger.info(f'source for {pid}: {data["source"]}')
-        return f'{prefix}project', '', is_open, data, ''
+        return f'{prefix}project', '', False, data, ''
     else:
-        logger.warning(f'Invalid password for PID: {pid}')
-        return f'{prefix}login', 'Invalid password', not is_open, data, ''
+        return f'{prefix}login', 'Invalid password', True, data, ''
