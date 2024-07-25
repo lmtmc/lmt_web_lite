@@ -13,9 +13,11 @@ import re
 import plotly.graph_objects as go
 from functions import logger
 from lmtoy_lite.lmtoy import runs
+from config import config
 
 logger = logger.logger
 
+python_path = config['path']['python_path']
 
 # Function to get pid options from the given path
 def get_pid_option(path):
@@ -111,7 +113,9 @@ def get_source(default_work_lmt, pid):
     else:
         logger.info(f'No source.json file found in {pid_path}, executing mk_runs.py to generate the sources')
         mk_runs_file = os.path.join(pid_path, 'mk_runs.py')
-        result = subprocess.run(['/home/lmt/LMT_projects/lmt_web_new/lmt_web_lite/env/bin/python3', mk_runs_file], capture_output=True,
+        # result = subprocess.run(['/home/lmt/LMT_projects/lmt_web_new/lmt_web_lite/env/bin/python3', mk_runs_file], capture_output=True,
+        #                         text=True, cwd=pid_path)
+        result = subprocess.run([python_path, mk_runs_file], capture_output=True,
                                 text=True, cwd=pid_path)
         print(f"result: {result}")
         # checks if the command ran successfully(return code 0)
