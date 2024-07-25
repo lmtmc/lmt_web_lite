@@ -16,6 +16,10 @@ from views.ui_elements import Session, Runfile, Table, Parameter, Storage
 
 from lmtoy_lite.lmtoy import runs
 
+# todo show the alert that obsnum can't be empty when create a new row
+# todo instead of verify option make a submit job option to perform verify first and then submit sbatch_lmtoy.sh
+# todo create a job status page to show submitted job
+# todo submit job progress bar
 logger = logger.logger
 # Constants
 TABLE_STYLE = {'overflow': 'auto'}
@@ -78,13 +82,14 @@ def default_session(active_session):
         Output(Session.SESSION_LIST.value, 'children'),
         Output(Session.MODAL.value, 'is_open'),
         Output(Session.MESSAGE.value, 'children'),
+        Output(Session.SESSION_LIST.value, 'active_item'),
     ],
     [
         Input(Session.NEW_BTN.value, 'n_clicks'),
         Input(Session.SAVE_BTN.value, 'n_clicks'),
         Input(Session.CONFIRM_DEL.value, 'submit_n_clicks'),
         Input(Runfile.CONFIRM_DEL_ALERT.value, 'submit_n_clicks'),
-        # Input(Runfile.SAVE_CLONE_RUNFILE_BTN.value, 'n_clicks'),
+        Input(Runfile.SAVE_CLONE_RUNFILE_BTN.value, 'n_clicks'),
         Input(Session.SESSION_LIST.value, 'active_item'),
 
     ],
@@ -93,14 +98,14 @@ def default_session(active_session):
     ],
 )
 def update_session_display(*args):
-    n1, n2, n3, n4, active_session, name = args
+    n1, n2, n3, n4, n5, active_session, name = args
     logger.info(f'Updating the session list')
     triggered_id = ctx.triggered_id
     logger.debug(f'Triggered: {triggered_id}')
 
     if not pf.check_user_exists():
         logger.error('User is not authenticated')
-        return no_update, no_update, "User is not authenticated"
+        return no_update, no_update, "User is not authenticated", no_update
 
     pid_path = os.path.join(default_work_lmt, current_user.username)
     os.makedirs(pid_path, exist_ok=True)
@@ -132,9 +137,10 @@ def update_session_display(*args):
             print(f"The folder {session_path} does not exist.")
     if triggered_id in update_btn:
         time.sleep(0.1)
+        active_session = None
 
     session_list = pf.get_session_list(init_session, pid_path)
-    return session_list, modal_open, message
+    return session_list, modal_open, message, active_session
 
 
 # if click delete session button show the confirmation
@@ -154,6 +160,7 @@ def display_confirmation(n_clicks, active_item):
 @app.callback(
     [
         Output(Runfile.CONTENT_TITLE.value, 'children'),
+        Output(Runfile.STATUS.value, 'children'),
         Output(Runfile.CONTENT_DISPLAY.value, 'style'),
         Output(Runfile.CONTENT.value, 'children'),
     ],
@@ -170,9 +177,10 @@ def display_runfile_content(selected_runfile, del_runfile_btn, n1, n2, n3):
         raise PreventUpdate
     current_runfile = next((value for value in selected_runfile if value), None)
     if not current_runfile:
-        return '', HIDE_STYLE, ''
+        return '','', HIDE_STYLE, ''
 
     runfile_title = pf.get_runfile_title(current_runfile, init_session)
+    runfile_status = pf.get_runfile_status(current_runfile)
     runfile_content = pf.df_runfile(current_runfile)[1]
 
     if ctx.triggered_id == Runfile.CONFIRM_DEL_ALERT.value:
@@ -181,7 +189,7 @@ def display_runfile_content(selected_runfile, del_runfile_btn, n1, n2, n3):
         time.sleep(0.5)
         runfile_content = pf.df_runfile(current_runfile)[1]
     logger.info(f'current_runfile is {current_runfile}')
-    return runfile_title, SHOW_STYLE, runfile_content
+    return runfile_title, runfile_status,SHOW_STYLE, runfile_content
 
 
 # If edit was clicked, show the modal
@@ -203,9 +211,7 @@ def show_parameter_table(n1, selected_runfile):
     if ctx.triggered_id == Runfile.EDIT_BTN.value:  # If edit was clicked, show the modal
         modal_style = True
         current_runfile = next((value for value in selected_runfile if value), None)
-        print('current_runfile', current_runfile)
         df = pf.df_runfile(current_runfile)[0]
-        print('df', df.head())
         dff = pd.concat([df, dff])
     return modal_style, dff.to_dict('records')
 
@@ -227,10 +233,12 @@ all_states = fixed_states + dynamic_states
 # If edit table save the new parameter to the dataTable, if add a new row append the parameter to the end of table
 @app.callback(
     Output(Runfile.TABLE.value, 'data'),
+    [dynamic_outputs[2:]],
     [
         Input(Table.DEL_ROW_BTN.value, 'n_clicks'),
         Input(Table.CLONE_ROW_BTN.value, 'n_clicks'),
         Input(Parameter.UPDATE_BTN.value, 'n_clicks'),
+        Input(Parameter.SAVE_BTN.value, 'n_clicks'),
         Input({'type': 'runfile-radio', 'index': ALL}, 'value'),
 
     ],
@@ -238,50 +246,29 @@ all_states = fixed_states + dynamic_states
     all_states,
     prevent_initial_call=True,
 )
-def save_new_parameters(n1, n2, n3, selected_runfile, selected_rows, df_table, *state_values):
+def save_new_parameters(n1, n2, n3, n4, selected_runfile, selected_rows, df_table, *state_values):
     triggered_id = ctx.triggered_id
     logger.info(f'Triggered component to update runfile: {triggered_id}')
     df = pd.DataFrame(df_table)
+    reset_parameter = [no_update] * (len(table_column) - 2)
     selected_runfile = next((value for value in selected_runfile if value), None)
     if not selected_runfile:
         return no_update
-    print('trigged_id', ctx.triggered)
     if triggered_id == Parameter.UPDATE_BTN.value:
         if selected_rows:
-            # update the table value of slected obsnums using parameter value
-            obsumns = list(state_values[1])
-            # change the value of rows which has the obsnum(s) in the obsumns
-            parameter_values = state_values[2:]
-            for row_index in selected_rows:
-                for i, column in enumerate(table_column[2:]):
-                    if parameter_values[i] is not None:
-                        if i == 1:
-                            filtered_beam = filter(bool, parameter_values[i])
-                            sorted_beam = sorted(filtered_beam, key=int)
-                            parameter_values[i] = ",".join(sorted_beam)
-                        elif i == 2:
-                            parameter_values[i] = f'[{parameter_values[i]} ]'
-                        df.loc[row_index, column] = parameter_values[i]
-        else:
-            new_row = {key: None for key in table_column}
-            for i, column in enumerate(table_column):
-                if state_values[i] is not None:
-                    value = state_values[i]
-                    if i == 1:
-                        value = '.'.join(value)
-                    if i == 3:
-                        filtered_beam = filter(bool, value)
-                        sorted_beam = sorted(filtered_beam, key=int)
-                        value = ",".join(sorted_beam)
-                    elif i == 4:
-                        value = f'[{value} ]'
-                    new_row[column] = value
+            df = pf.update_df_with_state_values(df, selected_rows, state_values, table_column)
+            reset_parameter = [None, []] + [None] * (len(table_column) - 4)
+            pf.save_runfile(df, selected_runfile)
+    elif triggered_id == Parameter.SAVE_BTN.value:
+        if state_values[1] is not None:
+            new_row = pf.create_new_row(state_values, table_column)
             df = df._append(new_row, ignore_index=True)
-        pf.save_runfile(df, selected_runfile)
+            reset_parameter = [None, []] + [None] * (len(table_column) - 4)
+            pf.save_runfile(df, selected_runfile)
     output_value = df.to_dict('records')
-
     # logger.debug(f'Updated table values: {output_values}')
-    return output_value
+
+    return output_value, reset_parameter
 
 
 # if click delete button show the confirmation
@@ -307,7 +294,7 @@ def display_confirmation(n_clicks, selected_runfile):
         return False, ''
 
 
-# open a modal if clone-runfile button
+# open a modal if clone-runfile button or save filtered rows button is clicked
 @app.callback(
     Output(Runfile.CLONE_RUNFILE_MODAL.value, 'is_open'),
     Output(Runfile.SAVE_CLONE_RUNFILE_STATUS.value, 'children'),
@@ -315,46 +302,48 @@ def display_confirmation(n_clicks, selected_runfile):
 
     [
         Input(Runfile.CLONE_BTN.value, 'n_clicks'),
+        Input(Table.FILTER_BTN.value, 'n_clicks'),
         Input(Runfile.SAVE_CLONE_RUNFILE_BTN.value, 'n_clicks'),
         Input({'type': 'runfile-radio', 'index': ALL}, 'value'),
     ],
     [
         State(Runfile.NAME_INPUT.value, 'value'),
+        State(Runfile.TABLE.value, 'derived_virtual_data'),
     ],
 
     prevent_initial_call=True
 )
-def copy_runfile(n1, n2, selected_runfile, new_name):
+def copy_runfile(n1, n2, n3, selected_runfile, new_name, data):
     if not ctx.triggered:
         raise PreventUpdate
-
-    current_runfile = next((value for value in selected_runfile if value), None)
-    modal_open = False
-    status = HIDE_STYLE
-    message = ''
     triggered_id = ctx.triggered_id
+    current_runfile = next((value for value in selected_runfile if value), None)
 
     if not current_runfile:
         return no_update, no_update, no_update
 
-    if triggered_id == Runfile.CLONE_BTN.value:
-        modal_open = True
-        return modal_open, message, status
+    modal_open = triggered_id in [Runfile.CLONE_BTN.value, Table.FILTER_BTN.value]
+    status = HIDE_STYLE
+    message = ''
 
-    if triggered_id == Runfile.SAVE_CLONE_RUNFILE_BTN.value:
+    if triggered_id in [Runfile.CLONE_BTN.value, Table.FILTER_BTN.value]:
         if not new_name:
             message = 'Please enter a new name!'
+            status = SHOW_STYLE
         else:
-            new_runfile_name = f"{current_user.username}.{new_name}"
-            new_name_path = os.path.join(Path(current_runfile).parent, new_runfile_name)
+            new_name_path = os.path.join(Path(current_runfile).parent, f"{current_user.username}.{new_name}")
             if os.path.exists(new_name_path):
                 message = f'{new_name} already exists!'
                 status = SHOW_STYLE
-                modal_open = True
             else:
-                shutil.copy(current_runfile, new_name_path)
+                if triggered_id == Runfile.SAVE_CLONE_RUNFILE_BTN.value:
+                    shutil.copy(current_runfile, new_name_path)
+                else:
+                    df = pd.DataFrame(data)
+                    pf.save_runfile(df, new_name_path)
                 message = f"Runfile {new_name} created successfully!"
                 status = HIDE_STYLE
+
     return modal_open, message, status
 
 
@@ -382,26 +371,34 @@ def show_edit_row_btn(selected_rows, style):
     Output(table_column[0], 'disabled'),
     Output(Runfile.TABLE.value, 'row_selectable'),
     Output(Table.OPTION.value, 'style'),
+    Output(Parameter.UPDATE_BTN.value, 'style'),
+    Output(Parameter.SAVE_BTN.value, 'style'),
     Input(Table.EDIT_TABLE.value, 'n_clicks'),
     Input(Table.ADD_ROW_BTN.value, 'n_clicks'),
     Input(Parameter.UPDATE_BTN.value, 'n_clicks'),
+    Input(Parameter.SAVE_BTN.value, 'n_clicks'),
     Input(Table.CLONE_ROW_BTN.value, 'n_clicks'),
     Input(Table.CONFIRM_DEL_ROW.value, 'submit_n_clicks'),
     Input(Runfile.TABLE.value, "selected_rows"),
     Input(Parameter.CANCEL_BTN.value, 'n_clicks'),
+    Input(Runfile.EDIT_BTN.value, 'n_clicks'),
 )
-def show_parameter_detail(n1, n2, n3, n4, n5, selected_rows, n6):
+def show_parameter_detail(n1, n2, n3, n4, n5, n6, selected_rows, n7, n8):
     triggered_id = ctx.triggered_id
     if not triggered_id:
         raise PreventUpdate
-    if triggered_id == Table.ADD_ROW_BTN.value:
-        return SHOW_STYLE, False, False, None, HIDE_STYLE
-    elif triggered_id == Table.EDIT_TABLE.value:
-        return SHOW_STYLE, True, True, 'multi', HIDE_STYLE
-    elif triggered_id in [Parameter.UPDATE_BTN.value, Table.CONFIRM_DEL_ROW.value, Parameter.CANCEL_BTN.value]:
-        return HIDE_STYLE, True, True, 'multi', SHOW_STYLE
-    else:
-        return no_update
+    output_map = {
+        Table.ADD_ROW_BTN.value: (SHOW_STYLE, False, False, None, HIDE_STYLE, HIDE_STYLE, SHOW_STYLE),
+        Table.EDIT_TABLE.value: (SHOW_STYLE, True, True, 'multi', HIDE_STYLE, SHOW_STYLE, HIDE_STYLE),
+        Parameter.UPDATE_BTN.value: (HIDE_STYLE, True, True, 'multi', SHOW_STYLE, HIDE_STYLE, HIDE_STYLE),
+        Parameter.SAVE_BTN.value: (HIDE_STYLE, True, True, 'multi', SHOW_STYLE, HIDE_STYLE, HIDE_STYLE),
+        Table.CONFIRM_DEL_ROW.value: (HIDE_STYLE, True, True, 'multi', SHOW_STYLE, HIDE_STYLE, HIDE_STYLE),
+        Parameter.CANCEL_BTN.value: (HIDE_STYLE, True, True, 'multi', SHOW_STYLE, HIDE_STYLE, HIDE_STYLE),
+        Runfile.EDIT_BTN.value: (HIDE_STYLE, True, True, 'multi', SHOW_STYLE, HIDE_STYLE, HIDE_STYLE)
+    }
+
+    # Return the corresponding outputs based on the triggered ID
+    return output_map.get(triggered_id, (no_update, no_update, no_update, no_update, no_update, no_update, no_update))
 
 
 # if delete row button is clicked, show the confirmation to delete the row
@@ -461,21 +458,27 @@ def delete_add_row(n1, n2, selected_runfile, df_table, selected_rows):
 @app.callback(
     Output(table_column[1], 'value'),
     Output(table_column[0], 'value'),
+    Output('source-alert', 'is_open', allow_duplicate = True),
+    Output('source-alert', 'children',allow_duplicate = True),
     Input(Runfile.TABLE.value, "selected_rows"),
     Input(Table.ADD_ROW_BTN.value, 'n_clicks'),
     State(Runfile.TABLE.value, 'data'),
 )
 def update_dropdown_from_table(selected_row, n1, data):
     if ctx.triggered_id == Table.ADD_ROW_BTN.value:
-        return None, None
+        return None, None, False, ''
 
     if not selected_row or not data:
-        return no_update
-
+        return no_update, no_update, False, ''
+    print('selected_row', selected_row)
     df = pd.DataFrame(data)
     obsnum_values = [df.loc[row][table_column[1]] for row in selected_row]
-    source_value = df.loc[selected_row[0]][table_column[0]]
-    return obsnum_values, source_value
+    source_value = [df.loc[row][table_column[0]] for row in selected_row]
+    print('source_value', source_value)
+    if len(set(source_value)) > 1:
+        return no_update, no_update, True, 'Please select rows with the same source!'
+    source_value = source_value[0]
+    return obsnum_values, source_value, False, ''
 
 
 # if value in obsnum is changed, update the table selected_rows
@@ -496,7 +499,6 @@ def update_selected_row(n1, n2, n3, data, selected_rows):
     if ctx.triggered_id == Parameter.UPDATE_BTN.value or ctx.triggered_id == Table.CONFIRM_DEL_ROW.value:
         return []
     if ctx.triggered_id == Table.SELECT_ALL.value:
-        print('n1', n1)
         if n1 % 2 == 1:
             return [i for i in range(len(data))]
         else:
@@ -528,6 +530,7 @@ def update_selected_row(n1, n2, n3, data, selected_rows):
 def update_options(active_item, stored_data):
     if not pf.check_user_exists():
         return no_update
+    source_options = []
     if stored_data['source']:
         sources = stored_data['source']
         source_options = [{'label': source, 'value': source} for source in sources]
@@ -556,14 +559,20 @@ def update_obsnum_options(selected_source, stored_data):
 @app.callback(
     Output('source-alert', 'is_open'),
     Output('source-alert', 'children'),
+    Input(Parameter.SAVE_BTN.value, 'value'),
     Input(table_column[0], 'value'),
     Input(table_column[1], 'value'),
+    prevent_initial_call=True
 )
-def source_exist(source, obsnum):
-    if source is None:
-        return True, 'Please select a source!'
-    elif obsnum is None:
-        return True, 'Please select one or more obsnum!'
+def source_exist(n1, source, obsnum):
+    if not ctx.triggered:
+        raise PreventUpdate
+    if ctx.triggered_id == Parameter.SAVE_BTN.value:
+        print('source', source, 'obsnum', obsnum)
+        if source is None:
+            return True, 'Please select a source!'
+        elif obsnum is None:
+            return True, 'Please select one or more obsnum!'
     else:
         return False, ''
 
@@ -581,14 +590,20 @@ def source_exist(source, obsnum):
     prevent_initial_call=True
 )
 def select_all_beam(n_clicks, current_values, options):
+    if not options:
+        return [], []
+
     all_values = [option['value'] for option in options]
 
+    if current_values is None:
+        current_values = []
+
+    # Toggle selection based on the 'all-beam' button click
     if ctx.triggered_id == 'all-beam':
-        if set(current_values) == set(all_values):  # if all are selected, unselect all
-            current_values = []
-        else:  # otherwise, select all
-            current_values = all_values
+        current_values = [] if set(current_values) == set(all_values) else all_values
+
     # Apply the strike-through class to selected options
+
     for option in options:
         if option['value'] in current_values:
             option['label']['props']['className'] = 'strike-through'
@@ -599,33 +614,28 @@ def select_all_beam(n_clicks, current_values, options):
 
 
 #
-#
+
 # verify the selected_runfile
-@app.callback(
-    Output(Runfile.VALIDATION_ALERT.value, 'is_open'),
-    Output(Runfile.VALIDATION_ALERT.value, 'children'),
+@app.long_callback(
+    Output('submit-job-progress', 'value'),
+    # Output('submit-job-graph', 'children'),
     Input(Runfile.RUN_BTN.value, 'n_clicks'),
-    Input({'type': 'runfile-radio', 'index': ALL}, 'value'),
+    Input('progress-interval', 'n_intervals'),
+    State({'type': 'runfile-radio', 'index': ALL}, 'value'),
+    prevent_initial_call=True
 )
-def verify_runfile(n_clicks, selected_runfile):
-    if not ctx.triggered:
-        raise PreventUpdate
-    selected_runfile = [value for value in selected_runfile if value is not None]
-
-    if not selected_runfile:
-        return False, ''
-
-    selected_runfile = selected_runfile[0]
-    logger.info(f'Verifying runfile: {selected_runfile}')
-    if ctx.triggered_id == Runfile.RUN_BTN.value:
-        message = runs.verify(selected_runfile, debug=False)
-        if message:
-            show_message = 'Runfile verification failed: ' + message
+def update_progress(n_clicks, n_intervals, selected_runfile):
+    if not pf.check_user_exists():
+        return no_update
+    current_runfile = next((value for value in selected_runfile if value), None)
+    if not current_runfile:
+        return no_update
+    if n_clicks:
+        if n_clicks % 2 == 1:
+            return 0
         else:
-            show_message = 'Runfile verification passed!'
-        return True, show_message
-    else:
-        return False, ''
+            return 100
+    return no_update
 
 
 app.clientside_callback(
