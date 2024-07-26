@@ -485,9 +485,10 @@ def make_progress_graph(progress, total):
 
 
 def submit_job(runfile, default_work_lmt,pid):
-    print(f"Submitting job for {runfile}")
+
     pid_path = os.path.join(default_work_lmt, 'lmtoy_run', f'lmtoy_{pid}')
-    result = subprocess.run('sbatch_lmtoy.sh ' + runfile, capture_output=True,
+
+    result = subprocess.run(['sbatch_lmtoy.sh ', runfile], capture_output=True,
                             text=True, cwd=pid_path)
     return result
 
