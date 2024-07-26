@@ -160,7 +160,7 @@ def display_confirmation(n_clicks, active_item):
 @app.callback(
     [
         Output(Runfile.CONTENT_TITLE.value, 'children'),
-        Output(Runfile.STATUS.value, 'children'),
+        Output(Runfile.STATUS.value, 'children', allow_duplicate=True),
         Output(Runfile.CONTENT_DISPLAY.value, 'style'),
         Output(Runfile.CONTENT.value, 'children'),
     ],
@@ -617,24 +617,29 @@ def select_all_beam(n_clicks, current_values, options):
 
 # verify the selected_runfile
 @app.long_callback(
-    Output('submit-job-progress', 'value'),
-    # Output('submit-job-graph', 'children'),
+    Output(Runfile.STATUS.value, 'children'),
     Input(Runfile.RUN_BTN.value, 'n_clicks'),
-    Input('progress-interval', 'n_intervals'),
     State({'type': 'runfile-radio', 'index': ALL}, 'value'),
     prevent_initial_call=True
 )
-def update_progress(n_clicks, n_intervals, selected_runfile):
+def update_progress(n_clicks, selected_runfile):
     if not pf.check_user_exists():
         return no_update
     current_runfile = next((value for value in selected_runfile if value), None)
+    print('current_runfile.................', current_runfile)
     if not current_runfile:
         return no_update
     if n_clicks:
-        if n_clicks % 2 == 1:
-            return 0
-        else:
-            return 100
+        print('submit job for runfile: ', current_runfile)
+        try:
+            result = pf.submit_job(current_runfile, default_work_lmt, current_user.username)
+            print(result.stdout)
+            if result.returncode == 0:
+                return 'Job submitted successfully'
+            else:
+                return 'Job failed to submit'
+        except Exception as e:
+            return str(e)
     return no_update
 
 

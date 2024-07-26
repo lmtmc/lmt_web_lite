@@ -198,6 +198,8 @@ submit_job = [
             dcc.Interval(id='submit-job-interval', interval=1000, n_intervals=0),
             dbc.Progress(id='submit-job-progress', value=0, striped=True, animated=True,
                          color='success', style={'visibility': 'hidden'}),
+            dbc.Button("Cancel Running Job", id='cancel-job-btn', className="ml-auto"),
+            dbc.Button("Check Job Status", id='check-job-status', className="ml-auto"),
             html.P(id=Runfile.STATUS.value, children='Job not submitted yet', className='mb-3'),
         ]
     ),

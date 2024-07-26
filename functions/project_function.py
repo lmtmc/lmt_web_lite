@@ -484,9 +484,13 @@ def make_progress_graph(progress, total):
     return progress_graph
 
 
-def submit_job(runfile):
-    subprocess.run('sbatch_lmtoy.sh ' + runfile, shell=True)
-#
+def submit_job(runfile, default_work_lmt,pid):
+    print(f"Submitting job for {runfile}")
+    pid_path = os.path.join(default_work_lmt, 'lmtoy_run', f'lmtoy_{pid}')
+    result = subprocess.run('sbatch_lmtoy.sh ' + runfile, capture_output=True,
+                            text=True, cwd=pid_path)
+    return result
+
 # def edit_row_details(details_data):
 # Divide the dictionary into 6 equal parts
 # n = len(details_data)
