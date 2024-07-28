@@ -492,7 +492,7 @@ def submit_job(runfile, default_work_lmt,pid):
     print('pid_path:', runfile_path)
     result = subprocess.run(['sbatch_lmtoy.sh ', runfile], capture_output=True,
                             text=True, cwd=runfile_path)
-    return result
+    return result.stdout if result.returncode == 0 else result.stderr
 
 # def edit_row_details(details_data):
 # Divide the dictionary into 6 equal parts

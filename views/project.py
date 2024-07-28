@@ -631,15 +631,10 @@ def update_progress(n_clicks, selected_runfile):
         return no_update
     if n_clicks:
         print('submit job for runfile: ', current_runfile)
-        try:
-            result = pf.submit_job(current_runfile, default_work_lmt, current_user.username)
-            print(result.stdout)
-            if result.returncode == 0:
-                return 'Job submitted successfully'
-            else:
-                return 'Job failed to submit'
-        except Exception as e:
-            return str(e)
+
+        result = pf.submit_job(current_runfile, default_work_lmt, current_user.username)
+        return html.Pre(result)
+
     return no_update
 
 
