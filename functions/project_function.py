@@ -14,10 +14,26 @@ import plotly.graph_objects as go
 from functions import logger
 from lmtoy_lite.lmtoy import runs
 from config import config
-
 logger = logger.logger
 
 python_path = config['path']['python_path']
+lmtoy_path = config['path']['lmtoy_path']
+sbatch_path = config['path']['sbatch_path']
+
+sbatch_path = os.path.expanduser(sbatch_path)
+if not os.path.exists(sbatch_path):
+    raise FileNotFoundError(f"File not found: {sbatch_path}")
+def set_pythonpath():
+    current_pythonpath = os.environ.get('PYTHONPATH') or ''
+    new_path = lmtoy_path
+    if new_path not in current_pythonpath:
+        if current_pythonpath:
+            updated_pythonpath = f"{new_path}:{current_pythonpath}"
+        else:
+            updated_pythonpath = new_path
+        os.environ['PYTHONPATH'] = updated_pythonpath
+
+set_pythonpath()
 
 # Function to get pid options from the given path
 def get_pid_option(path):
@@ -484,13 +500,13 @@ def make_progress_graph(progress, total):
     return progress_graph
 
 
-def submit_job(runfile, default_work_lmt,pid):
+def submit_job(runfile):
 
     #pid_path = os.path.join(default_work_lmt, 'lmtoy_run', f'lmtoy_{pid}')
     runfile_path = os.path.dirname(runfile)
     print('runfile:', runfile)
     print('pid_path:', runfile_path)
-    result = subprocess.run(['sbatch_lmtoy.sh ', runfile], capture_output=True,
+    result = subprocess.run([sbatch_path, runfile], capture_output=True,
                             text=True, cwd=runfile_path)
     return result.stdout if result.returncode == 0 else result.stderr
 

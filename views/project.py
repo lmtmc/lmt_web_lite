@@ -632,7 +632,7 @@ def update_progress(n_clicks, selected_runfile):
     if n_clicks:
         print('submit job for runfile: ', current_runfile)
 
-        result = pf.submit_job(current_runfile, default_work_lmt, current_user.username)
+        result = pf.submit_job(current_runfile)
         return html.Pre(result)
 
     return no_update
