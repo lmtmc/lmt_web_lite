@@ -399,9 +399,33 @@ display : block !important;
 
 .title-link {
     color: #0D67BF;
-    font-size: 24px;
-    font-weight: bold;}
+    font-size: 20px;
+    font-weight: bold;
+    margin-top: 10px;
+}
 
+.session-list-display {
+    border: 1px solid #CCCCCC;
+    height: 800px;
+    padding: 10px;
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+}
+.submit-job-message {
+    font-size: 0.8em; /* Smaller font size */
+    line-height: 1.5; /* Spacing between lines */
+    color: #333; /* Text color */
+}
+.custom-tooltip {
+     font-size: 14px !important; /* Larger text */
+    padding: 5px 10px !important; /* Reduce height */
+    margin-top: 5px !important; /* Add space between icon and tooltip */
+    background-color: rgba(255, 255, 255, 0.8) !important; /* Lighter background */
+    color: black !important; /* Dark text */
+    border-radius: 5px !important; /* Slight border rounding */
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1) !important; /* Light shadow */
+}
 /*#draggable-modal {*/
 /*    position: relative;*/
 /*    !*z-index: 1050;*!*/

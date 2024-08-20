@@ -3,7 +3,7 @@ from my_server import app
 from flask_login import logout_user, current_user
 from flask import session
 import dash_bootstrap_components as dbc
-from views import login, project, help, ui_elements as ui
+from views import login, project, help, ui_elements as ui, job_status
 import argparse
 from functions import logger
 from config import config
@@ -48,6 +48,8 @@ def display_page(pathname):
             data = {'runfile': None, 'pid': None, 'source': {}, 'selected_row': None, 'work_lmt': default_work_lmt}
             logger.info(f'stored data clear: {data}')
         return login.layout
+    elif pathname == f'{prefix}job_status' and current_user.is_authenticated:
+        return job_status.layout
     elif not current_user.is_authenticated:
         return dcc.Location(pathname=f'{prefix}login', id='url_redirect')
     else:

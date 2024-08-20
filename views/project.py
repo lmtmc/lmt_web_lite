@@ -1,11 +1,11 @@
 import os
 import time
 from pathlib import Path
-
-from dash import dcc, html, Input, Output, State, ALL, MATCH, dash_table, ctx, no_update, ClientsideFunction
+import flask
+import pandas as pd
+from dash import html, Input, Output, State, ALL, ctx, no_update, dcc
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
-import pandas as pd
 from flask_login import current_user
 import shutil
 from config import config
@@ -14,6 +14,8 @@ from functions import project_function as pf, logger
 from views import ui_elements as ui
 from views.ui_elements import Session, Runfile, Table, Parameter, Storage
 
+prefix = config['path']['prefix']
+default_runfiles = ['run1a', 'run1b', 'run2a', 'run2b']
 from lmtoy_lite.lmtoy import runs
 
 # todo show the alert that obsnum can't be empty when create a new row
@@ -29,25 +31,31 @@ SHOW_STYLE = {'display': 'block'}
 # root directory of the session's working area
 # default_work_lmt = '/home/lmt/work_lmt'
 default_work_lmt = config['path']['work_lmt']
+default_data_lmt = config['path']['data_lmt']
 default_session_prefix = os.path.join(default_work_lmt, 'lmtoy_run/lmtoy_')
 
 # default session name
-init_session = 'session-0'
+init_session = config['session']['init_session']
 # data table column
 table_column = ui.table_column
-
-# if any of the update_btn get trigged, update the session list
+dynamic_outputs = ui.dynamic_outputs
+all_states = ui.all_states
+# if any of the update_btn get trigger, update the session list
 update_btn = [Session.SAVE_BTN.value, Session.CONFIRM_DEL.value,
               Runfile.DEL_BTN.value, Runfile.SAVE_CLONE_RUNFILE_BTN.value]
 
 layout = html.Div(
     [
 
-        html.Div(ui.url_location),
-        html.Div(dbc.Container(ui.session_layout)),
-        html.Div(dbc.Container(ui.runfile_layout)),
+        dcc.Location(id='url_project', refresh=True),
+        dcc.Location(id='url_view_result', refresh=True),
+        # html.Div(id='dummy-output', style={'display': 'none'}),
+        # dcc.Store('submit-status-store', data={}),
+        dbc.Row([
+            dbc.Col(ui.session_layout, width=3),
+            dbc.Col(ui.runfile_layout, width=9),
+        ]),
         ui.parameter_layout,
-        html.Div(id='test')
     ])
 
 
@@ -59,21 +67,23 @@ layout = html.Div(
         Output(Runfile.CLONE_BTN.value, 'style'),
         Output(Session.DEL_BTN.value, 'style'),
         Output(Session.NEW_BTN.value, 'style'),
+        Output('submit-job-section', 'style')
     ],
-    [
-        Input(Session.SESSION_LIST.value, 'active_item'),
-    ],
-
+    [Input(Session.SESSION_LIST.value, 'active_item')]
 )
 def default_session(active_session):
-    logger.info('active_session: {}, init_session: {}'.format(active_session, init_session))
-    # Default all to hide
-    runfile_del, runfile_edit, runfile_clone, session_del, session_new = 5 * [SHOW_STYLE]
+    logger.info(f'active_session: {active_session}, init_session: {init_session}')
+
     if active_session is None:
-        session_del, session_new = 2 * [HIDE_STYLE]
-    elif active_session == init_session:
-        session_del, runfile_edit, runfile_del, runfile_clone = [HIDE_STYLE] * 4
-    return runfile_del, runfile_edit, runfile_clone, session_del, session_new
+        # Hide both delete and new session buttons if no session is selected
+        return 6 * [HIDE_STYLE]
+
+    if active_session == init_session:
+        # Hide session delete and runfile buttons for the default session
+        return [HIDE_STYLE] * 4 + 2*[SHOW_STYLE]
+
+    # Default case where all buttons are visible
+    return 6 * [SHOW_STYLE]
 
 
 # display the sessions
@@ -83,6 +93,8 @@ def default_session(active_session):
         Output(Session.MODAL.value, 'is_open'),
         Output(Session.MESSAGE.value, 'children'),
         Output(Session.SESSION_LIST.value, 'active_item'),
+        Output(Session.RUNFILE_SELECT.value, 'options'),
+        Output(Session.RUNFILE_SELECT.value, 'value'),
     ],
     [
         Input(Session.NEW_BTN.value, 'n_clicks'),
@@ -97,8 +109,7 @@ def default_session(active_session):
         State(Session.NAME_INPUT.value, 'value')
     ],
 )
-def update_session_display(*args):
-    n1, n2, n3, n4, n5, active_session, name = args
+def update_session_display(n1, n2, n3, n4, n5, active_session, name):
     logger.info(f'Updating the session list')
     triggered_id = ctx.triggered_id
     logger.debug(f'Triggered: {triggered_id}')
@@ -111,9 +122,11 @@ def update_session_display(*args):
     os.makedirs(pid_path, exist_ok=True)
 
     modal_open, message = no_update, ''
+    # create a new session
     if triggered_id == Session.NEW_BTN.value:
         logger.info(f'Create a new session for user {current_user.username}')
         modal_open = True
+    # save a session
     if triggered_id == Session.SAVE_BTN.value:
         default_session_path = default_session_prefix + current_user.username
         new_session_path = os.path.join(pid_path, f'Session-{name}', 'lmtoy_run', f'lmtoy_{current_user.username}')
@@ -121,12 +134,14 @@ def update_session_display(*args):
             message = f'session-{name} already exists'
         else:
             # Now perform the copy operation.
+            print(f'pid_path: {pid_path}, active_session: {active_session},current_user: {current_user.username}')
             old_session_path = default_session_path if active_session == init_session \
                 else os.path.join(pid_path, active_session, 'lmtoy_run', f'lmtoy_{current_user.username}')
             shutil.copytree(old_session_path, new_session_path)
             modal_open = False
             message = f"Successfully copied to {new_session_path}"
         logger.info(message)
+    # delete a session
     elif triggered_id == Session.CONFIRM_DEL.value:
         session_path = os.path.join(pid_path, active_session)
         if os.path.exists(session_path):
@@ -135,12 +150,35 @@ def update_session_display(*args):
             logger.info(f'deleted {session_path}')
         else:
             print(f"The folder {session_path} does not exist.")
+    # refresh session list
     if triggered_id in update_btn:
-        time.sleep(0.1)
+        # time.sleep(0.1)
         active_session = None
 
     session_list = pf.get_session_list(init_session, pid_path)
-    return session_list, modal_open, message, active_session
+
+    # update the runfile options and values for the active session
+    runfile_options = []
+    runfile_value = []
+    if active_session:
+        default_session_path = default_session_prefix + current_user.username
+        session_path = default_session_path if active_session == init_session \
+            else os.path.join(pid_path, active_session, 'lmtoy_run', f'lmtoy_{current_user.username}')
+
+        runfile_options = pf.get_runfile_option(session_path)
+        # Define the specific default runfiles you want to set as the dropdown values
+        default_runfiles = ['run1a', 'run1b', 'run2a', 'run2b']
+
+        # Filter the runfile options to check for these default values
+        runfile_value = [
+            option['value'] for option in runfile_options
+            if option['label'].split('.')[-1] in default_runfiles
+        ]
+
+        # If none of the default runfiles exist in the options, you can handle it by setting the first option or leaving it empty
+        if not runfile_value:
+            runfile_value = runfile_options[0]['value'] if runfile_options else None
+    return session_list, modal_open, message, active_session, runfile_options, runfile_value
 
 
 # if click delete session button show the confirmation
@@ -151,16 +189,14 @@ def update_session_display(*args):
     Input(Session.SESSION_LIST.value, 'active_item'),
 )
 def display_confirmation(n_clicks, active_item):
-    if ctx.triggered_id == Session.DEL_BTN.value:
+    if ctx.triggered_id == Session.DEL_BTN.value and active_item:
         return True, f'Are you sure you want to delete {active_item}?'
     return False, ''
-
 
 # display selected runfile
 @app.callback(
     [
         Output(Runfile.CONTENT_TITLE.value, 'children'),
-        Output(Runfile.STATUS.value, 'children', allow_duplicate=True),
         Output(Runfile.CONTENT_DISPLAY.value, 'style'),
         Output(Runfile.CONTENT.value, 'children'),
     ],
@@ -177,10 +213,9 @@ def display_runfile_content(selected_runfile, del_runfile_btn, n1, n2, n3):
         raise PreventUpdate
     current_runfile = next((value for value in selected_runfile if value), None)
     if not current_runfile:
-        return '','', HIDE_STYLE, ''
+        return '', HIDE_STYLE, ''
 
     runfile_title = pf.get_runfile_title(current_runfile, init_session)
-    runfile_status = pf.get_runfile_status(current_runfile)
     runfile_content = pf.df_runfile(current_runfile)[1]
 
     if ctx.triggered_id == Runfile.CONFIRM_DEL_ALERT.value:
@@ -189,8 +224,7 @@ def display_runfile_content(selected_runfile, del_runfile_btn, n1, n2, n3):
         time.sleep(0.5)
         runfile_content = pf.df_runfile(current_runfile)[1]
     logger.info(f'current_runfile is {current_runfile}')
-    return runfile_title, runfile_status,SHOW_STYLE, runfile_content
-
+    return runfile_title,SHOW_STYLE, runfile_content
 
 # If edit was clicked, show the modal
 @app.callback(
@@ -210,68 +244,62 @@ def show_parameter_table(n1, selected_runfile):
         raise PreventUpdate
     if ctx.triggered_id == Runfile.EDIT_BTN.value:  # If edit was clicked, show the modal
         modal_style = True
-        current_runfile = next((value for value in selected_runfile if value), None)
+        current_runfile = pf.current_file(selected_runfile)
         df = pf.df_runfile(current_runfile)[0]
         dff = pd.concat([df, dff])
     return modal_style, dff.to_dict('records')
 
 
-fixed_states = [
-
-    State(Runfile.TABLE.value, 'data'),
-
-]
-# Define dynamic Output objects based on a list of field names
-field_names = table_column
-dynamic_outputs = [Output(field, 'value', allow_duplicate=True) for field in field_names]
-dynamic_states = [State(field, 'value') for field in field_names]
-# Combine fixed and dynamic Output objects
-
-all_states = fixed_states + dynamic_states
+# Helper function to reset parameters
+def reset_params():
+    return [None, []] + [None] * (len(table_column) - 4)
 
 
-# If edit table save the new parameter to the dataTable, if add a new row append the parameter to the end of table
+# Helper function to handle saving the DataFrame and resetting parameters
+def save_and_reset(df, selected_runfile):
+    pf.save_runfile(df, selected_runfile)
+    return df.to_dict('records'), reset_params()
+
+
+# Callback to handle saving new parameters and modifying the DataTable
 @app.callback(
     Output(Runfile.TABLE.value, 'data'),
-    [dynamic_outputs[2:]],
+    [dynamic_outputs[2:]],  # Dynamic outputs starting from the 3rd column
     [
         Input(Table.DEL_ROW_BTN.value, 'n_clicks'),
         Input(Table.CLONE_ROW_BTN.value, 'n_clicks'),
         Input(Parameter.UPDATE_BTN.value, 'n_clicks'),
         Input(Parameter.SAVE_BTN.value, 'n_clicks'),
-        Input({'type': 'runfile-radio', 'index': ALL}, 'value'),
 
     ],
+    State({'type': 'runfile-radio', 'index': ALL}, 'value'),
     State(Runfile.TABLE.value, 'selected_rows'),
     all_states,
     prevent_initial_call=True,
 )
 def save_new_parameters(n1, n2, n3, n4, selected_runfile, selected_rows, df_table, *state_values):
     triggered_id = ctx.triggered_id
-    logger.info(f'Triggered component to update runfile: {triggered_id}')
-    df = pd.DataFrame(df_table)
-    reset_parameter = [no_update] * (len(table_column) - 2)
+
+    df = pd.DataFrame(df_table)  # Convert DataTable data to DataFrame
     selected_runfile = next((value for value in selected_runfile if value), None)
+
     if not selected_runfile:
-        return no_update
-    if triggered_id == Parameter.UPDATE_BTN.value:
-        if selected_rows:
-            df = pf.update_df_with_state_values(df, selected_rows, state_values, table_column)
-            reset_parameter = [None, []] + [None] * (len(table_column) - 4)
-            pf.save_runfile(df, selected_runfile)
-    elif triggered_id == Parameter.SAVE_BTN.value:
-        if state_values[1] is not None:
-            new_row = pf.create_new_row(state_values, table_column)
-            df = df._append(new_row, ignore_index=True)
-            reset_parameter = [None, []] + [None] * (len(table_column) - 4)
-            pf.save_runfile(df, selected_runfile)
-    output_value = df.to_dict('records')
-    # logger.debug(f'Updated table values: {output_values}')
+        return no_update  # Return if no runfile is selected
 
-    return output_value, reset_parameter
+    if triggered_id == Parameter.UPDATE_BTN.value and selected_rows:
+        # Update selected row with new parameter values
+        df = pf.update_df_with_state_values(df, selected_rows, state_values, table_column)
+        return save_and_reset(df, selected_runfile)
+
+    elif triggered_id == Parameter.SAVE_BTN.value and state_values[1] is not None:
+        # Add a new row with parameter values
+        new_row = pf.create_new_row(state_values, table_column)
+        df = df._append(new_row, ignore_index=True)
+        return save_and_reset(df, selected_runfile)
+
+    return no_update  # No change if other buttons are clicked
 
 
-# if click delete button show the confirmation
 @app.callback(
     Output(Runfile.CONFIRM_DEL_ALERT.value, 'displayed'),
     Output(Runfile.CONFIRM_DEL_ALERT.value, 'message'),
@@ -292,7 +320,6 @@ def display_confirmation(n_clicks, selected_runfile):
             return False, ''
     else:
         return False, ''
-
 
 # open a modal if clone-runfile button or save filtered rows button is clicked
 @app.callback(
@@ -316,6 +343,7 @@ def display_confirmation(n_clicks, selected_runfile):
 def copy_runfile(n1, n2, n3, selected_runfile, new_name, data):
     if not ctx.triggered:
         raise PreventUpdate
+
     triggered_id = ctx.triggered_id
     current_runfile = next((value for value in selected_runfile if value), None)
 
@@ -323,30 +351,25 @@ def copy_runfile(n1, n2, n3, selected_runfile, new_name, data):
         return no_update, no_update, no_update
 
     modal_open = triggered_id in [Runfile.CLONE_BTN.value, Table.FILTER_BTN.value]
-    status = HIDE_STYLE
-    message = ''
 
-    if triggered_id in [Runfile.CLONE_BTN.value, Table.FILTER_BTN.value]:
-        if not new_name:
-            message = 'Please enter a new name!'
-            status = SHOW_STYLE
+    if triggered_id in [Runfile.CLONE_BTN.value, Table.FILTER_BTN.value] and not new_name:
+        return modal_open, 'Please enter a new name!', SHOW_STYLE
+    if new_name:
+        new_name_path = os.path.join(Path(current_runfile).parent, f"{current_user.username}.{new_name}")
+        print('new_name_path', new_name_path)
+        if os.path.exists(new_name_path):
+            return modal_open, f"Runfile {new_name} already exists!", SHOW_STYLE
+
+
+        if triggered_id == Runfile.SAVE_CLONE_RUNFILE_BTN.value:
+            shutil.copy(current_runfile, new_name_path)
         else:
-            new_name_path = os.path.join(Path(current_runfile).parent, f"{current_user.username}.{new_name}")
-            if os.path.exists(new_name_path):
-                message = f'{new_name} already exists!'
-                status = SHOW_STYLE
-            else:
-                if triggered_id == Runfile.SAVE_CLONE_RUNFILE_BTN.value:
-                    shutil.copy(current_runfile, new_name_path)
-                else:
-                    df = pd.DataFrame(data)
-                    pf.save_runfile(df, new_name_path)
-                message = f"Runfile {new_name} created successfully!"
-                status = HIDE_STYLE
+            df = pd.DataFrame(data)
+            pf.save_runfile(df, new_name_path)
 
-    return modal_open, message, status
-
-
+    return modal_open, f'Runfile {new_name} created successfully!', HIDE_STYLE
+#
+#
 # when selected_rows is not none, show the edit, delete, clone rows, add a new row button
 # when no row is selected, only show add a new row btn
 @app.callback(
@@ -612,30 +635,87 @@ def select_all_beam(n_clicks, current_values, options):
 
     return current_values, options
 
-
-#
-
-# verify the selected_runfile
-@app.long_callback(
-    Output(Runfile.STATUS.value, 'children'),
-    Input(Runfile.RUN_BTN.value, 'n_clicks'),
-    State({'type': 'runfile-radio', 'index': ALL}, 'value'),
+# If there is data in the data_lmt folder, show the status of job submitted and show the job status button
+@app.callback(
+    Output(Session.SUBMIT_JOB.value, 'children'),
+    Output(Runfile.RUN_BTN.value, 'disabled'),
+    # Output('check-job-status', 'disabled'),
+    Output('view-result', 'disabled'),
+    Input(Session.SESSION_LIST.value, 'active_item'),
     prevent_initial_call=True
 )
-def update_progress(n_clicks, selected_runfile):
-    if not pf.check_user_exists():
+def show_job_status(active_session):
+
+    if not active_session:
         return no_update
-    current_runfile = next((value for value in selected_runfile if value), None)
-    print('current_runfile.................', current_runfile)
-    if not current_runfile:
-        return no_update
+    session_data = os.path.join(default_data_lmt, current_user.username)
+    if active_session != init_session:
+        session_data = os.path.join(default_data_lmt, current_user.username, active_session)
+        # Check if the session_data directory exists
+    if not os.path.exists(session_data):
+        return 'Job not submitted, click the submit job button to submit selected runfiles', False, True
+
+    # Check if there are files in the session_data directory
+    files_in_session = os.listdir(session_data)
+    if not files_in_session:
+        return 'Job not submitted', False, True
+
+    # Determine the job status based on the presence of specific files
+    if 'README.html' in files_in_session:
+        return 'Job finished successfully', True, False
+    else:
+        return 'Job submitted', True, True
+
+
+# open readme in a new tab when chick view result button
+
+# Flask route to serve the file, using session as part of the URL
+@app.server.route('/view_result/<username>/<session>')
+def serve_readme(username, session):
+    # Construct the file path using the session from the URL
+    if session == init_session:
+        readme_path = os.path.join(default_data_lmt, username, 'README.html')
+    else:
+        readme_path = os.path.join(default_data_lmt, username, session, 'README.html')
+    print(f'Serving README from: {readme_path}')
+    if os.path.exists(readme_path):
+        return flask.send_file(readme_path)
+    else:
+        return 'Error: README.html not found', 404
+
+
+# Dash callback to update the href of the dcc.Link
+@app.callback(
+    Output('view-result-url', 'href'),
+    Output('view-result-url', 'style'),
+    Input('view-result', 'n_clicks'),
+    Input(Session.SESSION_LIST.value, 'active_item'),
+    State('view-result', 'n_clicks'),
+    prevent_initial_call=True
+)
+def update_view_result_url(n_clicks, active_session, view_result_clicks):
+    if not view_result_clicks:
+        return no_update, no_update
+
     if n_clicks:
-        print('submit job for runfile: ', current_runfile)
+        return f"/view_result/{current_user.username}/{active_session}", {'display': 'inline', 'color': 'blue'}
+    return no_update, no_update
 
-        result = pf.submit_job(current_runfile)
-        return html.Pre(result)
-
-    return no_update
+# todo click sure to submit btn, then submit the selected funfies
+# run the sumbit job in the background
+# submit the selected_runfile
+@app.long_callback(
+    Output(Session.SUBMIT_JOB.value, 'children',allow_duplicate=True),
+    Input(Runfile.RUN_BTN.value, 'n_clicks'),
+    State(Session.RUNFILE_SELECT.value, 'value'),
+    prevent_initial_call=True
+)
+def submit_job(n_clicks, selected_runfile):
+    if n_clicks:
+        print('submit job for runfile: ', selected_runfile)
+        result = pf.run_job_background(selected_runfile)
+        print(html.Pre(result))
+        return 'Job submitted successfully. Check the job status page for more information' if result else 'Job submission failed'
 
 
 app.clientside_callback(

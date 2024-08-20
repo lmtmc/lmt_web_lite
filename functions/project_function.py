@@ -1,6 +1,6 @@
 import os
 import shutil
-import sys
+import threading
 from pathlib import Path
 import dash_bootstrap_components as dbc
 from flask_login import current_user
@@ -18,11 +18,11 @@ logger = logger.logger
 
 python_path = config['path']['python_path']
 lmtoy_path = config['path']['lmtoy_path']
-sbatch_path = config['path']['sbatch_path']
+script_path = config['path']['script_path']
 
-sbatch_path = os.path.expanduser(sbatch_path)
-if not os.path.exists(sbatch_path):
-    raise FileNotFoundError(f"File not found: {sbatch_path}")
+
+if not os.path.exists(script_path):
+    raise FileNotFoundError(f"File not found: {script_path}")
 def set_pythonpath():
     current_pythonpath = os.environ.get('PYTHONPATH') or ''
     new_path = lmtoy_path
@@ -32,7 +32,6 @@ def set_pythonpath():
         else:
             updated_pythonpath = new_path
         os.environ['PYTHONPATH'] = updated_pythonpath
-
 set_pythonpath()
 
 # Function to get pid options from the given path
@@ -102,6 +101,9 @@ def find_files(folder_path, prefix):
 
     files = [filename for filename in os.listdir(folder_path) if
              os.path.isfile(os.path.join(folder_path, filename)) and filename.startswith(prefix)]
+    # # Extract the part after the last dot in each file name
+    # files_after_dot = [filename.split('.')[-1] for filename in files if '.' in filename]
+
     return sorted(files)
 
 
@@ -222,11 +224,13 @@ def handle_delete_runfile(stored_data):
     del_runfile(stored_data['runfile'])
     return "Runfile deleted successfully"
 
-
+def current_file(selected_runfile):
+    return next((value for value in selected_runfile if value), None)
 def del_runfile(runfile):
     # Check if the file exists
     if os.path.exists(runfile):
         # If it exists, delete the folder and all its contents
+        print(f"Deleting the file {runfile}")
         os.remove(runfile)
         return False, f"The file {runfile} has been deleted successfully."
     else:
@@ -429,22 +433,22 @@ def make_summary(runfile):
     return True
 
 
-def get_runfile_status(current_runfile):
-    if current_runfile:
-        if os.path.exists(current_runfile):
-            message = runs.verify(current_runfile, debug=False)
-            if message:
-                return f'Failed to Verify.' + message
-            elif check_job(current_runfile):
-                return 'Job Running ...'
-            elif make_summary(current_runfile):
-                return 'Job Completed!'
-            else:
-                return 'Verified waiting for submission'
-        else:
-            return 'Missing'
-    else:
-        return 'Not Started'
+# def get_runfile_status(current_runfile):
+#     if current_runfile:
+#         if os.path.exists(current_runfile):
+#             message = runs.verify(current_runfile, debug=False)
+#             if message:
+#                 return f'Failed to Verify.' + message
+#             elif check_job(current_runfile):
+#                 return 'Job Running ...'
+#             elif make_summary(current_runfile):
+#                 return ''
+#             else:
+#                 return 'Verified waiting for submission'
+#         else:
+#             return 'Missing'
+#     else:
+#         return 'Not Started'
 
 
 def get_selected_runfile(ctx):
@@ -500,15 +504,19 @@ def make_progress_graph(progress, total):
     return progress_graph
 
 
-def submit_job(runfile):
+def run_job_background(runfile):
+    job_thread = threading.Thread(target=submit_job, args=(runfile,))
+    job_thread.start()
 
-    #pid_path = os.path.join(default_work_lmt, 'lmtoy_run', f'lmtoy_{pid}')
+
+def submit_job(runfile):
     runfile_path = os.path.dirname(runfile)
-    print('runfile:', runfile)
-    print('pid_path:', runfile_path)
-    result = subprocess.run([sbatch_path, runfile], capture_output=True,
-                            text=True, cwd=runfile_path)
-    return result.stdout if result.returncode == 0 else result.stderr
+    result = subprocess.run([script_path, runfile], capture_output=True, text=True, cwd=runfile_path)
+
+    if result.returncode == 0:
+        return result.stdout
+    else:
+        return result.stderr
 
 # def edit_row_details(details_data):
 # Divide the dictionary into 6 equal parts
