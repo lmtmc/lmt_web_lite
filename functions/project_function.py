@@ -101,10 +101,10 @@ def find_files(folder_path, prefix):
 
     files = [filename for filename in os.listdir(folder_path) if
              os.path.isfile(os.path.join(folder_path, filename)) and filename.startswith(prefix)]
-    # # Extract the part after the last dot in each file name
-    # files_after_dot = [filename.split('.')[-1] for filename in files if '.' in filename]
+    # get only the files without the .jobid extension
+    filtered_files = [f for f in files if not f.endswith('.jobid')]
 
-    return sorted(files)
+    return sorted(filtered_files)
 
 
 def find_runfiles(folder_path, prefix):
