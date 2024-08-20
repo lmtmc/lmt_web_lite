@@ -658,14 +658,17 @@ def show_job_status(active_session):
 
     # Check if there are files in the session_data directory
     files_in_session = os.listdir(session_data)
-    if not files_in_session:
-        return 'Job not submitted', False, HIDE_STYLE,''
+
+    # Check if the directory is empty or only contains the 'lmtoy_run' folder
+    if not files_in_session or (len(files_in_session) == 1 and files_in_session[0] == 'lmtoy_run'):
+        return 'Job not submitted', False, HIDE_STYLE, ''
 
     # Determine the job status based on the presence of specific files
     if 'README.html' in files_in_session:
         return 'Job finished successfully', True, SHOW_STYLE, f'/view_result/{current_user.username}/{active_session}'
-    else:
-        return 'Job submitted', True, HIDE_STYLE,''
+
+    # If other files are present but not 'README.html', assume the job is running
+    return 'Job is running!', True, HIDE_STYLE, ''
 
 
 # open readme in a new tab when chick view result button
