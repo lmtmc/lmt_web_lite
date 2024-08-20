@@ -242,10 +242,8 @@ session_layout = html.Div(
                 dbc.Col(
                     dbc.ButtonGroup([
                         dbc.Button("Submit Job", id=Runfile.RUN_BTN.value, outline=True, color='secondary'),
-                        dbc.Button("Job Status", id='check-job-status', outline=True, color='secondary', disabled=True),
-                        dbc.Button('View result', id='view-result', outline=True, color='secondary', disabled=True),
-
-
+                        # dbc.Button("Job Status", id='check-job-status', outline=True, color='secondary', disabled=True),
+                        #dbc.Button('View result', id='view-result', outline=True, color='secondary', disabled=True),
                     ], size='sm', className='ms-auto'),
                     width='auto',
                     className='d-flex justify-content-end'

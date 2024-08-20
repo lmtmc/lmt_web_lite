@@ -505,7 +505,7 @@ def make_progress_graph(progress, total):
 
 
 def run_job_background(runfile):
-    job_thread = threading.Thread(target=submit_job, args=(runfile,))
+    job_thread = threading.Thread(target=submit_job, args=(runfile,),daemon=True)
     job_thread.start()
 
 

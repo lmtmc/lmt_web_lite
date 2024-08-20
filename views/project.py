@@ -640,7 +640,8 @@ def select_all_beam(n_clicks, current_values, options):
     Output(Session.SUBMIT_JOB.value, 'children'),
     Output(Runfile.RUN_BTN.value, 'disabled'),
     # Output('check-job-status', 'disabled'),
-    Output('view-result', 'disabled'),
+    Output('view-result-url', 'style'),
+    Output('view-result-url', 'href'),
     Input(Session.SESSION_LIST.value, 'active_item'),
     prevent_initial_call=True
 )
@@ -653,18 +654,18 @@ def show_job_status(active_session):
         session_data = os.path.join(default_data_lmt, current_user.username, active_session)
         # Check if the session_data directory exists
     if not os.path.exists(session_data):
-        return 'Job not submitted, click the submit job button to submit selected runfiles', False, True
+        return 'Job not submitted, click the submit job button to submit selected runfiles', False, HIDE_STYLE,''
 
     # Check if there are files in the session_data directory
     files_in_session = os.listdir(session_data)
     if not files_in_session:
-        return 'Job not submitted', False, True
+        return 'Job not submitted', False, HIDE_STYLE,''
 
     # Determine the job status based on the presence of specific files
     if 'README.html' in files_in_session:
-        return 'Job finished successfully', True, False
+        return 'Job finished successfully', True, SHOW_STYLE, f'/view_result/{current_user.username}/{active_session}'
     else:
-        return 'Job submitted', True, True
+        return 'Job submitted', True, HIDE_STYLE,''
 
 
 # open readme in a new tab when chick view result button
@@ -685,21 +686,22 @@ def serve_readme(username, session):
 
 
 # Dash callback to update the href of the dcc.Link
-@app.callback(
-    Output('view-result-url', 'href'),
-    Output('view-result-url', 'style'),
-    Input('view-result', 'n_clicks'),
-    Input(Session.SESSION_LIST.value, 'active_item'),
-    State('view-result', 'n_clicks'),
-    prevent_initial_call=True
-)
-def update_view_result_url(n_clicks, active_session, view_result_clicks):
-    if not view_result_clicks:
-        return no_update, no_update
-
-    if n_clicks:
-        return f"/view_result/{current_user.username}/{active_session}", {'display': 'inline', 'color': 'blue'}
-    return no_update, no_update
+# @app.callback(
+#     Output('view-result-url', 'href'),
+#     Output('view-result-url', 'style'),
+#     Input('view-result', 'n_clicks'),
+#     Input(Session.SESSION_LIST.value, 'active_item'),
+#     State('view-result', 'n_clicks'),
+#     State('view-result', 'disabled'),
+#     prevent_initial_call=True
+# )
+# def update_view_result_url(n_clicks, active_session, view_result_clicks, view_result_disabled):
+#     if not view_result_clicks:
+#         return no_update, no_update
+#
+#     if n_clicks:
+#         return f"/view_result/{current_user.username}/{active_session}", {'display': 'inline', 'color': 'blue'}
+#     return no_update, no_update
 
 # todo click sure to submit btn, then submit the selected funfies
 # run the sumbit job in the background
