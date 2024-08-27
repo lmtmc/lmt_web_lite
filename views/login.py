@@ -1,6 +1,6 @@
 # todo password clear after login
 from dash import dcc, html, Input, Output, State, no_update
-from flask_login import logout_user, current_user
+
 import os
 import dash_bootstrap_components as dbc
 from my_server import app, User
@@ -8,7 +8,6 @@ from flask_login import login_user
 from werkzeug.security import check_password_hash
 from functions import project_function as pf, logger
 from views.ui_elements import Storage
-import time
 from config import config
 
 logger = logger.logger
@@ -20,8 +19,8 @@ pf.ensure_path_exists(default_work_lmt)
 lmtoy_run_path = os.path.join(default_work_lmt, 'lmtoy_run')
 pf.ensure_path_exists(default_work_lmt)
 
-pid_options = pf.get_pid_option(lmtoy_run_path)
-logger.info(f'pid_options: {pid_options}')
+# pid_options = pf.get_pid_option(lmtoy_run_path)
+# logger.info(f'pid_options: {pid_options}')
 
 layout = dbc.Container([
     dcc.Location(id='url_login', refresh=True),
@@ -29,9 +28,9 @@ layout = dbc.Container([
              className='mb-4'),
     html.Div([
         html.H1('Login using PID', className='text-center text-primary, mb-4'),
-        dbc.Label('Select a PID:', id='h1-label', className='mb-4'),
-        dcc.Dropdown(id='pid', options=pid_options, className='mb-4'),
-        dbc.Label('Password:', id='pwd-label', className='mb-4'),
+        dbc.Label('PID:', className='mb-2'),
+        dbc.Input(id='pid', type='text', placeholder='Enter PID', className='mb-4'),
+        dbc.Label('Password:', className='mb-2'),
         dbc.Input(id='pwd-box', n_submit=0, type='password', className='mb-5'),
         html.Div(dbc.Alert(id='output-state', is_open=False, className='alert-warning', duration=3000)),
         html.Div(dbc.Button('Login', type='submit', id='login-button',
@@ -42,20 +41,6 @@ layout = dbc.Container([
     )],
 
     style={'width': '500px', 'margin': 'auto'})
-
-
-# @app.callback(
-#     Output('pwd-box', 'value'),
-#     # Output(Storage.DATA_STORE.value, 'data', allow_duplicate=True),
-#     Input('url_login', 'pathname'),
-#     prevent_initial_call=True
-# )
-# def clear_password_on_logout(pathname):
-#     if not current_user.is_authenticated:
-#         logger.info(f'Clearing password')
-#         return ''  # Return an empty string to clear the password field
-#     return no_update  # No update if the condition is not met
-
 
 # if both pid and password have value then enable the login button
 @app.callback(
