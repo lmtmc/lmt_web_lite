@@ -4,7 +4,11 @@ import dash_bootstrap_components as dbc
 from flask_login import current_user
 from functions import project_function as pf
 from enum import Enum, auto
-from config import config
+import yaml
+
+# Load YAML configuration
+with open('config.yaml', 'r') as config_file:
+    config = yaml.safe_load(config_file)
 
 prefix = config['path']['prefix']
 

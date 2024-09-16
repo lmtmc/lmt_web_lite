@@ -1,0 +1,17 @@
+database:
+  con: sqlite:///users.db
+
+path:
+  work_lmt: /home/lmt/work_lmt
+  data_lmt: /home/lmt/data_lmt
+  prefix: /pipeline/
+  python_path: /home/lmt/LMT_projects/lmt_web_lite/env/bin/python3.9
+  lmtoy_path: /home/lmt/LMT_projects/lmt_web_lite/lmtoy_lite
+  script_path: /home/lmt/LMT_projects/lmt_web_lite/lmtoy_lite/bin
+
+session:
+  init_session: session-0
+
+connect:
+  user: lmthelpdesk_umass_edu
+  host: unity.rc.umass.edu

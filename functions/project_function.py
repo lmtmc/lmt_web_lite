@@ -13,7 +13,12 @@ import ast
 import re
 import plotly.graph_objects as go
 from functions import logger
-from config import config
+import yaml
+
+# Load YAML configuration
+with open('config.yaml', 'r') as config_file:
+    config = yaml.safe_load(config_file)
+
 logger = logger.logger
 
 python_path = config['path']['python_path']

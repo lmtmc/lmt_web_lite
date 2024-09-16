@@ -4,17 +4,11 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
 import os
 from flask_login import LoginManager, UserMixin
-# from config import config
 import dash_bootstrap_components as dbc
 from datetime import datetime
-#Diskcache
-import diskcache
-# from dash.long_callback import DiskcacheLongCallbackManager
-# cache = diskcache.Cache("./cache")
-# long_callback_manager = DiskcacheLongCallbackManager(cache)
-import configparser
-config = configparser.ConfigParser()
-config.read('config.txt')
+import yaml
+with open('config.yaml') as f:
+    config = yaml.safe_load(f)
 
 server = Flask(__name__)
 server.config['SECRET_KEY'] = os.urandom(12)

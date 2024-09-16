@@ -9,11 +9,15 @@ from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 from flask_login import current_user
 import shutil
-from config import config
 from my_server import app
 from functions import project_function as pf, logger
 from views import ui_elements as ui
 from views.ui_elements import Session, Runfile, Table, Parameter, Storage
+import yaml
+
+# Load YAML configuration
+with open('config.yaml', 'r') as config_file:
+    config = yaml.safe_load(config_file)
 
 prefix = config['path']['prefix']
 default_runfiles = ['run1a', 'run1b', 'run2a', 'run2b']

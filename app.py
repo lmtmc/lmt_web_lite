@@ -6,14 +6,17 @@ import dash_bootstrap_components as dbc
 from views import login, project, help, ui_elements as ui
 import argparse
 from functions import logger
-from config import config
+import yaml
 
 # prefix = '/pipeline'
-prefix = config['path']['prefix']
-logger = logger.logger
 
+logger = logger.logger
+with open('config.yaml', 'r') as config_file:
+    config = yaml.safe_load(config_file)
+
+prefix = config['path']['prefix']
 # default_work_lmt = '/home/lmt/work_lmt'
-default_work_lmt = config['path']['work_lmt']
+
 
 app.layout = html.Div(
     [
