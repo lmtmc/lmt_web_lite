@@ -1,13 +1,12 @@
 # slider and checklist cause issue
-from dash import dcc, html, Input, Output, State, ALL, MATCH, dash_table, ctx, no_update
+from dash import dcc, html, Output, State, dash_table, dcc
 import dash_bootstrap_components as dbc
 from flask_login import current_user
 from functions import project_function as pf
-from enum import Enum
+from enum import Enum, auto
 from config import config
 
 prefix = config['path']['prefix']
-
 
 class Session(Enum):
     NAME_INPUT = 'session-name'
@@ -19,6 +18,8 @@ class Session(Enum):
     DEL_BTN = 'del-session'
     CONFIRM_DEL = 'confirm-del-session'
     DEL_ALERT = 'session-del-alert'
+    SUBMIT_JOB = 'submit-job'
+    RUNFILE_SELECT = 'runfile-select'
 
 
 class Runfile(Enum):
@@ -29,6 +30,8 @@ class Runfile(Enum):
     CLONE_BTN = 'clone-runfile'
     SAVE_BTN = 'runfile-save'
     EDIT_BTN = 'runfile-edit'
+    DOWNLOAD_BTN = 'runfile-download'
+    UPLOAD = 'runfile-upload'
     VALIDATION_ALERT = 'validation-message'
     CONFIRM_DEL_ALERT = 'confirm-del-runfile'
     SAVE_TABLE_BTN = 'save-table'
@@ -38,8 +41,8 @@ class Runfile(Enum):
     CLONE_RUNFILE_MODAL = 'clone-runfile-modal'
     CONTENT_DISPLAY = 'parameter'
     NAME_INPUT = 'clone-input'
-    SUBMIT_JOB = 'submit-job'
     STATUS = 'submit-job-status'
+    SAVE_TEXT = 'save-text'
 
 
 class Table(Enum):
@@ -120,16 +123,13 @@ class Storage(Enum):
     URL_LOCATION = 'url_session1'
 
 
-session_height = '25vh'
+session_height = '500px'
 parameter_body_height = '75vh'
 table_height = '35vh'
 detail_height = '35vh'
 card_height = '28vh'
 detail_card_style = {'height': card_height, 'padding': '10px', 'overflowY': 'auto', 'margin': '10px'}
 
-# UI Elements
-
-url_location = dcc.Location(id='url_session1', refresh=True),
 
 # Generate column data dynamically
 columns = [{"name": col, "id": col,
@@ -141,9 +141,6 @@ columns = [{"name": col, "id": col,
 tooltip_header = {
     col: f'{col}' for col in column_list
 }
-
-runfile_content = html.Pre(id=Runfile.CONTENT.value, style={'overflowX': 'auto', 'overflowY': 'auto', 'padding': '10px',
-                                                            'white-space': 'pre-wrap'})
 
 runfile_table = dash_table.DataTable(
     id=Runfile.TABLE.value,
@@ -169,7 +166,6 @@ runfile_table = dash_table.DataTable(
         'backgroundColor': 'grey',  # dark background
         'color': 'white',  # white text
         'fontWeight': 'bold',  # make the text bold
-        # 'border': '1px solid black',  # add a border around the headers
         'textAlign': 'center'  # center-align text
     },
     style_filter={
@@ -178,6 +174,7 @@ runfile_table = dash_table.DataTable(
     },
     tooltip_delay=0,
     tooltip_duration=None,
+    fixed_columns={'headers': True, 'data': 2},
 )
 
 session_modal = pf.create_modal(
@@ -192,18 +189,6 @@ session_modal = pf.create_modal(
     html.Button("Save", id=Session.SAVE_BTN.value, className="ml-auto"),
     'new-session-modal'
 )
-submit_job = [
-    html.Div(
-        [
-            dcc.Interval(id='submit-job-interval', interval=1000, n_intervals=0),
-            dbc.Progress(id='submit-job-progress', value=0, striped=True, animated=True,
-                         color='success', style={'visibility': 'hidden'}),
-            html.P(id=Runfile.STATUS.value, children='Job not submitted yet', className='mb-3'),
-        ]
-    ),
-    html.A("view result", href='//taps.lmtgtm.org/lmtslr/lmtoy_run/')
-    # html.Button("Cancel Running Job", id='cancel-job-btn', className="ml-auto"),
-]
 
 clone_runfile_modal = pf.create_modal('Input the new runfile name',
                                       html.Div([html.Label(current_user.username if current_user else None),
@@ -217,78 +202,105 @@ clone_runfile_modal = pf.create_modal('Input the new runfile name',
 
 session_layout = html.Div(
     [
-
-        html.Div('Session List', className='mb-4 title-link', id='session-list-title'),
-        html.Div([
-            html.Div(dbc.Accordion(id=Session.SESSION_LIST.value,
-                                   flush=True,
-                                   persistence=True,
-                                   persistence_type="session",
-                                   active_item='session-0',
-                                   style={'overflow': 'auto'}
-                                   ), style={'max-height': session_height, 'overflowY': 'auto', 'padding': '10px',
-                                             'margin-bottom': '10px'}),
-            session_modal,
-            html.Div(
-                dcc.ConfirmDialog(id=Session.CONFIRM_DEL.value, message=''
-                                  ), ),
-            dbc.Row([
-                dbc.Col(html.Button([html.I(className="fas fa-trash me-2"), 'Delete Session'],
-                                    id=Session.DEL_BTN.value,
-                                    ), width='auto'),
-                dbc.Col(html.Button([html.I(className="fa-solid fa-clone me-2"), 'Clone Session'],
-                                    id=Session.NEW_BTN.value,
-
-                                    ), width='auto'),
-            ], className='flex justify-content-end'), ], id='session-list-display', style={
-            'border': '1px solid #CCCCCC', 'padding': '10px', 'margin-bottom': '10px'}
-
+        dbc.Row([
+            dbc.Col('SESSION LIST',  id='session-list-title', className='title-link'),
+            dbc.Col(
+                dbc.ButtonGroup([
+                    dbc.Button(html.I(className='fas fa-clone'), id=Session.NEW_BTN.value, outline=True, color='secondary',
+                               className='btn-icon'),
+                    dbc.Button(html.I(className='fas fa-trash-alt'), id=Session.DEL_BTN.value, outline=True, color='secondary',
+                               className='btn-icon'),
+                ]), width='auto',
         ),
-    ], style={'margin-top': '20px'})
-
-runfile_layout = html.Div(
-    [
-        html.Div('Runfile Content', className='mb-4 title-link', id='runfile-content-title', ),
+            dbc.Tooltip("Clone Session", target=Session.NEW_BTN.value, placement='bottom'),
+            dbc.Tooltip("Delete Session", target=Session.DEL_BTN.value, placement='bottom'),
+            ], className='d-flex justify-content-end'),
         html.Div(
-            [
+            dbc.Accordion(
+                id=Session.SESSION_LIST.value,
+                flush=True,
+                persistence=True,
+                persistence_type="session",
+                active_item='session-0',
+                style={'overflow': 'auto'}
+            ),
+            className='session-list-container',
+        ),
 
-                html.Div([
-                    html.Div([
-                        dbc.Row([
-                            dbc.Col(html.Div(id=Runfile.CONTENT_TITLE.value), width='auto'),
-                            dbc.Col(dbc.DropdownMenu(
-                                label="Runfile Options",
-                                children=[
-                                    dbc.DropdownMenuItem("Submit", id=Runfile.RUN_BTN.value),
-                                    dbc.DropdownMenuItem("Edit", id=Runfile.EDIT_BTN.value, ),
-                                    dbc.DropdownMenuItem("Delete", id=Runfile.DEL_BTN.value),
-                                    dbc.DropdownMenuItem("Clone", id=Runfile.CLONE_BTN.value),
-                                ], color='secondary', className='d-flex justify-content-end'
-                            )),
-                        ], align='center', style={'margin-bottom': '10px'}),
-                    ], ),
-                ], style={'margin-bottom': '0'}),
 
-                html.Div([
+        # Session modal and confirm dialog
+        session_modal,
+        html.Div(
+            dcc.ConfirmDialog(id=Session.CONFIRM_DEL.value, message='')
+        ),
+        # ButtonGroup at the bottom
+        html.Div(
+            [dbc.Row([
+                dbc.Label('Select runfiles to submit', className='title-link',),
+                dbc.Col(
+                    dcc.Dropdown(id = Session.RUNFILE_SELECT.value, multi=True, placeholder='Select Runfiles'),width='auto',
+                    className='mb-2'
+                ),
+                dbc.Col(
+                    dbc.ButtonGroup([
+                        dbc.Button("Submit Job", id=Runfile.RUN_BTN.value, color='secondary'),
+                        # dbc.Button("Job Status", id='check-job-status', outline=True, color='secondary', disabled=True),
+                        #dbc.Button('View result', id='view-result', outline=True, color='secondary', disabled=True),
+                    ], size='sm', className='ms-auto'),
+                    width='auto',
+                    className='d-flex justify-content-end'
+                ),
+                dbc.Col(dcc.Link('Open Result',
+                                 href='',
+                                 id='view-result-url',
+                                 target='_blank',
+                                 style={'display': 'none', 'color': 'grey'}),)
+            ],
+                className='justify-content-between align-items-end',
+            ),
+            dcc.Markdown(id=Session.SUBMIT_JOB.value, className='submit-job-message')],id='submit-job-section'
+        ),
 
-                    html.Div(submit_job, id=Runfile.SUBMIT_JOB.value, className='mb-3'),
+    ],
+    id='session-list-display',
+    className='session-list-display'
+)
 
-                    html.Div(runfile_content, className='mb-5',
-                             style={'border': '1px solid #CCCCCC', 'max-height': session_height,
-                                    'overflowY': 'auto',
-                                    'padding': '10px', }),
-                    html.Div(clone_runfile_modal),
-                    html.Div(dcc.ConfirmDialog(
-                        id=Runfile.CONFIRM_DEL_ALERT.value,
-                        message=''
-                    ),
-                        id='confirm-dialog-container',  # Give it an ID for styling
-                    ),
-                ],
-                )],
-            style={'margin': '0', 'border': '1px solid #CCCCCC', 'padding': '10px', 'margin-bottom': '10px', }),
-    ], id=Runfile.CONTENT_DISPLAY.value, style={'display': 'none'},
-),
+
+
+runfile_layout = dbc.Container([
+    #html.H3('Runfile Content', className='mb-4 title-link', id='runfile-content-title'),
+    dbc.Row([
+        dbc.Col(dbc.Label(id=Runfile.CONTENT_TITLE.value), className='mb-4 title-link',width='auto'),
+        dbc.Col([
+            dbc.ButtonGroup([
+                dbc.Button(html.I(className='fas fa-edit'), id=Runfile.EDIT_BTN.value, outline=True, className='btn-icon', color='secondary'),
+                dbc.Button(html.I(className='fas fa-trash-alt'), id=Runfile.DEL_BTN.value,outline=True, className='btn-icon',color='secondary'),
+                dbc.Button(html.I(className='fas fa-clone'), id=Runfile.CLONE_BTN.value, outline=True, className='btn-icon', color='secondary'),
+                dbc.Button(html.I(className='fas fa-download'), id=Runfile.DOWNLOAD_BTN.value, outline=True, className='btn-icon', color='secondary'),
+            ], size='lg'),
+            dcc.Upload(
+                id=Runfile.UPLOAD.value,
+                children=dbc.Button(html.I(className='fas fa-upload'), color='secondary',outline=True, className='btn-icon'),
+                className='ml-4'
+            ),
+        ], width='auto', className='d-flex align-items-center'),
+    ], className='mb-3 align-items-center'),
+    html.Div([
+        dcc.Textarea(id=Runfile.CONTENT.value, className='runfile-content',readOnly=True),
+        html.Button("Save", id=Runfile.SAVE_TEXT.value, className='mt-2')],
+        className = 'runfile-content-container',
+    ),
+    dcc.Download(id='download-link'),
+    clone_runfile_modal,
+    dcc.ConfirmDialog(id=Runfile.CONFIRM_DEL_ALERT.value, message=''),
+    dbc.Tooltip("Edit", target=Runfile.EDIT_BTN.value, placement='bottom'),
+    dbc.Tooltip("Delete", target=Runfile.DEL_BTN.value, placement='bottom'),
+    dbc.Tooltip("Clone", target=Runfile.CLONE_BTN.value, placement='bottom'),
+    dbc.Tooltip("Download", target=Runfile.DOWNLOAD_BTN.value, placement='bottom'),
+    dbc.Tooltip("Upload", target=Runfile.UPLOAD.value, placement='bottom'),
+], id=Runfile.CONTENT_DISPLAY.value, style={'display': 'none'}, fluid=True)
+
 # parameter layout
 bank_options = [
     {'label': '0', 'value': '0'},
@@ -482,23 +494,24 @@ edit_parameter_layout = html.Div(
 
 parameter_layout = dbc.Modal(
     [
-        dbc.ModalHeader(html.H1('Edit Parameters')),
+        dbc.ModalHeader(html.H5('Edit Parameters')),
         dbc.ModalBody(
             [
                 html.Div(
                     [
                         html.Div(
                             [html.H1('Parameter Table', className='mb-4 title-link', id='parameter-table-location'),
-                             html.Div(dbc.DropdownMenu(
-                                 label="Table Options",
-                                 children=[
-                                     dbc.DropdownMenuItem("Edit rows", id=Table.EDIT_TABLE.value, ),
-                                     dbc.DropdownMenuItem("Delete rows", id=Table.DEL_ROW_BTN.value, ),
-                                     dbc.DropdownMenuItem("Clone Rows", id=Table.CLONE_ROW_BTN.value, ),
-                                     dbc.DropdownMenuItem('Add a new row', id=Table.ADD_ROW_BTN.value),
-                                     dbc.DropdownMenuItem("Save filtered row", id=Table.FILTER_BTN.value, ),
-                                 ], color='secondary', className='d-flex justify-content-end'
-                             ), id=Table.OPTION.value, ),
+                             html.Div(
+                                 dbc.ButtonGroup(
+                                        [
+                                            dbc.Button('Edit rows', id=Table.EDIT_TABLE.value, color='secondary',outline=True ),
+                                            dbc.Button('Delete rows', id=Table.DEL_ROW_BTN.value, color='secondary', outline=True),
+                                            dbc.Button('Clone Rows', id=Table.CLONE_ROW_BTN.value, color='secondary', outline=True),
+                                            dbc.Button('Add a new row', id=Table.ADD_ROW_BTN.value, color='secondary', outline=True),
+                                            dbc.Button('Save filtered row', id=Table.FILTER_BTN.value, color='secondary', outline=True),
+                                        ], className='d-flex justify-content-end'
+                                 ),
+                                 id=Table.OPTION.value, ),
                              dcc.ConfirmDialog(id=Table.CONFIRM_DEL_ROW.value, message='', )
                              ],
                             className='d-flex justify-content-between'),
@@ -564,11 +577,14 @@ navbar = html.Div(dbc.Navbar(
     ],
     dark=True
 ),
-    style={
-        'position': 'fixed',  # This fixes the navbar position
-        'top': 0,  # Aligns the navbar to the top of the page
-        'left': 0,
-        'width': '100%',  # Navbar width is 100% of the page
-        'zIndex': 1000  # Ensures navbar stays on top of other elements
-    }
+    className='fixed-navbar',
+
 )
+
+fixed_states = [State(Runfile.TABLE.value, 'data')]
+# Define dynamic Output objects based on a list of field names
+field_names = table_column
+dynamic_outputs = [Output(field, 'value', allow_duplicate=True) for field in field_names]
+dynamic_states = [State(field, 'value') for field in field_names]
+# Combine fixed and dynamic Output objects
+all_states = fixed_states + dynamic_states

@@ -1,6 +1,7 @@
 import os
 import shutil
-import sys
+import threading
+from functools import lru_cache
 from pathlib import Path
 import dash_bootstrap_components as dbc
 from flask_login import current_user
@@ -12,17 +13,30 @@ import ast
 import re
 import plotly.graph_objects as go
 from functions import logger
-from lmtoy_lite.lmtoy import runs
-
+from config import config
 logger = logger.logger
 
+python_path = config['path']['python_path']
+lmtoy_path = config['path']['lmtoy_path']
+script_path = config['path']['script_path']
+
+
+if not os.path.exists(script_path):
+    raise FileNotFoundError(f"File not found: {script_path}")
+def set_pythonpath():
+    current_pythonpath = os.environ.get('PYTHONPATH', '')
+    new_path = lmtoy_path
+    if new_path not in current_pythonpath:
+        updated_pythonpath = f"{new_path}:{current_pythonpath}" if current_pythonpath else new_path
+        os.environ['PYTHONPATH'] = updated_pythonpath
+set_pythonpath()
 
 # Function to get pid options from the given path
+@lru_cache(maxsize=None)
 def get_pid_option(path):
     result = []
     for folder_name in os.listdir(path):
         full_path = os.path.join(path, folder_name)
-
         if os.path.isdir(full_path) and folder_name.startswith('lmtoy_'):
             label_value = os.path.basename(folder_name.split('_')[1])
             result.append({'label': label_value, 'value': label_value})
@@ -65,33 +79,33 @@ def load_source_data(file_name):
 
 def process_cmd(commands):
     for cmd in commands:
-        process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        out, err = process.communicate()
+        process = subprocess.run(cmd, shell=True, capture_output=True, text=True)
         if process.returncode != 0:
             print(f"Error executing command: {cmd}")
-            print(err.decode('utf-8'))
+            print(process.stderr)
         else:
-            print(out.decode('utf-8'))
+            print(process.stdout)
 
 
 # find files with prefix
 def find_files(folder_path, prefix):
     if not folder_path:
         raise ValueError("The provided folder path is empty or None.")
-
     if not os.path.exists(folder_path):
         raise FileNotFoundError(f"No such directory: {folder_path}")
 
     files = [filename for filename in os.listdir(folder_path) if
              os.path.isfile(os.path.join(folder_path, filename)) and filename.startswith(prefix)]
-    return sorted(files)
+    # get only the files without the .jobid extension
+    filtered_files = [f for f in files if not f.endswith('.jobid')]
+
+    return sorted(filtered_files)
 
 
 def find_runfiles(folder_path, prefix):
     matching_files = find_files(folder_path, prefix)
     if not matching_files:
         print("No matching files found. Running 'mk_runs.py'")
-
         matching_files = find_files(folder_path, prefix)
         if matching_files:
             print(f"Matching files: {matching_files}")
@@ -100,7 +114,6 @@ def find_runfiles(folder_path, prefix):
 
 def make_tooltip(content, target):
     return html.Div(dbc.Tooltip(content, target=target, className='large-tooltip', placement='bottom'))
-
 
 def get_source(default_work_lmt, pid):
     pid_path = os.path.join(default_work_lmt, 'lmtoy_run', f'lmtoy_{pid}')
@@ -111,9 +124,8 @@ def get_source(default_work_lmt, pid):
     else:
         logger.info(f'No source.json file found in {pid_path}, executing mk_runs.py to generate the sources')
         mk_runs_file = os.path.join(pid_path, 'mk_runs.py')
-        result = subprocess.run(['/home/lmt/LMT_projects/lmt_web_new/lmt_web_lite/env/bin/python3', mk_runs_file], capture_output=True,
+        result = subprocess.run([python_path, mk_runs_file], capture_output=True,
                                 text=True, cwd=pid_path)
-        print(f"result: {result}")
         # checks if the command ran successfully(return code 0)
         if result.returncode == 0:
             output = result.stdout  # converts the stdout string to a regular string
@@ -161,8 +173,6 @@ def get_session_list(default_session, pid_path):
         )
         for session in session_info
     ]
-    return False, f'{new_session_name} created successfully!'
-
 
 def clone_runfile(runfile, name):
     if not name:
@@ -191,7 +201,6 @@ def del_session(folder_path):
 def handle_new_session():
     return True, ''
 
-
 def handle_delete_session(pid_path, active_session):
     session_path = os.path.join(pid_path, active_session)
     del_session(session_path)
@@ -202,11 +211,13 @@ def handle_delete_runfile(stored_data):
     del_runfile(stored_data['runfile'])
     return "Runfile deleted successfully"
 
-
+def current_file(selected_runfile):
+    return next((value for value in selected_runfile if value), None)
 def del_runfile(runfile):
     # Check if the file exists
     if os.path.exists(runfile):
         # If it exists, delete the folder and all its contents
+        print(f"Deleting the file {runfile}")
         os.remove(runfile)
         return False, f"The file {runfile} has been deleted successfully."
     else:
@@ -395,7 +406,7 @@ def first_file_path(folder_path):
 
 def get_runfile_title(runfile_path, init_session):
     parts = runfile_path.split('/')
-    session_string = next((part for part in parts if 'Session' in part), init_session)
+    session_string = next((part for part in parts if 'Session' in part), init_session).upper()
     runfile_title = os.path.basename(runfile_path)
     return f'{session_string}: {runfile_title}'
 
@@ -407,25 +418,6 @@ def check_job(runfile):
 
 def make_summary(runfile):
     return True
-
-
-def get_runfile_status(current_runfile):
-    if current_runfile:
-        if os.path.exists(current_runfile):
-            message = runs.verify(current_runfile, debug=False)
-            if message:
-                return f'Failed to Verify.' + message
-            elif check_job(current_runfile):
-                return 'Job Running ...'
-            elif make_summary(current_runfile):
-                return 'Job Completed!'
-            else:
-                return 'Verified waiting for submission'
-        else:
-            return 'Missing'
-    else:
-        return 'Not Started'
-
 
 def get_selected_runfile(ctx):
     """Determine the selected runfile based on trigger."""
@@ -480,24 +472,12 @@ def make_progress_graph(progress, total):
     return progress_graph
 
 
-def submit_job(runfile):
-    subprocess.run('sbatch_lmtoy.sh ' + runfile, shell=True)
-#
-# def edit_row_details(details_data):
-# Divide the dictionary into 6 equal parts
-# n = len(details_data)
-# part_size = n // 6 + (1 if n % 6 else 0)  # Calculate size of each part, considering remainder
-# dict_parts = [dict(list(details_data.items())[i:i + part_size]) for i in range(0, n, part_size)]
-# columns = []
-# for part in dict_parts:
-#     rows = []
-#     for key, value in part.items():
-#         row = html.Div([
-#             html.Div(f"{key}:", className='col-6', style={'font-weight': 'bold'}),  # bold the key
-#             html.Div(str(value) if value else "-", className='col-6'),
-#         ], className='row mb-2')
-#         rows.append(row)
-#     column = html.Div(rows, className='col-md-2')  # Adjust for 6 columns
-#     columns.append(column)
+def run_job_background(runfile):
+    job_thread = threading.Thread(target=submit_job, args=(runfile,),daemon=True)
+    job_thread.start()
 
-# return html.Div(edit_parameter.)
+
+def submit_job(runfile):
+    runfile_path = os.path.dirname(runfile)
+    result = subprocess.run([script_path, runfile], capture_output=True, text=True, cwd=runfile_path)
+    return result.stdout if result.returncode == 0 else result.stderr
