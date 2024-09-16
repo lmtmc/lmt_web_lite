@@ -21,12 +21,12 @@ server.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 server.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 prefix = config['path']['prefix']
-
 db = SQLAlchemy(server)
-
 # enable running the Dash app on the Flask server
 app = dash.Dash(__name__, server=server,
-                requests_pathname_prefix=prefix,
+                # requests_pathname_prefix=prefix,
+                # routes_pathname_prefix=prefix,
+                url_base_pathname=prefix,
                 external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.FONT_AWESOME, dbc.icons.BOOTSTRAP],
                 meta_tags=[
                     {'charset': 'utf-8'},

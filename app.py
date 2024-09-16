@@ -86,6 +86,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
     logger.info(f'Running the app on port {args.port}')
     try:
-        app.server.run(port=args.port, debug=True)
+        app.server.run(port=args.port, debug=False)
     except Exception as e:
         logger.logger.error(e)
