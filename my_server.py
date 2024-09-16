@@ -9,9 +9,9 @@ import dash_bootstrap_components as dbc
 from datetime import datetime
 #Diskcache
 import diskcache
-from dash.long_callback import DiskcacheLongCallbackManager
-cache = diskcache.Cache("./cache")
-long_callback_manager = DiskcacheLongCallbackManager(cache)
+# from dash.long_callback import DiskcacheLongCallbackManager
+# cache = diskcache.Cache("./cache")
+# long_callback_manager = DiskcacheLongCallbackManager(cache)
 
 server = Flask(__name__)
 server.config['SECRET_KEY'] = os.urandom(12)
@@ -34,7 +34,7 @@ app = dash.Dash(__name__, server=server,
                      'content': 'width=device-width, initial-scale=1, shrink-to-fit=yes'},
                 ],
                 prevent_initial_callbacks="initial_duplicate",
-                long_callback_manager=long_callback_manager
+               # long_callback_manager=long_callback_manager
                 )
 app.config.suppress_callback_exceptions = True
 
