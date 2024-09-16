@@ -1,3 +1,4 @@
+import base64
 import os
 import time
 from pathlib import Path
@@ -52,8 +53,8 @@ layout = html.Div(
         # html.Div(id='dummy-output', style={'display': 'none'}),
         # dcc.Store('submit-status-store', data={}),
         dbc.Row([
-            dbc.Col(ui.session_layout, width=3),
-            dbc.Col(ui.runfile_layout, width=9),
+            dbc.Col(ui.session_layout, width=2, ),
+            dbc.Col(ui.runfile_layout, width=10),
         ]),
         ui.parameter_layout,
     ])
@@ -65,9 +66,13 @@ layout = html.Div(
         Output(Runfile.DEL_BTN.value, 'style'),
         Output(Runfile.EDIT_BTN.value, 'style'),
         Output(Runfile.CLONE_BTN.value, 'style'),
+        Output(Runfile.DOWNLOAD_BTN.value, 'style'),
+        Output(Runfile.UPLOAD.value, 'style'),
+        Output(Runfile.SAVE_TEXT.value, 'style'),
         Output(Session.DEL_BTN.value, 'style'),
         Output(Session.NEW_BTN.value, 'style'),
-        Output('submit-job-section', 'style')
+        Output('submit-job-section', 'style'),
+        Output(Runfile.CONTENT.value, 'readOnly'),
     ],
     [Input(Session.SESSION_LIST.value, 'active_item')]
 )
@@ -76,14 +81,14 @@ def default_session(active_session):
 
     if active_session is None:
         # Hide both delete and new session buttons if no session is selected
-        return 6 * [HIDE_STYLE]
+        return 9 * [HIDE_STYLE] + [True]
 
     if active_session == init_session:
         # Hide session delete and runfile buttons for the default session
-        return [HIDE_STYLE] * 4 + 2*[SHOW_STYLE]
+        return [HIDE_STYLE] * 7 + 2*[SHOW_STYLE] + [True]
 
     # Default case where all buttons are visible
-    return 6 * [SHOW_STYLE]
+    return 9 * [SHOW_STYLE] + [False]
 
 
 # display the sessions
@@ -198,7 +203,8 @@ def display_confirmation(n_clicks, active_item):
     [
         Output(Runfile.CONTENT_TITLE.value, 'children'),
         Output(Runfile.CONTENT_DISPLAY.value, 'style'),
-        Output(Runfile.CONTENT.value, 'children'),
+        # Output(Runfile.CONTENT.value, 'children'), # if output pre
+        Output(Runfile.CONTENT.value, 'value') # if output textarea
     ],
     [
         Input({'type': 'runfile-radio', 'index': ALL}, 'value'),
@@ -223,6 +229,7 @@ def display_runfile_content(selected_runfile, del_runfile_btn, n1, n2, n3):
     if ctx.triggered_id in [Table.CLONE_ROW_BTN.value, Parameter.UPDATE_BTN.value, Table.DEL_ROW_BTN.value]:
         time.sleep(0.5)
         runfile_content = pf.df_runfile(current_runfile)[1]
+    print(f'current_runfile is {current_runfile}')
     logger.info(f'current_runfile is {current_runfile}')
     return runfile_title,SHOW_STYLE, runfile_content
 
@@ -706,7 +713,7 @@ def serve_readme(username, session):
 #         return f"/view_result/{current_user.username}/{active_session}", {'display': 'inline', 'color': 'blue'}
 #     return no_update, no_update
 
-# todo click sure to submit btn, then submit the selected funfies
+# todo click sure to submit btn, then submit the selected runfiles
 # run the sumbit job in the background
 # submit the selected_runfile
 @app.long_callback(
@@ -737,3 +744,72 @@ app.clientside_callback(
     Output('dummy-div', 'children'),  # Dummy output
     Input(Runfile.EDIT_BTN.value, 'n_clicks'),
 )
+
+# if click the filefile download button, download the selected runfile,
+@app.callback(
+    Output('download-link', 'data'),
+    Input(Runfile.DOWNLOAD_BTN.value, 'n_clicks'),
+    State({'type': 'runfile-radio', 'index': ALL}, 'value'),
+    prevent_initial_call=True
+)
+def download_upload_runfile(n1,selected_runfile):
+    if not selected_runfile:
+        return no_update
+    current_runfile = next((value for value in selected_runfile if value), None)
+    if not current_runfile:
+        return no_update
+    if n1:
+        try:
+            with open(current_runfile, 'r') as file:
+                runfile_content = file.read()
+            return dict(content=runfile_content, filename=current_runfile.split('/')[-1])
+        except Exception as e:
+            return f'Error reading file: {str(e)}'
+    # if n2:
+    #     return 'Upload', SHOW_STYLE
+    return no_update
+
+# if click the upload button, upload the file
+@app.callback(
+    Output(Runfile.CONTENT.value, 'children',allow_duplicate=True),
+    Input(Runfile.UPLOAD.value, 'contents'),
+    State(Runfile.UPLOAD.value, 'filename'),
+    State({'type': 'runfile-radio', 'index': ALL}, 'value'),
+    prevent_initial_call=True
+)
+def upload_runfile(contents, filename, selected_file):
+    if contents is None:
+        return no_update
+    current_runfile = next((value for value in selected_file if value), None)
+    if not current_runfile:
+        return no_update
+    content_type, content_string = contents.split(',')
+    decoded = base64.b64decode(content_string)
+    print('decoded', decoded)
+    print('current_runfile', current_runfile)
+    try:
+        with open(current_runfile, 'wb') as file:
+            file.write(decoded)
+        return pf.df_runfile(current_runfile)[1]
+    except Exception as e:
+        return ''
+
+# if save-text button is clicked, save the text to the selected runfile
+@app.callback(
+    Output(Runfile.CONTENT.value, 'children'),
+    Input(Runfile.SAVE_TEXT.value, 'n_clicks'),
+    State(Runfile.CONTENT.value, 'value'),
+    State({'type': 'runfile-radio', 'index': ALL}, 'value'),
+    prevent_initial_call=True
+)
+def save_text(n1, text, selected_runfile):
+    if not selected_runfile:
+        return no_update
+    current_runfile = next((value for value in selected_runfile if value), None)
+    if not current_runfile:
+        return no_update
+    if n1:
+        with open(current_runfile, 'w') as file:
+            file.write(text)
+        return text
+    return no_update

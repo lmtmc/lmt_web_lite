@@ -1,4 +1,4 @@
-from dash import dcc, html, Input, Output, State, no_update
+from dash import dcc, html, Input, Output, State
 from my_server import app
 from flask_login import logout_user, current_user
 from flask import session
@@ -19,13 +19,13 @@ app.layout = html.Div(
     [
         ui.navbar,
         html.Br(),
-        html.Div(id='body-content', className='content'),
+        html.Div(id='body-content',
+                 className='content-container'),
         # keep track of the current URL, the app will handle the location change without a full page refresh
         dcc.Location(id='url', refresh=False),
-        html.Div(dcc.Store(id='data-store',
-                           data={'pid': None, 'runfile': None, 'source': {}, 'selected_row': None, 'work_lmt': None},
-                           storage_type='session'), )
-    ]
+        dcc.Store(id='data-store',data={'pid': None, 'runfile': None, 'source': {}, 'selected_row': None, 'work_lmt': None},
+                           storage_type='session')
+    ], id='main-container', className='main-container'
 )
 
 
@@ -63,15 +63,12 @@ def display_page(pathname):
     [Input('body-content', 'children')])
 def nav_bar(input1):
     if current_user.is_authenticated:
-
         return [
             dbc.NavLink('Current ProjectId: ' + current_user.username, href=f'{prefix}project'),
             dbc.NavLink('Logout', href=f'{prefix}logout', )
         ]
-
     else:
         return '', ''
-
 
 # add callback for toggling the collapse on small screens
 @app.callback(
@@ -80,19 +77,13 @@ def nav_bar(input1):
     [State("navbar-collapse", "is_open")],
 )
 def toggle_navbar_collapse(n, is_open):
-    if n:
-        return not is_open
-    return is_open
+    return not is_open if n else is_open
 
-
-# add a port arg to the command line
-parser = argparse.ArgumentParser(description="Run the Dash app")
-parser.add_argument("-p", "--port", type=int, default=8000,
-                    help="Port to run the Dash app on")
-args = parser.parse_args()
-
-# export FLASK_ENV=development
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="Run the Dash app")
+    parser.add_argument("-p", "--port", type=int, default=8000,
+                        help="Port to run the Dash app on")
+    args = parser.parse_args()
     logger.info(f'Running the app on port {args.port}')
     try:
         app.server.run(port=args.port, debug=True)

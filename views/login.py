@@ -27,7 +27,7 @@ layout = dbc.Container([
     html.Img(src='assets/lmt_img.jpg', style={'width': '100%', 'height': 'auto', 'margin-top': '100px'},
              className='mb-4'),
     html.Div([
-        html.H1('Login using PID', className='text-center text-primary, mb-4'),
+        # html.H1('Login using PD', className='text-center text-primary, mb-4'),
         dbc.Label('PID:', className='mb-2'),
         dbc.Input(id='pid', type='text', placeholder='Enter PID', className='mb-4'),
         dbc.Label('Password:', className='mb-2'),
