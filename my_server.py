@@ -7,6 +7,7 @@ from flask_login import LoginManager, UserMixin
 import dash_bootstrap_components as dbc
 from datetime import datetime
 import yaml
+
 with open('config.yaml') as f:
     config = yaml.safe_load(f)
 

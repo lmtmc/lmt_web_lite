@@ -12,14 +12,11 @@ import json
 import ast
 import re
 import plotly.graph_objects as go
-from functions import logger
 import yaml
 
 # Load YAML configuration
 with open('config.yaml', 'r') as config_file:
     config = yaml.safe_load(config_file)
-
-logger = logger.logger
 
 python_path = config['path']['python_path']
 lmtoy_path = config['path']['lmtoy_path']
@@ -127,7 +124,6 @@ def get_source(default_work_lmt, pid):
         json_data = load_source_data(json_file)
         sources = json_data
     else:
-        logger.info(f'No source.json file found in {pid_path}, executing mk_runs.py to generate the sources')
         mk_runs_file = os.path.join(pid_path, 'mk_runs.py')
         result = subprocess.run([python_path, mk_runs_file], capture_output=True,
                                 text=True, cwd=pid_path)
@@ -289,7 +285,6 @@ def df_runfile(filename):
     data = []
     content = ''
     if os.path.exists(filename):
-        logger.info(f'{filename} exists')
         try:
             with open(filename) as file:
                 content = file.read()
@@ -312,10 +307,8 @@ def df_runfile(filename):
                 df['exclude_beams'] = df['exclude_beams'].apply(lambda x: exclude_beams(x))
             return df, content
         except Exception as e:
-            logger.error(e)
             return pd.DataFrame(), content
     else:
-        logger.warning(f'{filename} does not exist')
         return pd.DataFrame(), ''
 
 

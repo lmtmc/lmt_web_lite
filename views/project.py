@@ -10,7 +10,7 @@ import dash_bootstrap_components as dbc
 from flask_login import current_user
 import shutil
 from my_server import app
-from functions import project_function as pf, logger
+from functions import project_function as pf
 from views import ui_elements as ui
 from views.ui_elements import Session, Runfile, Table, Parameter, Storage
 import yaml
@@ -27,7 +27,6 @@ from lmtoy_lite.lmtoy import runs
 # todo instead of verify option make a submit job option to perform verify first and then submit sbatch_lmtoy.sh
 # todo create a job status page to show submitted job
 # todo submit job progress bar
-logger = logger.logger
 # Constants
 TABLE_STYLE = {'overflow': 'auto'}
 HIDE_STYLE = {'display': 'none'}
@@ -81,7 +80,6 @@ layout = html.Div(
     [Input(Session.SESSION_LIST.value, 'active_item')]
 )
 def default_session(active_session):
-    logger.info(f'active_session: {active_session}, init_session: {init_session}')
 
     if active_session is None:
         # Hide both delete and new session buttons if no session is selected
@@ -119,12 +117,9 @@ def default_session(active_session):
     ],
 )
 def update_session_display(n1, n2, n3, n4, n5, active_session, name):
-    logger.info(f'Updating the session list')
     triggered_id = ctx.triggered_id
-    logger.debug(f'Triggered: {triggered_id}')
 
     if not pf.check_user_exists():
-        logger.error('User is not authenticated')
         return no_update, no_update, "User is not authenticated", no_update
 
     pid_path = os.path.join(default_work_lmt, current_user.username)
@@ -133,7 +128,6 @@ def update_session_display(n1, n2, n3, n4, n5, active_session, name):
     modal_open, message = no_update, ''
     # create a new session
     if triggered_id == Session.NEW_BTN.value:
-        logger.info(f'Create a new session for user {current_user.username}')
         modal_open = True
     # save a session
     if triggered_id == Session.SAVE_BTN.value:
@@ -149,14 +143,12 @@ def update_session_display(n1, n2, n3, n4, n5, active_session, name):
             shutil.copytree(old_session_path, new_session_path)
             modal_open = False
             message = f"Successfully copied to {new_session_path}"
-        logger.info(message)
     # delete a session
     elif triggered_id == Session.CONFIRM_DEL.value:
         session_path = os.path.join(pid_path, active_session)
         if os.path.exists(session_path):
             # If it exists, delete the folder and all its contents
             shutil.rmtree(session_path)
-            logger.info(f'deleted {session_path}')
         else:
             print(f"The folder {session_path} does not exist.")
     # refresh session list
@@ -234,7 +226,6 @@ def display_runfile_content(selected_runfile, del_runfile_btn, n1, n2, n3):
         time.sleep(0.5)
         runfile_content = pf.df_runfile(current_runfile)[1]
     print(f'current_runfile is {current_runfile}')
-    logger.info(f'current_runfile is {current_runfile}')
     return runfile_title,SHOW_STYLE, runfile_content
 
 # If edit was clicked, show the modal

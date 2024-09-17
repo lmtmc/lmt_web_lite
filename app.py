@@ -5,12 +5,10 @@ from flask import session
 import dash_bootstrap_components as dbc
 from views import login, project, help, ui_elements as ui
 import argparse
-from functions import logger
 import yaml
 
 # prefix = '/pipeline'
 
-logger = logger.logger
 with open('config.yaml', 'r') as config_file:
     config = yaml.safe_load(config_file)
 
@@ -37,7 +35,6 @@ app.layout = html.Div(
               [Input('url', 'pathname')])
 def display_page(pathname):
     user_id = current_user.username if current_user.is_authenticated else None
-    logger.info(f'User {user_id} navigating to the page: {pathname}')
     if pathname in [prefix, f'{prefix}login']:
         return login.layout
     elif pathname == f'{prefix}project' and current_user.is_authenticated:
@@ -49,7 +46,7 @@ def display_page(pathname):
             logout_user()
             session.clear()
             data = {'runfile': None, 'pid': None, 'source': {}, 'selected_row': None, 'work_lmt': default_work_lmt}
-            logger.info(f'stored data clear: {data}')
+
         return login.layout
     elif not current_user.is_authenticated:
         return dcc.Location(pathname=f'{prefix}login', id='url_redirect')
@@ -87,8 +84,8 @@ if __name__ == '__main__':
     parser.add_argument("-p", "--port", type=int, default=8000,
                         help="Port to run the Dash app on")
     args = parser.parse_args()
-    logger.info(f'Running the app on port {args.port}')
     try:
         app.server.run(port=args.port, debug=False)
     except Exception as e:
-        logger.logger.error(e)
+        print(e)
+        app.server.run(port=args.port, debug=False)

@@ -6,11 +6,13 @@ import dash_bootstrap_components as dbc
 from my_server import app, User
 from flask_login import login_user
 from werkzeug.security import check_password_hash
-from functions import project_function as pf, logger
+from functions import project_function as pf
 from views.ui_elements import Storage
-from config import config
+import yaml
 
-logger = logger.logger
+# Load YAML configuration
+with open('config.yaml', 'r') as config_file:
+    config = yaml.safe_load(config_file)
 
 prefix = config['path']['prefix']
 default_work_lmt = config['path']['work_lmt']
@@ -18,9 +20,6 @@ pf.ensure_path_exists(default_work_lmt)
 
 lmtoy_run_path = os.path.join(default_work_lmt, 'lmtoy_run')
 pf.ensure_path_exists(default_work_lmt)
-
-# pid_options = pf.get_pid_option(lmtoy_run_path)
-# logger.info(f'pid_options: {pid_options}')
 
 layout = dbc.Container([
     dcc.Location(id='url_login', refresh=True),
@@ -77,10 +76,8 @@ def login_state(n_clicks, pid, password, is_open, data):
     user = User.query.filter_by(username=pid).first()
     if user and check_password_hash(user.password, password):
         login_user(user)
-        logger.info(f'Successful login for PID: {pid}')
         data['pid'] = pid
         data['source'] = pf.get_source(default_work_lmt, pid)
-        logger.info(f'source for {pid}: {data["source"]}')
         return f'{prefix}project', '', False, data, ''
     else:
         return f'{prefix}login', 'Invalid password', True, data, ''
