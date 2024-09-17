@@ -6,10 +6,11 @@ import os
 from flask_login import LoginManager, UserMixin
 import dash_bootstrap_components as dbc
 from datetime import datetime
-import yaml
-
-with open('config.yaml') as f:
-    config = yaml.safe_load(f)
+from config_loader import load_config
+try :
+    config = load_config()
+except Exception as e:
+    print(f"Error loading configuration: {e}")
 
 server = Flask(__name__)
 server.config['SECRET_KEY'] = os.urandom(12)

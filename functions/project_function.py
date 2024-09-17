@@ -12,11 +12,11 @@ import json
 import ast
 import re
 import plotly.graph_objects as go
-import yaml
-
-# Load YAML configuration
-with open('config.yaml', 'r') as config_file:
-    config = yaml.safe_load(config_file)
+from config_loader import load_config
+try :
+    config = load_config()
+except Exception as e:
+    print(f"Error loading configuration: {e}")
 
 python_path = config['path']['python_path']
 lmtoy_path = config['path']['lmtoy_path']

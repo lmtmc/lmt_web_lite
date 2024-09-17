@@ -5,16 +5,15 @@ from flask import session
 import dash_bootstrap_components as dbc
 from views import login, project, help, ui_elements as ui
 import argparse
-import yaml
-
-# prefix = '/pipeline'
-
-with open('config.yaml', 'r') as config_file:
-    config = yaml.safe_load(config_file)
+from config_loader import load_config
+try :
+    config = load_config()
+except Exception as e:
+    print(f"Error loading configuration: {e}")
 
 prefix = config['path']['prefix']
 # default_work_lmt = '/home/lmt/work_lmt'
-
+default_work_lmt = config['path']['work_lmt']
 
 app.layout = html.Div(
     [

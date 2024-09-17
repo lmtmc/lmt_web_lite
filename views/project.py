@@ -13,11 +13,11 @@ from my_server import app
 from functions import project_function as pf
 from views import ui_elements as ui
 from views.ui_elements import Session, Runfile, Table, Parameter, Storage
-import yaml
-
-# Load YAML configuration
-with open('config.yaml', 'r') as config_file:
-    config = yaml.safe_load(config_file)
+from config_loader import load_config
+try :
+    config = load_config()
+except Exception as e:
+    print(f"Error loading configuration: {e}")
 
 prefix = config['path']['prefix']
 default_runfiles = ['run1a', 'run1b', 'run2a', 'run2b']

@@ -7,11 +7,11 @@ import pandas as pd
 
 from dash import dcc, html, Input, Output, dash_table, State
 import dash_bootstrap_components as dbc
-# from config import config
-# prefix = config['path']['prefix']
-import yaml
-with open('config.yaml', 'r') as config_file:
-    config = yaml.safe_load(config_file)
+from config_loader import load_config
+try :
+    config = load_config()
+except Exception as e:
+    print(f"Error loading configuration: {e}")
 
 # from my_server import app
 

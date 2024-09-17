@@ -8,11 +8,11 @@ from flask_login import login_user
 from werkzeug.security import check_password_hash
 from functions import project_function as pf
 from views.ui_elements import Storage
-import yaml
-
-# Load YAML configuration
-with open('config.yaml', 'r') as config_file:
-    config = yaml.safe_load(config_file)
+from config_loader import load_config
+try :
+    config = load_config()
+except Exception as e:
+    print(f"Error loading configuration: {e}")
 
 prefix = config['path']['prefix']
 default_work_lmt = config['path']['work_lmt']
