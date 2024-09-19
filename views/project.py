@@ -1,4 +1,5 @@
 import base64
+import logging
 import os
 import time
 from pathlib import Path
@@ -94,6 +95,97 @@ def default_session(active_session):
 
 
 # display the sessions
+# @app.callback(
+#     [
+#         Output(Session.SESSION_LIST.value, 'children'),
+#         Output(Session.MODAL.value, 'is_open'),
+#         Output(Session.MESSAGE.value, 'children'),
+#         Output(Session.SESSION_LIST.value, 'active_item'),
+#         Output(Session.RUNFILE_SELECT.value, 'options'),
+#         Output(Session.RUNFILE_SELECT.value, 'value'),
+#     ],
+#     [
+#         Input(Session.NEW_BTN.value, 'n_clicks'),
+#         Input(Session.SAVE_BTN.value, 'n_clicks'),
+#         Input(Session.CONFIRM_DEL.value, 'submit_n_clicks'),
+#         Input(Runfile.CONFIRM_DEL_ALERT.value, 'submit_n_clicks'),
+#         Input(Runfile.SAVE_CLONE_RUNFILE_BTN.value, 'n_clicks'),
+#         Input(Session.SESSION_LIST.value, 'active_item'),
+#
+#     ],
+#     [
+#         State(Session.NAME_INPUT.value, 'value')
+#     ],
+# )
+# def update_session_display(n1, n2, n3, n4, n5, active_session, name):
+#
+#     triggered_id = ctx.triggered_id
+#
+#     if not pf.check_user_exists():
+#      return no_update, no_update, "User is not authenticated", no_update
+#
+#     pid_path = os.path.join(default_work_lmt, current_user.username)
+#     os.makedirs(pid_path, exist_ok=True)
+#
+#     modal_open, message = no_update, ''
+#     # create a new session
+#     if triggered_id == Session.NEW_BTN.value:
+#         modal_open = True
+#     # save a session
+#     if triggered_id == Session.SAVE_BTN.value:
+#         default_session_path = default_session_prefix + current_user.username
+#         new_session_path = os.path.join(pid_path, f'Session-{name}', 'lmtoy_run', f'lmtoy_{current_user.username}')
+#         if os.path.exists(new_session_path):
+#             message = f'session-{name} already exists'
+#         else:
+#             # Now perform the copy operation.
+#             print(f'pid_path: {pid_path}, active_session: {active_session},current_user: {current_user.username}')
+#             old_session_path = default_session_path if active_session == init_session \
+#                 else os.path.join(pid_path, active_session, 'lmtoy_run', f'lmtoy_{current_user.username}')
+#             shutil.copytree(old_session_path, new_session_path)
+#             modal_open = False
+#             message = f"Successfully copied to {new_session_path}"
+#     # delete a session
+#     elif triggered_id == Session.CONFIRM_DEL.value:
+#         session_path = os.path.join(pid_path, active_session)
+#         if os.path.exists(session_path):
+#             # If it exists, delete the folder and all its contents
+#             shutil.rmtree(session_path)
+#         else:
+#             print(f"The folder {session_path} does not exist.")
+#     # refresh session list
+#     if triggered_id in update_btn:
+#         # time.sleep(0.1)
+#         active_session = None
+#
+#     session_list = pf.get_session_list(init_session, pid_path)
+#
+#     # update the runfile options and values for the active session
+#     runfile_options = []
+#     runfile_value = []
+#     if active_session:
+#         default_session_path = default_session_prefix + current_user.username
+#         session_path = default_session_path if active_session == init_session \
+#             else os.path.join(pid_path, active_session, 'lmtoy_run', f'lmtoy_{current_user.username}')
+#
+#         runfile_options = pf.get_runfile_option(session_path)
+#         # Define the specific default runfiles you want to set as the dropdown values
+#         default_runfiles = ['run1a', 'run1b', 'run2a', 'run2b']
+#
+#         # Filter the runfile options to check for these default values
+#         runfile_value = [
+#             option['value'] for option in runfile_options
+#             if option['label'].split('.')[-1] in default_runfiles
+#         ]
+#
+#         # If none of the default runfiles exist in the options, you can handle it by setting the first option or leaving it empty
+#         if not runfile_value:
+#             runfile_value = runfile_options[0]['value'] if runfile_options else None
+#     return session_list, modal_open, message, active_session, runfile_options, runfile_value
+
+
+# if click delete session button show the confirmation
+
 @app.callback(
     [
         Output(Session.SESSION_LIST.value, 'children'),
@@ -110,79 +202,109 @@ def default_session(active_session):
         Input(Runfile.CONFIRM_DEL_ALERT.value, 'submit_n_clicks'),
         Input(Runfile.SAVE_CLONE_RUNFILE_BTN.value, 'n_clicks'),
         Input(Session.SESSION_LIST.value, 'active_item'),
-
     ],
     [
         State(Session.NAME_INPUT.value, 'value')
     ],
 )
 def update_session_display(n1, n2, n3, n4, n5, active_session, name):
-    triggered_id = ctx.triggered_id
+    try:
+        triggered_id = ctx.triggered_id
 
-    if not pf.check_user_exists():
-        return no_update, no_update, "User is not authenticated", no_update
+        if not pf.check_user_exists():
+            logging.warning("User is not authenticated")
+            return no_update, no_update, "User is not authenticated", no_update, no_update, no_update
 
-    pid_path = os.path.join(default_work_lmt, current_user.username)
-    os.makedirs(pid_path, exist_ok=True)
+        pid_path = os.path.join(default_work_lmt, current_user.username)
+        try:
+            os.makedirs(pid_path, exist_ok=True)
+        except OSError as e:
+            logging.error(f"Failed to create directory {pid_path}: {str(e)}")
+            return no_update, no_update, f"Failed to create directory: {str(e)}", no_update, no_update, no_update
 
-    modal_open, message = no_update, ''
-    # create a new session
-    if triggered_id == Session.NEW_BTN.value:
-        modal_open = True
-    # save a session
-    if triggered_id == Session.SAVE_BTN.value:
+        modal_open, message = no_update, ''
+
+        if triggered_id == Session.NEW_BTN.value:
+            modal_open = True
+        elif triggered_id == Session.SAVE_BTN.value:
+            message, modal_open = save_session(pid_path, name, active_session)
+        elif triggered_id == Session.CONFIRM_DEL.value:
+            message = delete_session(pid_path, active_session)
+            active_session = None if "Successfully" in message else active_session
+
+        if triggered_id in update_btn:
+            active_session = None
+
+        session_list = pf.get_session_list(init_session, pid_path)
+        runfile_options, runfile_value = get_runfile_info(active_session, pid_path)
+
+        return session_list, modal_open, message, active_session, runfile_options, runfile_value
+
+    except Exception as e:
+        logging.error(f"Error in update_session_display: {str(e)}")
+        return no_update, no_update, f"An error occurred: {str(e)}", no_update, no_update, no_update
+
+
+def save_session(pid_path, name, active_session):
+    try:
         default_session_path = default_session_prefix + current_user.username
         new_session_path = os.path.join(pid_path, f'Session-{name}', 'lmtoy_run', f'lmtoy_{current_user.username}')
         if os.path.exists(new_session_path):
-            message = f'session-{name} already exists'
-        else:
-            # Now perform the copy operation.
-            print(f'pid_path: {pid_path}, active_session: {active_session},current_user: {current_user.username}')
-            old_session_path = default_session_path if active_session == init_session \
-                else os.path.join(pid_path, active_session, 'lmtoy_run', f'lmtoy_{current_user.username}')
-            shutil.copytree(old_session_path, new_session_path)
-            modal_open = False
-            message = f"Successfully copied to {new_session_path}"
-    # delete a session
-    elif triggered_id == Session.CONFIRM_DEL.value:
+            return f'session-{name} already exists', no_update
+
+        old_session_path = default_session_path if active_session == init_session \
+            else os.path.join(pid_path, active_session, 'lmtoy_run', f'lmtoy_{current_user.username}')
+
+        shutil.copytree(old_session_path, new_session_path)
+        logging.info(f"Successfully copied session to {new_session_path}")
+        return f"Successfully copied to {new_session_path}", False
+    except Exception as e:
+        logging.error(f"Error in save_session: {str(e)}")
+        return f"Failed to save session: {str(e)}", no_update
+
+
+def delete_session(pid_path, active_session):
+    try:
         session_path = os.path.join(pid_path, active_session)
         if os.path.exists(session_path):
-            # If it exists, delete the folder and all its contents
             shutil.rmtree(session_path)
+            logging.info(f"Successfully deleted session at {session_path}")
+            return f"Successfully deleted {session_path}"
         else:
-            print(f"The folder {session_path} does not exist.")
-    # refresh session list
-    if triggered_id in update_btn:
-        # time.sleep(0.1)
-        active_session = None
+            logging.warning(f"The folder {session_path} does not exist.")
+            return f"The folder {session_path} does not exist."
+    except Exception as e:
+        logging.error(f"Error in delete_session: {str(e)}")
+        return f"Failed to delete session: {str(e)}"
 
-    session_list = pf.get_session_list(init_session, pid_path)
 
-    # update the runfile options and values for the active session
-    runfile_options = []
-    runfile_value = []
-    if active_session:
+def get_runfile_info(active_session, pid_path):
+    if not active_session:
+        return [], []
+
+    try:
         default_session_path = default_session_prefix + current_user.username
         session_path = default_session_path if active_session == init_session \
             else os.path.join(pid_path, active_session, 'lmtoy_run', f'lmtoy_{current_user.username}')
 
         runfile_options = pf.get_runfile_option(session_path)
-        # Define the specific default runfiles you want to set as the dropdown values
         default_runfiles = ['run1a', 'run1b', 'run2a', 'run2b']
 
-        # Filter the runfile options to check for these default values
         runfile_value = [
             option['value'] for option in runfile_options
             if option['label'].split('.')[-1] in default_runfiles
         ]
 
-        # If none of the default runfiles exist in the options, you can handle it by setting the first option or leaving it empty
-        if not runfile_value:
-            runfile_value = runfile_options[0]['value'] if runfile_options else None
-    return session_list, modal_open, message, active_session, runfile_options, runfile_value
+        if not runfile_value and runfile_options:
+            runfile_value = [runfile_options[0]['value']]
+
+        return runfile_options, runfile_value
+    except Exception as e:
+        logging.error(f"Error in get_runfile_info: {str(e)}")
+        return [], []
 
 
-# if click delete session button show the confirmation
+
 @app.callback(
     Output(Session.CONFIRM_DEL.value, 'displayed'),
     Output(Session.CONFIRM_DEL.value, 'message'),
