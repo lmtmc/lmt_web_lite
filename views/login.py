@@ -73,11 +73,15 @@ def login_state(n_clicks, pid, password, is_open, data):
     if not n_clicks:
         return no_update, no_update, no_update, no_update, no_update
 
-    user = User.query.filter_by(username=pid).first()
-    if user and check_password_hash(user.password, password):
-        login_user(user)
-        data['pid'] = pid
-        data['source'] = pf.get_source(default_work_lmt, pid)
-        return f'{prefix}project', '', False, data, ''
-    else:
-        return f'{prefix}login', 'Invalid password', True, data, ''
+    try:
+        user = User.query.filter_by(username=pid).first()
+        if user and check_password_hash(user.password, password):
+            login_user(user)
+            data['pid'] = pid
+            data['source'] = pf.get_source(default_work_lmt, pid)
+            return f'{prefix}project', '', False, data, ''
+        else:
+            return f'{prefix}login', 'Invalid password', True, data, ''
+    except Exception as e:
+        return f'{prefix}login', f'Error: {e}', True, data, ''
+    
