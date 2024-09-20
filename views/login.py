@@ -84,4 +84,3 @@ def login_state(n_clicks, pid, password, is_open, data):
             return f'{prefix}login', 'Invalid password', True, data, ''
     except Exception as e:
         return f'{prefix}login', f'Error: {e}', True, data, ''
-    
