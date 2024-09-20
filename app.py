@@ -78,6 +78,8 @@ def nav_bar(input1):
 def toggle_navbar_collapse(n, is_open):
     return not is_open if n else is_open
 
+server = app.server
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Run the Dash app")
     parser.add_argument("-p", "--port", type=int, default=8000,
