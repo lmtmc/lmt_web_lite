@@ -121,14 +121,14 @@ def update_session_display(n1, n2, n3, n4, n5, active_session, name):
 
         if not pf.check_user_exists():
             logging.warning("User is not authenticated")
-            return no_update, no_update, "User is not authenticated", no_update, no_update, no_update
+            return [], False, "User is not authenticated", None, [], None
 
         pid_path = os.path.join(default_work_lmt, current_user.username)
         try:
             os.makedirs(pid_path, exist_ok=True)
         except OSError as e:
             logging.error(f"Failed to create directory {pid_path}: {str(e)}")
-            return no_update, no_update, f"Failed to create directory: {str(e)}", no_update, no_update, no_update
+            return [], False, f"Failed to create directory: {str(e)}", None, [], None
 
         modal_open, message = no_update, ''
 
@@ -150,7 +150,7 @@ def update_session_display(n1, n2, n3, n4, n5, active_session, name):
 
     except Exception as e:
         logging.error(f"Error in update_session_display: {str(e)}")
-        return no_update, no_update, f"An error occurred: {str(e)}", no_update, no_update, no_update
+        return [], False, f"An error occurred: {str(e)}", None, [], None
 
 
 def save_session(pid_path, name, active_session):

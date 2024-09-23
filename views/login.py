@@ -1,4 +1,3 @@
-# todo password clear after login
 from dash import dcc, html, Input, Output, State, no_update
 
 import os
