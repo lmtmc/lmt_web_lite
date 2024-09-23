@@ -13,18 +13,16 @@ except Exception as e:
     print(f"Error loading configuration: {e}")
 
 server = Flask(__name__)
-server.config['SECRET_KEY'] = os.urandom(12)
-# server.config['SQLALCHEMY_DATABASE_URI'] = config.get('database', 'con')
-server.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
-
-server.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+server.config.update(
+    SECRET_KEY=os.urandom(12),
+    SQLALCHEMY_DATABASE_URI='sqlite:///users.db',
+    SQLALCHEMY_TRACK_MODIFICATIONS=False
+)
 
 prefix = config['path']['prefix']
 db = SQLAlchemy(server)
 # enable running the Dash app on the Flask server
 app = dash.Dash(__name__, server=server,
-                # requests_pathname_prefix=prefix,
-                # routes_pathname_prefix=prefix,
                 url_base_pathname=prefix,
                 external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.FONT_AWESOME, dbc.icons.BOOTSTRAP],
                 meta_tags=[
@@ -33,9 +31,8 @@ app = dash.Dash(__name__, server=server,
                      'content': 'width=device-width, initial-scale=1, shrink-to-fit=yes'},
                 ],
                 prevent_initial_callbacks="initial_duplicate",
-               # long_callback_manager=long_callback_manager
+                suppress_callback_exceptions=True,
                 )
-app.config.suppress_callback_exceptions = True
 
 login_manager = LoginManager(server)
 login_manager.login_view = f'{prefix}/login'
@@ -54,9 +51,6 @@ class User(UserMixin, db.Model):
         self.password = generate_password_hash(password, method='pbkdf2:sha256')
         self.email = email
 
-    def __repr__(self):
-        return f"User(id={self.username})"
-
     def check_password(self, password):
         return check_password_hash(self.password, password)
 
@@ -73,10 +67,6 @@ class Job(db.Model):
         self.session = session
         self.create_time = create_time
         self.username = username
-
-    def __repr__(self):
-        return f"Job(id={self.title})"
-
 
 with server.app_context():
     db.create_all()
