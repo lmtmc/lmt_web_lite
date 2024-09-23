@@ -351,7 +351,7 @@ tooltip_target = ['obsunms_label', 'bank_label', 'b_order_label', 'extent_label'
 tooltip_content = [
     "obsnum: A single observation number, typically 6 digits, e.g. 123456, obsnums: a comma separated "
     "series of obsnums to stack observations",
-    "Select a bank from a WARES based instrument; -1 means all banks, 0 is the first bank",
+    f"select a bank from a WARES based instrument; -1 means all banks, 0 is the first bank",
     "baseline order of a polynomial baseline subtraction in WARES based instruments",
     "half the size of the (square) box on the sky for gridding (in arcsec)",
 ]
@@ -541,49 +541,51 @@ parameter_layout = dbc.Modal(
     ], id=Parameter.MODAL.value, is_open=False, scrollable=True, size='xl', centered=True,
 )
 
-link_bar = dbc.Row(
-    [
-        dbc.Col(id='current-joblist', width='auto'),
-        dbc.Col(id='user-name', width='auto'),
-        dbc.Col(id='logout', width='auto'),
-        dbc.Col(
-            dbc.Row(
-                [
-                    dbc.Col(html.I(className="bi bi-question-circle-fill"), width="auto"),
-                    dbc.Col(dbc.NavLink("Help", href=f"{prefix}help"), width="auto"),
-                ],
-            ),
-        )
-    ],
-    className='ms-auto flex-nowrap mt-3 mt-md-3 me-5', align="center",
-)
 
-navbar = html.Div(dbc.Navbar(
-    [
-        html.A(
-            dbc.Row(
-                [dbc.Col(html.Img(src=f'{prefix}assets/lmt_img.jpg', height='30px'), ),
-                 dbc.Col(
-                     dbc.NavbarBrand('JOB RUNNER', className='ms-2', style={'fontSize': '24px', 'color': 'black'})), ],
-                # ms meaning margin start
-                align='right',
-                className='ms-5'
-            ),
-            href=f'{prefix}assets/lmt_img.jpg', style={'textDecoration': 'none'}
+def create_navbar(is_authenticated, username):
+    logo_brand = dbc.Row(
+        [
+            dbc.Col(html.Img(src=f'{prefix}assets/lmt_img.jpg', height='30px'), width='auto'),
+            dbc.Col(
+                dbc.NavbarBrand("PIPELINE JOB MANAGER", className='ms-2', style={'fontSize': '20px', 'color': 'black'}),
+                width='auto'),
+        ],
+        align='center',
+        className='g-0',
+    )
+
+    right_content = []
+
+    if is_authenticated:
+        right_content.extend([
+            dbc.NavItem(dbc.NavLink(f'Current Project: {username}', href="#", style={'color': 'black'}),
+                        className='me-3'),
+            dbc.NavItem(dbc.NavLink('Logout', href=f'{prefix}logout', style={'color':'black'}), className='me-3'),
+        ])
+
+    right_content.append(
+        dbc.NavItem(
+            dbc.NavLink(
+                [html.I(className="bi bi-question-circle-fill me-2"), "Help"],
+                href=f"{prefix}help",style={'color':'black'}
+            )
+        )
+    )
+
+    navbar = dbc.Navbar(
+        dbc.Container(
+            [
+                logo_brand,
+                dbc.Nav(right_content, className="ms-auto", navbar=True),
+            ],
+            fluid=True,
         ),
-        dbc.NavbarToggler(id='navbar-toggler', n_clicks=0),
-        dbc.Collapse(
-            link_bar,
-            id='navbar-collapse',
-            is_open=False,
-            navbar=True
-        )
-    ],
-    dark=True
-),
-    className='fixed-navbar',
+        dark=True,
+        className='fixed-navbar',
+    )
 
-)
+    return navbar
+
 
 fixed_states = [State(Runfile.TABLE.value, 'data')]
 # Define dynamic Output objects based on a list of field names

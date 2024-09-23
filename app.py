@@ -1,96 +1,4 @@
-# from dash import dcc, html, Input, Output, State
-# from my_server import app
-# from flask_login import logout_user, current_user
-# from flask import session
-# import dash_bootstrap_components as dbc
-# from views import login, project, help, ui_elements as ui
-# import argparse
-# from config_loader import load_config
-# try :
-#     config = load_config()
-# except Exception as e:
-#     print(f"Error loading configuration: {e}")
-#
-# prefix = config['path']['prefix']
-# default_work_lmt = config['path']['work_lmt']
-#
-# app.layout = html.Div(
-#     [
-#         ui.navbar,
-#         html.Br(),
-#         html.Div(id='body-content', className='content-container'),
-#         # keep track of the current URL, the app will handle the location change without a full page refresh
-#         dcc.Location(id='url', refresh=False),
-#         dcc.Store(id='data-store',data={'pid': None, 'runfile': None, 'source': {}, 'selected_row': None, 'work_lmt': None},
-#                            storage_type='session')
-#         dcc.Store(id='auth-store', data={'is_authenticated': False}, storage_type='session')
-#     ], id='main-container', className='main-container'
-# )
-#
-#
-# # update the body-content children based on the URL
-# @app.callback(Output('body-content', 'children'),
-#               [Input('url', 'pathname')])
-# def display_page(pathname):
-#     user_id = current_user.username if current_user.is_authenticated else None
-#     if pathname in [prefix, f'{prefix}login']:
-#         return login.layout
-#     elif pathname == f'{prefix}project' and current_user.is_authenticated:
-#         return project.layout
-#     elif pathname == f'{prefix}help':
-#         return help.layout
-#     elif pathname == f'{prefix}logout':
-#         if current_user.is_authenticated:
-#             logout_user()
-#             session.clear()
-#             data = {'runfile': None, 'pid': None, 'source': {}, 'selected_row': None, 'work_lmt': default_work_lmt}
-#
-#         return login.layout
-#     elif not current_user.is_authenticated:
-#         return dcc.Location(pathname=f'{prefix}login', id='url_redirect')
-#     else:
-#         return '404'
-#
-#
-# # update the navbar
-# @app.callback(
-#     [
-#         Output('user-name', 'children'),
-#         Output('logout', 'children'),
-#     ],
-#     [Input('body-content', 'children')])
-# def nav_bar(input1):
-#     if current_user.is_authenticated:
-#         return [
-#             dbc.NavLink('Current ProjectId: ' + current_user.username, href=f'{prefix}project'),
-#             dbc.NavLink('Logout', href=f'{prefix}logout', )
-#         ]
-#     else:
-#         return '', ''
-#
-# # add callback for toggling the collapse on small screens
-# @app.callback(
-#     Output("navbar-collapse", "is_open"),
-#     [Input("navbar-toggler", "n_clicks")],
-#     [State("navbar-collapse", "is_open")],
-# )
-# def toggle_navbar_collapse(n, is_open):
-#     return not is_open if n else is_open
-#
-# server = app.server
-#
-# if __name__ == '__main__':
-#     parser = argparse.ArgumentParser(description="Run the Dash app")
-#     parser.add_argument("-p", "--port", type=int, default=8000,
-#                         help="Port to run the Dash app on")
-#     args = parser.parse_args()
-#     try:
-#         app.server.run(port=args.port, debug=True)
-#     except Exception as e:
-#         print(e)
-#         app.server.run(port=args.port, debug=True)
-
-from dash import dcc, html, Input, Output, State, callback_context
+from dash import dcc, html, Input, Output, State
 from my_server import app
 from flask_login import logout_user, current_user
 from flask import session
@@ -98,8 +6,7 @@ import dash_bootstrap_components as dbc
 from views import login, project, help, ui_elements as ui
 import argparse
 from config_loader import load_config
-
-try:
+try :
     config = load_config()
 except Exception as e:
     print(f"Error loading configuration: {e}")
@@ -107,71 +14,65 @@ except Exception as e:
 prefix = config['path']['prefix']
 default_work_lmt = config['path']['work_lmt']
 
-app.layout = html.Div(
-    [
-        dcc.Location(id='url', refresh=False),
-        html.Div(id='navbar-container'),
-        html.Br(),
-        html.Div(id='body-content', className='content-container'),
-        dcc.Store(id='data-store', data={'pid': None, 'runfile': None, 'source': {}, 'selected_row': None, 'work_lmt': None},
-                  storage_type='session'),
-        dcc.Store(id='auth-store', data={'is_authenticated': False}, storage_type='session')
-    ], id='main-container', className='main-container'
-)
+def create_lalyout():
+    return html.Div(
+        [
+            html.Div(id='navbar-container'),
+            html.Br(),
+            html.Div(id='body-content', className='content-container'),
+            # keep track of the current URL, the app will handle the location change without a full page refresh
+            dcc.Location(id='url', refresh=False),
+            dcc.Store(id='data-store',data={'pid': None, 'runfile': None, 'source': {}, 'selected_row': None, 'work_lmt': None},
+                               storage_type='session'),
+            dcc.Store(id='auth-store', data={'is_authenticated': False}, storage_type='session')
+        ], id='main-container', className='main-container'
+    )
+
+app.layout = create_lalyout()
+
+
+# update the body-content children based on the URL
 
 @app.callback(
     [Output('navbar-container', 'children'),
+     Output('body-content', 'children'),
      Output('auth-store', 'data')],
-    [Input('url', 'pathname'),
-     Input('auth-store', 'data')]
+    [Input('url', 'pathname')],
+    [State('auth-store', 'data')]
 )
-def update_navbar(pathname, auth_data):
+def update_page(pathname, auth_data):
     is_authenticated = current_user.is_authenticated
     auth_data['is_authenticated'] = is_authenticated
+    username = current_user.username if is_authenticated else None
 
-    if is_authenticated:
-        navbar = ui.navbar
-        navbar.children[0].children.extend([
-            dbc.NavItem(dbc.NavLink(f'Current ProjectId: {current_user.username}', href=f'{prefix}project')),
-            dbc.NavItem(dbc.NavLink('Logout', href=f'{prefix}logout', id='logout-link'))
-        ])
+    navbar = ui.create_navbar(is_authenticated, username)
+
+    if pathname.startswith(prefix):
+        route = pathname[len(prefix):]
+
+        if route in ['', 'login']:
+            content = login.layout if not is_authenticated else dcc.Location(pathname=f'{prefix}project',
+                                                                             id='redirect-to-project')
+        elif route == 'project':
+            content = project.layout if is_authenticated else dcc.Location(pathname=f'{prefix}login',
+                                                                           id='redirect-to-login')
+        elif route == 'help':
+            content = help.layout
+        elif route == 'logout':
+            if is_authenticated:
+                logout_user()
+                session.clear()
+                auth_data['is_authenticated'] = False
+            content = dcc.Location(pathname=f'{prefix}login', id='redirect-after-logout')
+        else:
+            content = html.Div('404 - Page not found')
     else:
-        navbar = ui.navbar
+        content = html.Div('404 - Page not found')
 
-    return navbar, auth_data
+    if not is_authenticated and content not in [login.layout, help.layout]:
+        content = dcc.Location(pathname=f'{prefix}login', id='redirect-to-login')
 
-@app.callback(Output('body-content', 'children'),
-              [Input('url', 'pathname'),
-               Input('auth-store', 'data')])
-def display_page(pathname, auth_data):
-    is_authenticated = auth_data['is_authenticated']
-
-    if pathname in [prefix, f'{prefix}login']:
-        return login.layout
-    elif pathname == f'{prefix}project' and is_authenticated:
-        return project.layout
-    elif pathname == f'{prefix}help':
-        return help.layout
-    elif pathname == f'{prefix}logout':
-        if is_authenticated:
-            logout_user()
-            session.clear()
-            auth_data['is_authenticated'] = False
-        return login.layout
-    elif not is_authenticated:
-        return dcc.Location(pathname=f'{prefix}login', id='url_redirect')
-    else:
-        return '404'
-
-@app.callback(
-    Output("navbar-collapse", "is_open"),
-    [Input("navbar-toggler", "n_clicks")],
-    [State("navbar-collapse", "is_open")],
-)
-def toggle_navbar_collapse(n, is_open):
-    if n:
-        return not is_open
-    return is_open
+    return navbar, content, auth_data
 
 server = app.server
 
@@ -181,7 +82,7 @@ if __name__ == '__main__':
                         help="Port to run the Dash app on")
     args = parser.parse_args()
     try:
-        app.run_server(port=args.port, debug=True)
+        app.server.run(port=args.port, debug=True)
     except Exception as e:
         print(e)
-        app.run_server(port=args.port, debug=True)
+        app.server.run(port=args.port, debug=True)

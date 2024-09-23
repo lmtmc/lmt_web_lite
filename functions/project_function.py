@@ -155,8 +155,6 @@ def get_session_info(default_session, pid_path):
         session_info.extend(new_sessions)
     return session_info
 
-
-
 def get_runfile_option(session_path):
     matching_files = find_runfiles(session_path, f'{current_user.username}.')
     return [{'label': label, 'value': f'{session_path}/{label}'} for label in matching_files]
