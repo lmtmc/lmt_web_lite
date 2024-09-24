@@ -40,7 +40,6 @@ app.layout = create_lalyout()
 def update_page(pathname):
     is_authenticated = current_user.is_authenticated
     username = current_user.username if is_authenticated else None
-
     navbar = ui.create_navbar(is_authenticated, username)
 
     if pathname.startswith(prefix):
@@ -56,12 +55,13 @@ def update_page(pathname):
             if is_authenticated:
                 logout_user()
                 session.clear()
-            content = login.layout
+            content = dcc.Location(pathname=f'{prefix}login', id='redirect-after-logout')
         elif not is_authenticated:
-            content = dcc.Location(pathname=f'{prefix}login', id='redirect-to-login')
+            content = login.layout
         else:
             content = html.Div('404 - Page not found')
-
+    else:
+        content = html.Div('404 - Page not found')
     return navbar, content
 
 server = app.server
