@@ -24,7 +24,6 @@ def create_lalyout():
             dcc.Location(id='url', refresh=False),
             dcc.Store(id='data-store',data={'pid': None, 'runfile': None, 'source': {}, 'selected_row': None, 'work_lmt': None},
                                storage_type='session'),
-            dcc.Store(id='auth-store', data={'is_authenticated': False}, storage_type='session')
         ], id='main-container', className='main-container'
     )
 
@@ -35,14 +34,11 @@ app.layout = create_lalyout()
 
 @app.callback(
     [Output('navbar-container', 'children'),
-     Output('body-content', 'children'),
-     Output('auth-store', 'data')],
+     Output('body-content', 'children'),],
     [Input('url', 'pathname')],
-    [State('auth-store', 'data')]
 )
-def update_page(pathname, auth_data):
+def update_page(pathname):
     is_authenticated = current_user.is_authenticated
-    auth_data['is_authenticated'] = is_authenticated
     username = current_user.username if is_authenticated else None
 
     navbar = ui.create_navbar(is_authenticated, username)
@@ -51,28 +47,22 @@ def update_page(pathname, auth_data):
         route = pathname[len(prefix):]
 
         if route in ['', 'login']:
-            content = login.layout if not is_authenticated else dcc.Location(pathname=f'{prefix}project',
-                                                                             id='redirect-to-project')
-        elif route == 'project':
-            content = project.layout if is_authenticated else dcc.Location(pathname=f'{prefix}login',
-                                                                           id='redirect-to-login')
+            content = login.layout
+        elif route == 'project' and is_authenticated:
+            content = project.layout
         elif route == 'help':
             content = help.layout
         elif route == 'logout':
             if is_authenticated:
                 logout_user()
                 session.clear()
-                auth_data['is_authenticated'] = False
-            content = dcc.Location(pathname=f'{prefix}login', id='redirect-after-logout')
+            content = login.layout
+        elif not is_authenticated:
+            content = dcc.Location(pathname=f'{prefix}login', id='redirect-to-login')
         else:
             content = html.Div('404 - Page not found')
-    else:
-        content = html.Div('404 - Page not found')
 
-    if not is_authenticated and content not in [login.layout, help.layout]:
-        content = dcc.Location(pathname=f'{prefix}login', id='redirect-to-login')
-
-    return navbar, content, auth_data
+    return navbar, content
 
 server = app.server
 
