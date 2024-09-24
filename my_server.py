@@ -14,7 +14,7 @@ except Exception as e:
 
 server = Flask(__name__)
 server.config.update(
-    SECRET_KEY=os.urandom(12),
+    SECRET_KEY='my_secret_key',
     SQLALCHEMY_DATABASE_URI='sqlite:///users.db',
     SQLALCHEMY_TRACK_MODIFICATIONS=False
 )
